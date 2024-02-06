@@ -1,0 +1,19 @@
+[package]
+name = "consumer"
+version = "0.1.0"
+edition = "2021"
+homepage.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+did-jwk = "0.1.1"
+did-key = "0.2.1"
+did-web = "0.2.2"
+ssi-dids = "0.1.1"
+identity_iota.workspace = true
+tokio.workspace = true
+
+[dev-dependencies]
+wiremock = "0.5"

@@ -1,0 +1,13 @@
+[workspace]
+resolver = "2"
+members = ["consumer"]
+
+[workspace.package]
+homepage = "https://www.impierce.com/"
+license = "Apache-2.0"
+repository = "https://github.com/impierce/did-manager"
+rust-version = "1.75"
+
+[workspace.dependencies]
+identity_iota = { version = "1.0.0" }
+tokio = { version = "1", features = ["full"] }
