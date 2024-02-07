@@ -4,11 +4,9 @@ use identity_iota::document::CoreDocument;
 use ssi_dids::did_resolve::ResolutionInputMetadata;
 use ssi_dids::DIDMethod;
 
-/// https://github.com/spruceid/ssi/tree/main/did-web/
-
-pub async fn resolve_did_web(did: CoreDID) -> std::result::Result<CoreDocument, identity_iota::core::Error> {
+pub async fn resolve_did_jwk(did: CoreDID) -> std::result::Result<CoreDocument, identity_iota::core::Error> {
     println!("Resolving DID: {}", did);
-    let resolver = did_web::DIDWeb.to_resolver();
+    let resolver = did_jwk::DIDJWK.to_resolver();
     let input_metadata = ResolutionInputMetadata::default();
     let (result, document, metadata) = resolver.resolve(did.as_str(), &input_metadata).await;
 
@@ -28,15 +26,15 @@ pub async fn resolve_did_web(did: CoreDID) -> std::result::Result<CoreDocument, 
     document
 }
 
-// #[cfg(test)]
+#[cfg(test)]
 mod tests {
     use super::*;
 
-    // #[tokio::test]
-    async fn it_works() {
-        let did = CoreDID::parse("did:key:z6Mkk7yqnGF3YwTrLpqrW6PGsKci7dNqh1CjnvMbzrMerSeL").unwrap();
-        // let result = configure_and_resolve(did).await.unwrap();
+    #[tokio::test]
+    async fn resolves_did_jwk() {
+        let did = "did:jwk:eyJjcnYiOiJQLTI1NiIsImt0eSI6IkVDIiwieCI6ImFjYklRaXVNczNpOF91c3pFakoydHBUdFJNNEVVM3l6OTFQSDZDZEgyVjAiLCJ5IjoiX0tjeUxqOXZXTXB0bm1LdG00NkdxRHo4d2Y3NEk1TEtncmwyR3pIM25TRSJ9";
+        let document = configure_and_resolve(did).await.unwrap();
 
-        // assert_eq!(result.id(), "did:key:z6Mkk7yqnGF3YwTrLpqrW6PGsKci7dNqh1CjnvMbzrMerSeL");
+        assert_eq!(document.id(), "did:jwk:eyJjcnYiOiJQLTI1NiIsImt0eSI6IkVDIiwieCI6ImFjYklRaXVNczNpOF91c3pFakoydHBUdFJNNEVVM3l6OTFQSDZDZEgyVjAiLCJ5IjoiX0tjeUxqOXZXTXB0bm1LdG00NkdxRHo4d2Y3NEk1TEtncmwyR3pIM25TRSJ9");
     }
 }

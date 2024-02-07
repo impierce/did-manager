@@ -1,25 +1,79 @@
-pub mod did_jwk;
-pub mod did_key;
-pub mod did_web;
-
-use did_jwk::resolve_did_jwk;
-use did_key::resolve_did_key;
-use did_web::resolve_did_web;
+// use did_jwk::resolve_did_jwk;
+use did_key::consumer::resolve_did_key;
+use did_web::consumer::resolve_did_web;
+// use did_web::resolve_did_web;
 use identity_iota::did::CoreDID;
 use identity_iota::document::CoreDocument;
+use identity_iota::iota::{IotaDID, IotaIdentityClientExt};
 use identity_iota::resolver::Resolver;
+use iota_sdk::client::Client;
 
 async fn configure_and_resolve(did: &str) -> std::result::Result<CoreDocument, Box<dyn std::error::Error>> {
     let did = CoreDID::parse(did)?;
-    let resolver: Resolver = configure_resolver(Resolver::new());
+    let resolver: Resolver = configure_resolver(Resolver::new()).await;
     let document: CoreDocument = resolver.resolve(&did).await?;
     Ok(document)
 }
 
-fn configure_resolver(mut resolver: Resolver) -> Resolver {
+async fn configure_resolver(mut resolver: Resolver) -> Resolver {
     resolver.attach_handler("key".to_owned(), resolve_did_key);
     resolver.attach_handler("web".to_owned(), resolve_did_web);
-    resolver.attach_handler("jwk".to_owned(), resolve_did_jwk);
+    // resolver.attach_handler("jwk".to_owned(), resolve_did_jwk);
+
+    // ------------------ IOTA resolver ------------------
+    static MAINNET_URL: &str = "https://api.stardust-mainnet.iotaledger.net";
+    static SHIMMER_URL: &str = "https://api.shimmer.network";
+    static TESTNET_URL: &str = "https://api.testnet.shimmer.network";
+
+    // let client: Client = Client::builder()
+    //     .with_primary_node(MAINNET_URL, None)
+    //     .unwrap()
+    //     .finish()
+    //     .await
+    //     .unwrap();
+
+    // resolver.attach_iota_handler(client);
+    // ---------------------------------------------------
+
+    // ------------------ SHIMMER resolver ------------------
+    let smr_client: Client = Client::builder()
+        .with_primary_node(SHIMMER_URL, None)
+        .unwrap()
+        .finish()
+        .await
+        .unwrap();
+    // let arc_client = std::sync::Arc::new(smr_client);
+
+    // resolver.attach_handler("smr".to_owned(), move |did: CoreDID| {
+    //     let future_client = arc_client.clone();
+    //     async move { future_client.resolve_did(&did).await }
+    // });
+    // ---------------------------------------------------
+
+    // ------------------ SHIMMER resolver ------------------
+    let shimmer_testnet_client: Client = Client::builder()
+        .with_primary_node(TESTNET_URL, None)
+        .unwrap()
+        .finish()
+        .await
+        .unwrap();
+
+    resolver.attach_iota_handler(shimmer_testnet_client);
+    resolver.attach_iota_handler(smr_client);
+
+    // let arc_client = std::sync::Arc::new(shimmer_testnet_client);
+
+    // println!("client info: {:?}", arc_client.network_name().await.unwrap());
+
+    // resolver.attach_handler("iota".to_owned(), move |did: IotaDID| {
+    //     let future_client = arc_client.clone();
+    //     async move {
+    //         // println!("client network: {:?}", future_client.network_name().await.unwrap());
+    //         future_client.resolve_did(&did).await
+    //     }
+    // });
+    // ---------------------------------------------------
+
     resolver
 }
 
@@ -27,41 +81,36 @@ fn configure_resolver(mut resolver: Resolver) -> Resolver {
 mod tests {
     use super::*;
 
-    use wiremock::matchers::{method, path};
-    use wiremock::{Mock, MockServer, ResponseTemplate};
-
     #[tokio::test]
-    async fn resolves_did_key() {
-        let did = "did:key:z6Mkk7yqnGF3YwTrLpqrW6PGsKci7dNqh1CjnvMbzrMerSeL";
+    async fn resolves_did_iota() {
+        let did = "did:iota:0xe4edef97da1257e83cbeb49159cfdd2da6ac971ac447f233f8439cf29376ebfe";
         let document = configure_and_resolve(did).await.unwrap();
 
         assert_eq!(
             document.id(),
-            "did:key:z6Mkk7yqnGF3YwTrLpqrW6PGsKci7dNqh1CjnvMbzrMerSeL"
+            "did:iota:0xe4edef97da1257e83cbeb49159cfdd2da6ac971ac447f233f8439cf29376ebfe"
         );
     }
 
     #[tokio::test]
-    async fn resolves_did_web() {
-        let mock_server = MockServer::start().await;
+    async fn resolves_did_iota_smr() {
+        let did = "did:iota:smr:0xe4edef97da1257e83cbeb49159cfdd2da6ac971ac447f233f8439cf29376ebfe";
+        let document = configure_and_resolve(did).await.unwrap();
 
-        Mock::given(method("GET"))
-            .and(path("/.well-known/did.json"))
-            .respond_with(ResponseTemplate::new(200))
-            .mount(&mock_server)
-            .await;
-
-        let did = format!("did:web:localhost%3A{}", mock_server.address().port());
-        let document = configure_and_resolve(&did).await.unwrap();
-
-        assert_eq!(document.id(), "did:web:foobar");
+        assert_eq!(
+            document.id(),
+            "did:iota:smr:0xe4edef97da1257e83cbeb49159cfdd2da6ac971ac447f233f8439cf29376ebfe"
+        );
     }
 
     #[tokio::test]
-    async fn resolves_did_jwk() {
-        let did = "did:jwk:eyJjcnYiOiJQLTI1NiIsImt0eSI6IkVDIiwieCI6ImFjYklRaXVNczNpOF91c3pFakoydHBUdFJNNEVVM3l6OTFQSDZDZEgyVjAiLCJ5IjoiX0tjeUxqOXZXTXB0bm1LdG00NkdxRHo4d2Y3NEk1TEtncmwyR3pIM25TRSJ9";
+    async fn resolves_did_iota_rms() {
+        let did = "did:iota:rms:0x4868d61773a9f8e54741261a0e82fc883e299c2614c94b2400e2423d4c5bbe6a";
         let document = configure_and_resolve(did).await.unwrap();
 
-        assert_eq!(document.id(), "did:jwk:eyJjcnYiOiJQLTI1NiIsImt0eSI6IkVDIiwieCI6ImFjYklRaXVNczNpOF91c3pFakoydHBUdFJNNEVVM3l6OTFQSDZDZEgyVjAiLCJ5IjoiX0tjeUxqOXZXTXB0bm1LdG00NkdxRHo4d2Y3NEk1TEtncmwyR3pIM25TRSJ9");
+        assert_eq!(
+            document.id(),
+            "did:iota:rms:0x4868d61773a9f8e54741261a0e82fc883e299c2614c94b2400e2423d4c5bbe6a"
+        );
     }
 }

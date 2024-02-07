@@ -1,5 +1,5 @@
 [package]
-name = "consumer"
+name = "did_web"
 version = "0.1.0"
 edition = "2021"
 homepage.workspace = true
@@ -8,9 +8,10 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-did_jwk = { path = "../did_jwk" }
-did_key = { path = "../did_key" }
-did_web = { path = "../did_web" }
+did-web = "0.2.2"
 identity_iota.workspace = true
-iota-sdk.workspace = true
+ssi-dids = "0.1.1"
 tokio.workspace = true
+
+[dev-dependencies]
+wiremock = "0.5"

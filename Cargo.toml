@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["consumer"]
+members = ["consumer", "did_jwk", "did_key", "did_web"]
 
 [workspace.package]
 homepage = "https://www.impierce.com/"
@@ -10,4 +10,5 @@ rust-version = "1.75"
 
 [workspace.dependencies]
 identity_iota = { version = "1.0.0" }
+iota-sdk = { version = "1.0" }
 tokio = { version = "1", features = ["full"] }

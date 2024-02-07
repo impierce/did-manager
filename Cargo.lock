@@ -700,13 +700,12 @@ checksum = "f7144d30dcf0fafbce74250a3963025d8d52177934239851c917d29f1df280c2"
 name = "consumer"
 version = "0.1.0"
 dependencies = [
- "did-jwk",
- "did-key",
- "did-web",
+ "did_jwk",
+ "did_key",
+ "did_web",
  "identity_iota",
- "ssi-dids",
+ "iota-sdk",
  "tokio",
- "wiremock",
 ]
 
 [[package]]
@@ -1103,6 +1102,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "did_jwk"
+version = "0.1.0"
+dependencies = [
+ "did-jwk",
+ "identity_iota",
+ "ssi-dids",
+ "tokio",
+]
+
+[[package]]
+name = "did_key"
+version = "0.1.0"
+dependencies = [
+ "did-key",
+ "identity_iota",
+ "tokio",
+]
+
+[[package]]
 name = "did_url"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1110,6 +1128,17 @@ checksum = "70d5f6334e473e3bb5650ab4ef3e4c910296b76968e62758e7c66157ff767c05"
 dependencies = [
  "form_urlencoded",
  "serde",
+]
+
+[[package]]
+name = "did_web"
+version = "0.1.0"
+dependencies = [
+ "did-web",
+ "identity_iota",
+ "ssi-dids",
+ "tokio",
+ "wiremock",
 ]
 
 [[package]]
