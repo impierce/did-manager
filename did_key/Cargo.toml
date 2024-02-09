@@ -9,5 +9,15 @@ rust-version.workspace = true
 
 [dependencies]
 did-key = "0.2.1"
-identity_iota.workspace = true
+# identity_iota.workspace = true
+identity_iota = { version = "1.1.0", features = ["memstore"] }
+identity_stronghold.workspace = true
+iota-sdk.workspace = true
 tokio.workspace = true
+
+[dev-dependencies]
+iota-crypto = { version = "0.23", default-features = false, features = [
+    "ed25519",
+] }
+iota_stronghold = { version = "2.0" }
+rand = "0.8.5"

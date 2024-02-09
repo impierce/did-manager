@@ -106,19 +106,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "ansi_term"
-version = "0.12.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d52a9bb7ec0cf484c551830a7ce27bd20d67eac647e1befb56b0be4ee39a55d2"
-dependencies = [
- "winapi",
-]
-
-[[package]]
 name = "anyhow"
 version = "1.0.79"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "080e9890a082662b09c1ad45f567faeeb47f22b5fb23895fbe1e651e718e25ca"
+
+[[package]]
+name = "anymap"
+version = "0.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "33954243bd79057c2de7338850b85983a44588021f8a5fee574a8888c6de4344"
 
 [[package]]
 name = "arrayref"
@@ -350,17 +347,6 @@ name = "atomic-waker"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
-
-[[package]]
-name = "atty"
-version = "0.2.14"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9b39be18770d11421cdb1b9947a45dd3f37e93092cbf377614828a319d5fee8"
-dependencies = [
- "hermit-abi 0.1.19",
- "libc",
- "winapi",
-]
 
 [[package]]
 name = "autocfg"
@@ -649,21 +635,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "clap"
-version = "2.34.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a0610544180c38b88101fecf2dd634b174a62eef6946f84dfc6a7127512b381c"
-dependencies = [
- "ansi_term",
- "atty",
- "bitflags 1.3.2",
- "strsim 0.8.0",
- "textwrap",
- "unicode-width",
- "vec_map",
-]
-
-[[package]]
 name = "combination"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -890,7 +861,7 @@ dependencies = [
  "ident_case",
  "proc-macro2",
  "quote",
- "strsim 0.9.3",
+ "strsim",
  "syn 1.0.109",
 ]
 
@@ -929,20 +900,6 @@ checksum = "0047d07f2c89b17dd631c80450d69841a6b5d7fb17278cbc43d7e4cfcf2576f3"
 dependencies = [
  "data-encoding",
  "syn 1.0.109",
-]
-
-[[package]]
-name = "dataurl"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "17a1f14ed857323d318ca723a05a456196347efbe855f712f68cf6b8a14f8f15"
-dependencies = [
- "atty",
- "base64 0.13.1",
- "clap",
- "encoding_rs",
- "percent-encoding",
- "url",
 ]
 
 [[package]]
@@ -1107,6 +1064,11 @@ version = "0.1.0"
 dependencies = [
  "did-jwk",
  "identity_iota",
+ "identity_stronghold",
+ "iota-crypto",
+ "iota-sdk",
+ "iota_stronghold",
+ "rand 0.8.5",
  "ssi-dids",
  "tokio",
 ]
@@ -1117,6 +1079,11 @@ version = "0.1.0"
 dependencies = [
  "did-key",
  "identity_iota",
+ "identity_stronghold",
+ "iota-crypto",
+ "iota-sdk",
+ "iota_stronghold",
+ "rand 0.8.5",
  "tokio",
 ]
 
@@ -1822,15 +1789,6 @@ checksum = "95505c38b4572b2d910cecb0281560f54b440a19336cbbcb27bf6ce6adc6f5a8"
 
 [[package]]
 name = "hermit-abi"
-version = "0.1.19"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "62b467343b94ba476dcb2500d242dadbb39557df889310ac77c5d99100aaac33"
-dependencies = [
- "libc",
-]
-
-[[package]]
-name = "hermit-abi"
 version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d0c62115964e08cb8039170eb33c1d0e2388a256930279edca206fff675f82c3"
@@ -2037,9 +1995,9 @@ checksum = "b9e0384b61958566e926dc50660321d12159025e767c18e043daf26b70104c39"
 
 [[package]]
 name = "identity_core"
-version = "1.0.0"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3aee1810a89ab737d3a4dd660867f4a4d2ef5f57c18bb4afba578254a8c9b4b3"
+checksum = "567abca0bba6a8a8b1aa7023fed5290017f32c7b1cccc9968a139518e2bb6f20"
 dependencies = [
  "iota-crypto",
  "js-sys",
@@ -2055,11 +2013,10 @@ dependencies = [
 
 [[package]]
 name = "identity_credential"
-version = "1.0.0"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3dd5f343f5d67ba5398a4ab087c6981b0a869ddc1e63b6b59b5e36d0c9c38e1c"
+checksum = "bad9c21b17156e7be5670bf3c27a8a746d179e41e8994bcff5a888bb1796bc9b"
 dependencies = [
- "dataurl",
  "flate2",
  "identity_core",
  "identity_did",
@@ -2070,6 +2027,7 @@ dependencies = [
  "once_cell",
  "roaring",
  "serde",
+ "serde_json",
  "serde_repr",
  "strum",
  "thiserror",
@@ -2078,9 +2036,9 @@ dependencies = [
 
 [[package]]
 name = "identity_did"
-version = "1.0.0"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e70a1b3b93ec45f45239964fc484764ff252055a9ef00db90c89a4bd80e60761"
+checksum = "bb571addcf09cdfa51f65f17624538acbb1c9197126f90bc2681075dbed19447"
 dependencies = [
  "did_url",
  "form_urlencoded",
@@ -2092,9 +2050,9 @@ dependencies = [
 
 [[package]]
 name = "identity_document"
-version = "1.0.0"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6095569f56c25e47cc12ffd17ec580fe44d71a7aaa52471d2c8aa89f6a38407a"
+checksum = "405aa074481ae0b6cef37112ebfb6e09e05864ae6dd20a32b07e6fabf0ea10e4"
 dependencies = [
  "did_url",
  "identity_core",
@@ -2108,9 +2066,9 @@ dependencies = [
 
 [[package]]
 name = "identity_iota"
-version = "1.0.0"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8e5983474db123d21f534e53b98807957d60001e8e9e2ab1962f9745a1144f69"
+checksum = "7cb9e48bad9eb2b6c05e60c9d862f3df964b31541a4d6ba19aea60bb21501b34"
 dependencies = [
  "identity_core",
  "identity_credential",
@@ -2124,9 +2082,9 @@ dependencies = [
 
 [[package]]
 name = "identity_iota_core"
-version = "1.0.0"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6a3fdfe60dae19090557c013058d0cab28b9d428122302f7ecbab038f6cec4b8"
+checksum = "ca6f3c4c1a11ddaf8f337a5ab1067a944ae528de4bfc10754f8380e36006c0ce"
 dependencies = [
  "async-trait",
  "futures",
@@ -2148,9 +2106,9 @@ dependencies = [
 
 [[package]]
 name = "identity_jose"
-version = "1.0.0"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d8890438d085777f7370032bb805d5db98ebec1291bb2e04e4af2a8dc4e46224"
+checksum = "70bbce34800cf6c05168651e6a5d6592b662851d16650d4b3605af4417b4e7a0"
 dependencies = [
  "identity_core",
  "iota-crypto",
@@ -2163,9 +2121,9 @@ dependencies = [
 
 [[package]]
 name = "identity_resolver"
-version = "1.0.0"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fdb19b9b760856281aeb53912448ccc57e964eb05f8020ea1cd3533a2d362544"
+checksum = "a74a723134343f07b71f7617eac6ae51a3ac98c936c4c1b1d2cc9f1abf622617"
 dependencies = [
  "async-trait",
  "futures",
@@ -2181,9 +2139,9 @@ dependencies = [
 
 [[package]]
 name = "identity_storage"
-version = "1.0.0"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a5790b703f634062f27f06211b5ebf33787ad18226b9a605194f621ed5e6b4f5"
+checksum = "72fadb6e3eb29591a1dc1566d287b75af130ffcd197a2d2d4e6c8f57f330945a"
 dependencies = [
  "async-trait",
  "futures",
@@ -2193,17 +2151,37 @@ dependencies = [
  "identity_document",
  "identity_iota_core",
  "identity_verification",
+ "iota-crypto",
+ "rand 0.8.5",
  "seahash",
  "serde",
  "serde_json",
  "thiserror",
+ "tokio",
+]
+
+[[package]]
+name = "identity_stronghold"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d23b69f6348b567faef49dcae73f5551b6c2e19409ca6de2b60c6b6ca3cbae86"
+dependencies = [
+ "async-trait",
+ "identity_storage",
+ "identity_verification",
+ "iota-crypto",
+ "iota-sdk",
+ "iota_stronghold",
+ "rand 0.8.5",
+ "tokio",
+ "zeroize",
 ]
 
 [[package]]
 name = "identity_verification"
-version = "1.0.0"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "87a47637a711e8ba9dea4939c92f622464b11563b6a511923fa6ce1e68c9153c"
+checksum = "60bc31d6a7e8e8e0d2ead465b178be7e7b13b97e1f5e3cf78b48bee944a2703a"
 dependencies = [
  "identity_core",
  "identity_did",
@@ -2307,7 +2285,7 @@ version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eae7b9aee968036d54dce06cebaefd919e4472e753296daccd6d344e3e2df0c2"
 dependencies = [
- "hermit-abi 0.3.5",
+ "hermit-abi",
  "libc",
  "windows-sys 0.48.0",
 ]
@@ -2353,6 +2331,7 @@ version = "1.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "76d62d16468c4bc555cac621734b5aa4fa971341f8fe3938d4481f7f394b9167"
 dependencies = [
+ "anymap",
  "async-trait",
  "bech32",
  "bitflags 2.4.2",
@@ -2362,6 +2341,7 @@ dependencies = [
  "getset",
  "gloo-timers 0.3.0",
  "hashbrown 0.14.3",
+ "heck",
  "hex",
  "instant",
  "iota-crypto",
@@ -2383,6 +2363,7 @@ dependencies = [
  "serde_json",
  "serde_repr",
  "thiserror",
+ "time",
  "tokio",
  "url",
  "zeroize",
@@ -3043,7 +3024,7 @@ version = "1.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4161fcb6d602d4d2081af7c3a45852d875a03dd337a6bfdd6e06407b61342a43"
 dependencies = [
- "hermit-abi 0.3.5",
+ "hermit-abi",
  "libc",
 ]
 
@@ -4485,12 +4466,6 @@ dependencies = [
 
 [[package]]
 name = "strsim"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ea5119cdb4c55b55d432abb513a0429384878c15dde60cc77b1c99de1a95a6a"
-
-[[package]]
-name = "strsim"
 version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6446ced80d6c486436db5c078dde11a9f73d42b57fb273121e160b84f63d894c"
@@ -4588,15 +4563,6 @@ dependencies = [
  "fastrand 2.0.1",
  "rustix 0.38.31",
  "windows-sys 0.52.0",
-]
-
-[[package]]
-name = "textwrap"
-version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d326610f408c7a4eb6f51c37c330e496b08506c9457c9d34287ecc38809fb060"
-dependencies = [
- "unicode-width",
 ]
 
 [[package]]
@@ -4878,12 +4844,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "unicode-width"
-version = "0.1.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e51733f11c9c4f72aa0c160008246859e340b00807569a0da0e7a1079b27ba85"
-
-[[package]]
 name = "universal-hash"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4940,12 +4900,6 @@ name = "vcpkg"
 version = "0.2.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"
-
-[[package]]
-name = "vec_map"
-version = "0.8.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f1bddf1187be692e79c5ffeab891132dfb0f236ed36a43c7ed39f1165ee20191"
 
 [[package]]
 name = "version_check"

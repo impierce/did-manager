@@ -10,5 +10,14 @@ rust-version.workspace = true
 [dependencies]
 did-jwk = "0.1.1"
 identity_iota.workspace = true
+identity_stronghold.workspace = true
+iota-sdk.workspace = true
 ssi-dids = "0.1.1"
 tokio.workspace = true
+
+[dev-dependencies]
+iota-crypto = { version = "0.23", default-features = false, features = [
+    "ed25519",
+] }
+iota_stronghold = { version = "2.0" }
+rand = "0.8.5"
