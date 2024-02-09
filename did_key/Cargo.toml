@@ -8,11 +8,16 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-did-key = "0.2.1"
+did-key = "0.2.1"        # https://github.com/decentralized-identity/did-key.rs
+did-method-key = "0.2.2" # https://github.com/spruceid/ssi/tree/main/did-key
 # identity_iota.workspace = true
 identity_iota = { version = "1.1.0", features = ["memstore"] }
 identity_stronghold.workspace = true
 iota-sdk.workspace = true
+jsonwebkey = "0.3.5"
+serde_json = "1.0"
+ssi-dids = "0.1.1"
+ssi-jwk = "0.1.2"
 tokio.workspace = true
 
 [dev-dependencies]

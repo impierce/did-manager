@@ -16,7 +16,7 @@ where
         key_id, "TODO_get_name"
     );
 
-    let controller = CoreDID::parse("did:example:1234").unwrap();
+    let controller = CoreDID::parse("did:key:1234").unwrap();
 
     let mut document = CoreDocument::builder(Default::default())
         .id(controller.clone())
