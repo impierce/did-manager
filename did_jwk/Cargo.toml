@@ -8,8 +8,9 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-did-jwk = "0.1.1"
-identity_iota.workspace = true
+did-jwk-extern = { version = "0.1.1", package = "did-jwk" }
+#identity_iota.workspace = true
+identity_iota = { version = "1.1.0", features = ["memstore"] }
 identity_stronghold.workspace = true
 iota-sdk.workspace = true
 ssi-dids = "0.1.1"

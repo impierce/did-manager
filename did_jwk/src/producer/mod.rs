@@ -6,7 +6,11 @@ use identity_iota::{
     verification::{jws::JwsAlgorithm, MethodScope},
 };
 
-pub async fn produce_did_from_key<K, I>(storage: Storage<K, I>, password: &str, key_id: &str)
+pub async fn produce_did_from_key<K, I>(
+    storage: Storage<K, I>,
+    password: &str,
+    key_id: &str,
+) -> std::result::Result<CoreDocument, std::io::Error>
 where
     K: JwkStorage,
     I: KeyIdStorage,
@@ -37,10 +41,14 @@ where
         .unwrap();
 
     println!("{}", document.to_json_pretty().unwrap());
+
+    Ok(document)
 }
 
 #[cfg(test)]
-pub mod tests {
+mod tests {
+    use super::*;
+
     use crypto::signatures::ed25519::SecretKey;
     use identity_iota::core::ToJson;
     use identity_iota::storage::{JwkMemStore, KeyIdMemstore};
@@ -52,13 +60,11 @@ pub mod tests {
     use iota_sdk::client::Password;
     use rand::distributions::DistString;
 
-    use super::*;
-
     #[tokio::test]
     async fn test_mem_storage() {
         type MemStorage = Storage<JwkMemStore, KeyIdMemstore>;
         let storage: MemStorage = MemStorage::new(JwkMemStore::new(), KeyIdMemstore::new());
-        produce_did_from_key(storage, "foo", "bar").await;
+        let document = produce_did_from_key(storage, "foo", "bar").await.unwrap();
     }
 
     #[tokio::test]

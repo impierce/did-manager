@@ -1,4 +1,4 @@
-use did_key::{resolve, Config, DIDCore, Fingerprint};
+use did_key_extern::{resolve, Config, DIDCore, Fingerprint};
 use identity_iota::core::{FromJson, ToJson};
 use identity_iota::did::{CoreDID, DID};
 use identity_iota::document::CoreDocument;

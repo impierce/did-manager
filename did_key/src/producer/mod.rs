@@ -1,5 +1,3 @@
-use std::io::Error;
-
 use identity_iota::{
     core::ToJson,
     did::{CoreDID, DID},
@@ -8,6 +6,7 @@ use identity_iota::{
     verification::{jws::JwsAlgorithm, MethodScope, VerificationMethod},
 };
 use ssi_dids::{DIDMethod, Source};
+use std::io::Error;
 
 pub async fn produce_did_from_key<K, I>(
     storage: Storage<K, I>,
@@ -106,9 +105,11 @@ where
 }
 
 #[cfg(test)]
-pub mod tests {
+mod tests {
+    use super::*;
+
     use crypto::signatures::ed25519::SecretKey;
-    use did_key::{Config, DIDCore};
+    use did_key_extern::{Config, DIDCore};
     use identity_iota::core::{FromJson, ToJson};
     use identity_iota::storage::{JwkMemStore, KeyIdMemstore};
     use identity_iota::verification::jwk::{EdCurve, Jwk, JwkParamsOkp};
@@ -118,8 +119,6 @@ pub mod tests {
     use iota_sdk::client::secret::stronghold::StrongholdSecretManager;
     use iota_sdk::client::Password;
     use rand::distributions::DistString;
-
-    use super::*;
 
     #[tokio::test]
     async fn test_mem_storage() {

@@ -6,7 +6,7 @@ use ssi_dids::DIDMethod;
 
 pub async fn resolve_did_jwk(did: CoreDID) -> std::result::Result<CoreDocument, identity_iota::core::Error> {
     println!("Resolving DID: {}", did);
-    let resolver = did_jwk::DIDJWK.to_resolver();
+    let resolver = did_jwk_extern::DIDJWK.to_resolver();
     let input_metadata = ResolutionInputMetadata::default();
     let (result, document, metadata) = resolver.resolve(did.as_str(), &input_metadata).await;
 
@@ -33,7 +33,7 @@ mod tests {
     #[tokio::test]
     async fn resolves_did_jwk() {
         let did = "did:jwk:eyJjcnYiOiJQLTI1NiIsImt0eSI6IkVDIiwieCI6ImFjYklRaXVNczNpOF91c3pFakoydHBUdFJNNEVVM3l6OTFQSDZDZEgyVjAiLCJ5IjoiX0tjeUxqOXZXTXB0bm1LdG00NkdxRHo4d2Y3NEk1TEtncmwyR3pIM25TRSJ9";
-        let document = configure_and_resolve(did).await.unwrap();
+        let document = resolve_did_jwk(CoreDID::parse(did).unwrap()).await.unwrap();
 
         assert_eq!(document.id(), "did:jwk:eyJjcnYiOiJQLTI1NiIsImt0eSI6IkVDIiwieCI6ImFjYklRaXVNczNpOF91c3pFakoydHBUdFJNNEVVM3l6OTFQSDZDZEgyVjAiLCJ5IjoiX0tjeUxqOXZXTXB0bm1LdG00NkdxRHo4d2Y3NEk1TEtncmwyR3pIM25TRSJ9");
     }

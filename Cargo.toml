@@ -15,5 +15,5 @@ iota-sdk = { version = "1.0", features = ["stronghold"] }
 tokio = { version = "1", features = ["full"] }
 
 # TODO: Temporarily fixes percent-encoding for did:web method id (https://github.com/iotaledger/identity.rs/issues/1299)
-[patch.crates-io]
-did_url = { git = "https://github.com/iotaledger/did_url.git" }
+#[patch.crates-io]
+#did_url = { git = "https://github.com/iotaledger/did_url.git" }

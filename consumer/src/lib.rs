@@ -1,10 +1,8 @@
-// use did_jwk::resolve_did_jwk;
+use did_jwk::consumer::resolve_did_jwk;
 use did_key::consumer::resolve_did_key;
 use did_web::consumer::resolve_did_web;
-// use did_web::resolve_did_web;
 use identity_iota::did::CoreDID;
 use identity_iota::document::CoreDocument;
-use identity_iota::iota::{IotaDID, IotaIdentityClientExt};
 use identity_iota::resolver::Resolver;
 use iota_sdk::client::Client;
 
@@ -16,9 +14,9 @@ async fn configure_and_resolve(did: &str) -> std::result::Result<CoreDocument, B
 }
 
 async fn configure_resolver(mut resolver: Resolver) -> Resolver {
+    resolver.attach_handler("jwk".to_owned(), resolve_did_jwk);
     resolver.attach_handler("key".to_owned(), resolve_did_key);
-    resolver.attach_handler("web".to_owned(), resolve_did_web);
-    // resolver.attach_handler("jwk".to_owned(), resolve_did_jwk);
+    // resolver.attach_handler("web".to_owned(), resolve_did_web);
 
     // ------------------ IOTA resolver ------------------
     static MAINNET_URL: &str = "https://api.stardust-mainnet.iotaledger.net";
