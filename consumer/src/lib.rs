@@ -16,7 +16,7 @@ async fn configure_and_resolve(did: &str) -> std::result::Result<CoreDocument, B
 async fn configure_resolver(mut resolver: Resolver) -> Resolver {
     resolver.attach_handler("jwk".to_owned(), resolve_did_jwk);
     resolver.attach_handler("key".to_owned(), resolve_did_key);
-    // resolver.attach_handler("web".to_owned(), resolve_did_web);
+    resolver.attach_handler("web".to_owned(), resolve_did_web);
 
     // ------------------ IOTA resolver ------------------
     static MAINNET_URL: &str = "https://api.stardust-mainnet.iotaledger.net";
@@ -56,8 +56,10 @@ async fn configure_resolver(mut resolver: Resolver) -> Resolver {
         .await
         .unwrap();
 
-    resolver.attach_iota_handler(shimmer_testnet_client);
-    resolver.attach_iota_handler(smr_client);
+    resolver.attach_multiple_iota_handlers(vec![("smr", smr_client), ("testnet", shimmer_testnet_client)]);
+
+    // resolver.attach_iota_handler(shimmer_testnet_client);
+    // resolver.attach_iota_handler(smr_client);
 
     // let arc_client = std::sync::Arc::new(shimmer_testnet_client);
 

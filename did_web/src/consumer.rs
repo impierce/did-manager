@@ -21,7 +21,7 @@ pub async fn resolve_did_web(did: CoreDID) -> std::result::Result<CoreDocument, 
     // let key = resolve(did.as_str()).unwrap();
     // println!("key: {:?}", key.fingerprint());
     // let document = key.get_did_document(Config::default());
-    println!("document: {:#?}", document);
+    println!("document: {}", document.clone().unwrap().to_json_pretty().unwrap());
     println!("metadata: {:#?}", metadata);
     let document = CoreDocument::from_json(&document.to_json().unwrap());
     document
@@ -58,7 +58,7 @@ mod tests {
               "@context": "https://www.w3.org/ns/did/v1",
               "id": format!("did:web:localhost%3A{}", mock_server.address().port()),
               "verificationMethod": [{
-                "id": "did:web:localhost#key1",
+                "id": "did:web:localhost#key-0",
                 "type": "Ed25519VerificationKey2018",
                 "controller": "did:web:localhost",
                 "publicKeyJwk": {
@@ -68,7 +68,7 @@ mod tests {
                   "x": "G80iskrv_nE69qbGLSpeOHJgmV4MKIzsy5l5iT6pCww"
                 }
               }],
-              "assertionMethod": ["did:web:localhost#key1"]
+              "assertionMethod": ["did:web:localhost#key-0"]
             })))
             .mount(&mock_server)
             .await;

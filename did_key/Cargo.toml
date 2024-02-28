@@ -8,10 +8,10 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+common = { path = "../common" }
 did-key-extern = { version = "0.2.1", package = "did-key" } # https://github.com/decentralized-identity/did-key.rs
 did-method-key = "0.2.2"                                    # https://github.com/spruceid/ssi/tree/main/did-key
-# identity_iota.workspace = true
-identity_iota = { version = "1.1.0", features = ["memstore"] }
+identity_iota.workspace = true
 identity_stronghold.workspace = true
 iota-sdk.workspace = true
 jsonwebkey = "0.3.5"
@@ -25,4 +25,3 @@ iota-crypto = { version = "0.23", default-features = false, features = [
     "ed25519",
 ] }
 iota_stronghold = { version = "2.0" }
-rand = "0.8.5"

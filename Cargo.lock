@@ -65,9 +65,9 @@ dependencies = [
 
 [[package]]
 name = "ahash"
-version = "0.8.8"
+version = "0.8.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "42cd52102d3df161c77a887b608d7a4897d7cc112886a9537b738a887a03aaff"
+checksum = "d713b3834d76b85304d4d525563c1276e2e30dc97cc67bfb4585a4a29fc2c89f"
 dependencies = [
  "cfg-if",
  "once_cell",
@@ -107,9 +107,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.79"
+version = "1.0.80"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "080e9890a082662b09c1ad45f567faeeb47f22b5fb23895fbe1e651e718e25ca"
+checksum = "5ad32ce52e4161730f7098c077cd2ed6229b5804ccf99e5366be1ab72a98b4e1"
 
 [[package]]
 name = "anymap"
@@ -167,7 +167,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f28243a43d821d11341ab73c80bed182dc015c514b951616cf79bd4af39af0c3"
 dependencies = [
  "concurrent-queue",
- "event-listener 5.0.0",
+ "event-listener 5.1.0",
  "event-listener-strategy 0.5.0",
  "futures-core",
  "pin-project-lite",
@@ -234,7 +234,7 @@ dependencies = [
  "futures-io",
  "futures-lite 2.2.0",
  "parking",
- "polling 3.4.0",
+ "polling 3.5.0",
  "rustix 0.38.31",
  "slab",
  "tracing",
@@ -302,7 +302,7 @@ checksum = "c980ee35e870bd1a4d2c8294d4c04d0499e67bca1e4b5cefcc693c2fa00caea9"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.48",
+ "syn 2.0.50",
 ]
 
 [[package]]
@@ -541,9 +541,9 @@ dependencies = [
 
 [[package]]
 name = "bumpalo"
-version = "3.14.0"
+version = "3.15.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f30e7476521f6f8af1a1c4c0b8cc94f0bee37d91763d0ca2665f299b6cd8aec"
+checksum = "8ea184aa71bb362a1157c896979544cc23974e08fd265f29ea96b59f0b4a555b"
 
 [[package]]
 name = "byte-slice-cast"
@@ -571,12 +571,9 @@ checksum = "a2bd12c1caf447e69cd4528f47f94d203fd2582878ecb9e9465484c4148a8223"
 
 [[package]]
 name = "cc"
-version = "1.0.83"
+version = "1.0.87"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f1174fb0b6ec23863f8b971027804a42614e347eafb0a95bf0b12cdae21fc4d0"
-dependencies = [
- "libc",
-]
+checksum = "3286b845d0fccbdd15af433f61c5970e711987036cb468f437ff6badd70f4e24"
 
 [[package]]
 name = "cfg-if"
@@ -620,7 +617,7 @@ dependencies = [
  "num-traits",
  "serde",
  "wasm-bindgen",
- "windows-targets 0.52.0",
+ "windows-targets 0.52.3",
 ]
 
 [[package]]
@@ -639,6 +636,15 @@ name = "combination"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "337cdbf3f1a0e643b4a7d1a2ffa39d22342fb6ee25739b5cfb997c28b3586422"
+
+[[package]]
+name = "common"
+version = "0.1.0"
+dependencies = [
+ "identity_iota",
+ "identity_stronghold",
+ "rand 0.8.5",
+]
 
 [[package]]
 name = "concurrent-queue"
@@ -680,7 +686,7 @@ dependencies = [
  "did_jwk",
  "did_key",
  "did_web",
- "identity_iota 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "identity_iota",
  "iota-sdk",
  "tokio",
 ]
@@ -854,7 +860,7 @@ checksum = "f46882e17999c6cc590af592290432be3bce0428cb0d5f8b6715e4dc7b383eb3"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.48",
+ "syn 2.0.50",
 ]
 
 [[package]]
@@ -1107,14 +1113,17 @@ dependencies = [
 name = "did_jwk"
 version = "0.1.0"
 dependencies = [
+ "common",
  "did-jwk",
- "identity_iota 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "identity_iota",
  "identity_stronghold",
  "iota-crypto",
  "iota-sdk",
  "iota_stronghold",
  "rand 0.8.5",
+ "serde_json",
  "ssi-dids",
+ "ssi-jwk",
  "tokio",
 ]
 
@@ -1122,15 +1131,15 @@ dependencies = [
 name = "did_key"
 version = "0.1.0"
 dependencies = [
+ "common",
  "did-key",
  "did-method-key",
- "identity_iota 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "identity_iota",
  "identity_stronghold",
  "iota-crypto",
  "iota-sdk",
  "iota_stronghold",
  "jsonwebkey",
- "rand 0.8.5",
  "serde_json",
  "ssi-dids",
  "ssi-jwk",
@@ -1144,7 +1153,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "70d5f6334e473e3bb5650ab4ef3e4c910296b76968e62758e7c66157ff767c05"
 dependencies = [
  "form_urlencoded",
- "serde",
 ]
 
 [[package]]
@@ -1160,10 +1168,16 @@ dependencies = [
 name = "did_web"
 version = "0.1.0"
 dependencies = [
+ "common",
  "did-web",
- "identity_iota 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
+ "identity_iota",
+ "identity_stronghold",
+ "iota-sdk",
+ "iota_stronghold",
+ "rand 0.8.5",
  "serde_json",
  "ssi-dids",
+ "ssi-jwk",
  "tokio",
  "wiremock",
 ]
@@ -1414,9 +1428,9 @@ dependencies = [
 
 [[package]]
 name = "event-listener"
-version = "5.0.0"
+version = "5.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b72557800024fabbaa2449dd4bf24e37b93702d457a4d4f2b0dd1f0f039f20c1"
+checksum = "b7ad6fd685ce13acd6d9541a30f6db6567a7a24c9ffd4ba2955d29e3f22c8b27"
 dependencies = [
  "concurrent-queue",
  "parking",
@@ -1439,7 +1453,7 @@ version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "feedafcaa9b749175d5ac357452a9d41ea2911da598fde46ce1fe02c37751291"
 dependencies = [
- "event-listener 5.0.0",
+ "event-listener 5.1.0",
  "pin-project-lite",
 ]
 
@@ -1648,7 +1662,7 @@ checksum = "87750cf4b7a4c0625b1529e4c543c2182106e4dedc60a2a6455e00d212c489ac"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.48",
+ "syn 2.0.50",
 ]
 
 [[package]]
@@ -1665,9 +1679,9 @@ checksum = "38d84fa142264698cdce1a9f9172cf383a0c82de1bddcf3092901442c4097004"
 
 [[package]]
 name = "futures-timer"
-version = "3.0.2"
+version = "3.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e64b03909df88034c26dc1547e8970b91f98bdb65165d6a4e9110d94263dbb2c"
+checksum = "f288b0a4f20f9a56b5d1da57e2227c661b7b16168e2f72365f57b63326e29b24"
 
 [[package]]
 name = "futures-util"
@@ -1851,7 +1865,7 @@ version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "43a3c133739dddd0d2990f9a4bdf8eb4b21ef50e4851ca85ab661199821d510e"
 dependencies = [
- "ahash 0.8.8",
+ "ahash 0.8.9",
 ]
 
 [[package]]
@@ -1860,7 +1874,7 @@ version = "0.14.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "290f1a1d9242c78d09ce40a5e87e7554ee637af1351968159f4952f028f75604"
 dependencies = [
- "ahash 0.8.8",
+ "ahash 0.8.9",
  "allocator-api2",
  "serde",
 ]
@@ -2027,7 +2041,7 @@ dependencies = [
  "httpdate",
  "itoa",
  "pin-project-lite",
- "socket2 0.5.5",
+ "socket2 0.5.6",
  "tokio",
  "tower-service",
  "tracing",
@@ -2092,26 +2106,8 @@ checksum = "b9e0384b61958566e926dc50660321d12159025e767c18e043daf26b70104c39"
 
 [[package]]
 name = "identity_core"
-version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "567abca0bba6a8a8b1aa7023fed5290017f32c7b1cccc9968a139518e2bb6f20"
-dependencies = [
- "iota-crypto",
- "js-sys",
- "multibase 0.9.1",
- "serde",
- "serde_json",
- "strum",
- "thiserror",
- "time",
- "url",
- "zeroize",
-]
-
-[[package]]
-name = "identity_core"
-version = "1.1.0"
-source = "git+https://github.com/iotaledger/identity.rs.git?rev=4635a47#4635a474d0da8fdb15747204fe5fa55ba018810c"
+version = "1.1.1"
+source = "git+https://github.com/iotaledger/identity.rs.git?rev=b424d3d#b424d3d823dccbb0867a4962d638fd3e29918ddc"
 dependencies = [
  "iota-crypto",
  "js-sys",
@@ -2127,37 +2123,14 @@ dependencies = [
 
 [[package]]
 name = "identity_credential"
-version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bad9c21b17156e7be5670bf3c27a8a746d179e41e8994bcff5a888bb1796bc9b"
+version = "1.1.1"
+source = "git+https://github.com/iotaledger/identity.rs.git?rev=b424d3d#b424d3d823dccbb0867a4962d638fd3e29918ddc"
 dependencies = [
  "flate2",
- "identity_core 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "identity_did 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "identity_document 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "identity_verification 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "indexmap 2.2.3",
- "itertools 0.11.0",
- "once_cell",
- "roaring",
- "serde",
- "serde_json",
- "serde_repr",
- "strum",
- "thiserror",
- "url",
-]
-
-[[package]]
-name = "identity_credential"
-version = "1.1.0"
-source = "git+https://github.com/iotaledger/identity.rs.git?rev=4635a47#4635a474d0da8fdb15747204fe5fa55ba018810c"
-dependencies = [
- "flate2",
- "identity_core 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
- "identity_did 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
- "identity_document 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
- "identity_verification 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
+ "identity_core",
+ "identity_did",
+ "identity_document",
+ "identity_verification",
  "indexmap 2.2.3",
  "itertools 0.11.0",
  "once_cell",
@@ -2172,26 +2145,12 @@ dependencies = [
 
 [[package]]
 name = "identity_did"
-version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb571addcf09cdfa51f65f17624538acbb1c9197126f90bc2681075dbed19447"
-dependencies = [
- "did_url 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "form_urlencoded",
- "identity_core 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde",
- "strum",
- "thiserror",
-]
-
-[[package]]
-name = "identity_did"
-version = "1.1.0"
-source = "git+https://github.com/iotaledger/identity.rs.git?rev=4635a47#4635a474d0da8fdb15747204fe5fa55ba018810c"
+version = "1.1.1"
+source = "git+https://github.com/iotaledger/identity.rs.git?rev=b424d3d#b424d3d823dccbb0867a4962d638fd3e29918ddc"
 dependencies = [
  "did_url 0.1.0 (git+https://github.com/iotaledger/did_url.git)",
  "form_urlencoded",
- "identity_core 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
+ "identity_core",
  "serde",
  "strum",
  "thiserror",
@@ -2199,29 +2158,13 @@ dependencies = [
 
 [[package]]
 name = "identity_document"
-version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "405aa074481ae0b6cef37112ebfb6e09e05864ae6dd20a32b07e6fabf0ea10e4"
-dependencies = [
- "did_url 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "identity_core 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "identity_did 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "identity_verification 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "indexmap 2.2.3",
- "serde",
- "strum",
- "thiserror",
-]
-
-[[package]]
-name = "identity_document"
-version = "1.1.0"
-source = "git+https://github.com/iotaledger/identity.rs.git?rev=4635a47#4635a474d0da8fdb15747204fe5fa55ba018810c"
+version = "1.1.1"
+source = "git+https://github.com/iotaledger/identity.rs.git?rev=b424d3d#b424d3d823dccbb0867a4962d638fd3e29918ddc"
 dependencies = [
  "did_url 0.1.0 (git+https://github.com/iotaledger/did_url.git)",
- "identity_core 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
- "identity_did 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
- "identity_verification 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
+ "identity_core",
+ "identity_did",
+ "identity_verification",
  "indexmap 2.2.3",
  "serde",
  "strum",
@@ -2230,71 +2173,31 @@ dependencies = [
 
 [[package]]
 name = "identity_iota"
-version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7cb9e48bad9eb2b6c05e60c9d862f3df964b31541a4d6ba19aea60bb21501b34"
+version = "1.1.1"
+source = "git+https://github.com/iotaledger/identity.rs.git?rev=b424d3d#b424d3d823dccbb0867a4962d638fd3e29918ddc"
 dependencies = [
- "identity_core 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "identity_credential 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "identity_did 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "identity_document 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "identity_iota_core 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "identity_resolver 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "identity_storage 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "identity_verification 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "identity_iota"
-version = "1.1.0"
-source = "git+https://github.com/iotaledger/identity.rs.git?rev=4635a47#4635a474d0da8fdb15747204fe5fa55ba018810c"
-dependencies = [
- "identity_core 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
- "identity_credential 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
- "identity_did 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
- "identity_document 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
- "identity_iota_core 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
- "identity_resolver 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
- "identity_storage 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
- "identity_verification 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
+ "identity_core",
+ "identity_credential",
+ "identity_did",
+ "identity_document",
+ "identity_iota_core",
+ "identity_resolver",
+ "identity_storage",
+ "identity_verification",
 ]
 
 [[package]]
 name = "identity_iota_core"
-version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ca6f3c4c1a11ddaf8f337a5ab1067a944ae528de4bfc10754f8380e36006c0ce"
+version = "1.1.1"
+source = "git+https://github.com/iotaledger/identity.rs.git?rev=b424d3d#b424d3d823dccbb0867a4962d638fd3e29918ddc"
 dependencies = [
  "async-trait",
  "futures",
- "identity_core 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "identity_credential 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "identity_did 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "identity_document 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "identity_verification 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "iota-sdk",
- "num-derive 0.4.2",
- "num-traits",
- "once_cell",
- "prefix-hex",
- "ref-cast",
- "serde",
- "strum",
- "thiserror",
-]
-
-[[package]]
-name = "identity_iota_core"
-version = "1.1.0"
-source = "git+https://github.com/iotaledger/identity.rs.git?rev=4635a47#4635a474d0da8fdb15747204fe5fa55ba018810c"
-dependencies = [
- "async-trait",
- "futures",
- "identity_core 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
- "identity_credential 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
- "identity_did 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
- "identity_document 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
- "identity_verification 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
+ "identity_core",
+ "identity_credential",
+ "identity_did",
+ "identity_document",
+ "identity_verification",
  "iota-sdk",
  "num-derive 0.4.2",
  "num-traits",
@@ -2308,25 +2211,10 @@ dependencies = [
 
 [[package]]
 name = "identity_jose"
-version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "70bbce34800cf6c05168651e6a5d6592b662851d16650d4b3605af4417b4e7a0"
+version = "1.1.1"
+source = "git+https://github.com/iotaledger/identity.rs.git?rev=b424d3d#b424d3d823dccbb0867a4962d638fd3e29918ddc"
 dependencies = [
- "identity_core 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "iota-crypto",
- "serde",
- "serde_json",
- "subtle",
- "thiserror",
- "zeroize",
-]
-
-[[package]]
-name = "identity_jose"
-version = "1.1.0"
-source = "git+https://github.com/iotaledger/identity.rs.git?rev=4635a47#4635a474d0da8fdb15747204fe5fa55ba018810c"
-dependencies = [
- "identity_core 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
+ "identity_core",
  "iota-crypto",
  "serde",
  "serde_json",
@@ -2337,34 +2225,16 @@ dependencies = [
 
 [[package]]
 name = "identity_resolver"
-version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a74a723134343f07b71f7617eac6ae51a3ac98c936c4c1b1d2cc9f1abf622617"
+version = "1.1.1"
+source = "git+https://github.com/iotaledger/identity.rs.git?rev=b424d3d#b424d3d823dccbb0867a4962d638fd3e29918ddc"
 dependencies = [
  "async-trait",
  "futures",
- "identity_core 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "identity_credential 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "identity_did 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "identity_document 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "identity_iota_core 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde",
- "strum",
- "thiserror",
-]
-
-[[package]]
-name = "identity_resolver"
-version = "1.1.0"
-source = "git+https://github.com/iotaledger/identity.rs.git?rev=4635a47#4635a474d0da8fdb15747204fe5fa55ba018810c"
-dependencies = [
- "async-trait",
- "futures",
- "identity_core 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
- "identity_credential 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
- "identity_did 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
- "identity_document 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
- "identity_iota_core 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
+ "identity_core",
+ "identity_credential",
+ "identity_did",
+ "identity_document",
+ "identity_iota_core",
  "serde",
  "strum",
  "thiserror",
@@ -2372,58 +2242,31 @@ dependencies = [
 
 [[package]]
 name = "identity_storage"
-version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "72fadb6e3eb29591a1dc1566d287b75af130ffcd197a2d2d4e6c8f57f330945a"
+version = "1.1.1"
+source = "git+https://github.com/iotaledger/identity.rs.git?rev=b424d3d#b424d3d823dccbb0867a4962d638fd3e29918ddc"
 dependencies = [
  "async-trait",
  "futures",
- "identity_core 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "identity_credential 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "identity_did 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "identity_document 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "identity_iota_core 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "identity_verification 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "iota-crypto",
- "rand 0.8.5",
+ "identity_core",
+ "identity_credential",
+ "identity_did",
+ "identity_document",
+ "identity_iota_core",
+ "identity_verification",
  "seahash",
  "serde",
  "serde_json",
  "thiserror",
- "tokio",
-]
-
-[[package]]
-name = "identity_storage"
-version = "1.1.0"
-source = "git+https://github.com/iotaledger/identity.rs.git?rev=4635a47#4635a474d0da8fdb15747204fe5fa55ba018810c"
-dependencies = [
- "async-trait",
- "futures",
- "identity_core 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
- "identity_credential 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
- "identity_did 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
- "identity_document 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
- "identity_iota_core 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
- "identity_verification 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
- "iota-crypto",
- "rand 0.8.5",
- "seahash",
- "serde",
- "serde_json",
- "thiserror",
- "tokio",
 ]
 
 [[package]]
 name = "identity_stronghold"
-version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d23b69f6348b567faef49dcae73f5551b6c2e19409ca6de2b60c6b6ca3cbae86"
+version = "1.1.1"
+source = "git+https://github.com/iotaledger/identity.rs.git?rev=b424d3d#b424d3d823dccbb0867a4962d638fd3e29918ddc"
 dependencies = [
  "async-trait",
- "identity_storage 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "identity_verification 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "identity_storage",
+ "identity_verification",
  "iota-crypto",
  "iota-sdk",
  "iota_stronghold",
@@ -2434,26 +2277,12 @@ dependencies = [
 
 [[package]]
 name = "identity_verification"
-version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "60bc31d6a7e8e8e0d2ead465b178be7e7b13b97e1f5e3cf78b48bee944a2703a"
+version = "1.1.1"
+source = "git+https://github.com/iotaledger/identity.rs.git?rev=b424d3d#b424d3d823dccbb0867a4962d638fd3e29918ddc"
 dependencies = [
- "identity_core 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "identity_did 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "identity_jose 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde",
- "strum",
- "thiserror",
-]
-
-[[package]]
-name = "identity_verification"
-version = "1.1.0"
-source = "git+https://github.com/iotaledger/identity.rs.git?rev=4635a47#4635a474d0da8fdb15747204fe5fa55ba018810c"
-dependencies = [
- "identity_core 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
- "identity_did 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
- "identity_jose 1.1.0 (git+https://github.com/iotaledger/identity.rs.git?rev=4635a47)",
+ "identity_core",
+ "identity_did",
+ "identity_jose",
  "serde",
  "strum",
  "thiserror",
@@ -2842,9 +2671,9 @@ dependencies = [
 
 [[package]]
 name = "json-number"
-version = "0.4.6"
+version = "0.4.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "280f53da10842ffc42737ac8a6f2c14ced71f950de1cdb6765264a2eb1100cc5"
+checksum = "4c54d19ae7e6fc83aafa649707655a9a0ac956a0f62793bde4cfd193b0693fdf"
 dependencies = [
  "lexical",
  "ryu-js",
@@ -3305,7 +3134,7 @@ checksum = "ed3955f1a9c7c0c15e092f9c887db08b1fc683305fdf6eb6684f22555355e202"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.48",
+ "syn 2.0.50",
 ]
 
 [[package]]
@@ -3371,9 +3200,9 @@ checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 
 [[package]]
 name = "openssl"
-version = "0.10.63"
+version = "0.10.64"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "15c9d69dd87a29568d4d017cfe8ec518706046a05184e5aea92d0af890b803c8"
+checksum = "95a0481286a310808298130d22dd1fef0fa571e05a8f44ec801801e84b216b1f"
 dependencies = [
  "bitflags 2.4.2",
  "cfg-if",
@@ -3392,7 +3221,7 @@ checksum = "a948666b637a0f465e8564c73e89d4dde00d72d4d473cc972f390fc3dcee7d9c"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.48",
+ "syn 2.0.50",
 ]
 
 [[package]]
@@ -3412,9 +3241,9 @@ dependencies = [
 
 [[package]]
 name = "openssl-sys"
-version = "0.9.99"
+version = "0.9.101"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22e1bf214306098e4832460f797824c05d25aacdf896f64a985fb0fd992454ae"
+checksum = "dda2b0f344e78efc2facf7d195d098df0dd72151b26ab98da807afc26c198dff"
 dependencies = [
  "cc",
  "libc",
@@ -3667,9 +3496,9 @@ dependencies = [
 
 [[package]]
 name = "pkg-config"
-version = "0.3.29"
+version = "0.3.30"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2900ede94e305130c13ddd391e0ab7cbaeb783945ae07a279c268cb05109c6cb"
+checksum = "d231b230927b5e4ad203db57bbcbee2802f6bce620b1e4a9024a07d94e2907ec"
 
 [[package]]
 name = "platforms"
@@ -3695,9 +3524,9 @@ dependencies = [
 
 [[package]]
 name = "polling"
-version = "3.4.0"
+version = "3.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "30054e72317ab98eddd8561db0f6524df3367636884b7b21b703e4b280a84a14"
+checksum = "24f040dee2588b4963afb4e420540439d126f73fdacf4a9c486a96d840bac3c9"
 dependencies = [
  "cfg-if",
  "concurrent-queue",
@@ -3982,7 +3811,7 @@ checksum = "5fddb4f8d99b0a2ebafc65a87a69a7b9875e4b1ae1f00db265d300ef7f28bccc"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.48",
+ "syn 2.0.50",
 ]
 
 [[package]]
@@ -4060,9 +3889,9 @@ dependencies = [
 
 [[package]]
 name = "retain_mut"
-version = "0.1.7"
+version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8c31b5c4033f8fdde8700e4657be2c497e7288f01515be52168c631e2e4d4086"
+checksum = "4389f1d5789befaf6029ebd9f7dac4af7f7e3d61b69d4f30e2ac02b57e7712b0"
 
 [[package]]
 name = "rfc6979"
@@ -4087,16 +3916,17 @@ dependencies = [
 
 [[package]]
 name = "ring"
-version = "0.17.7"
+version = "0.17.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "688c63d65483050968b2a8937f7995f443e27041a0f7700aa59b0822aedebb74"
+checksum = "c17fa4cb658e3583423e915b9f3acc01cceaee1860e33d59ebae66adc3a2dc0d"
 dependencies = [
  "cc",
+ "cfg-if",
  "getrandom 0.2.12",
  "libc",
  "spin 0.9.8",
  "untrusted",
- "windows-sys 0.48.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -4112,13 +3942,12 @@ dependencies = [
 
 [[package]]
 name = "roaring"
-version = "0.10.2"
+version = "0.10.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6106b5cf8587f5834158895e9715a3c6c9716c8aefab57f1f7680917191c7873"
+checksum = "a1c77081a55300e016cb86f2864415b7518741879db925b8d488a0ee0d2da6bf"
 dependencies = [
  "bytemuck",
  "byteorder",
- "retain_mut",
 ]
 
 [[package]]
@@ -4273,9 +4102,9 @@ checksum = "7ffc183a10b4478d04cbbbfc96d0873219d962dd5accaff2ffbd4ceb7df837f4"
 
 [[package]]
 name = "ryu"
-version = "1.0.16"
+version = "1.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f98d2aa92eebf49b69786be48e4477826b256916e84a57ff2a4f21923b48eb4c"
+checksum = "e86697c916019a8588c99b5fac3cead74ec0b4b819707a682fd4d23fa0ce1ba1"
 
 [[package]]
 name = "ryu-js"
@@ -4403,28 +4232,28 @@ dependencies = [
 
 [[package]]
 name = "semver"
-version = "1.0.21"
+version = "1.0.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b97ed7a9823b74f99c7742f5336af7be5ecd3eeafcb1507d1fa93347b1d589b0"
+checksum = "92d43fe69e652f3df9bdc2b85b2854a0825b86e4fb76bc44d945137d053639ca"
 
 [[package]]
 name = "serde"
-version = "1.0.196"
+version = "1.0.197"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "870026e60fa08c69f064aa766c10f10b1d62db9ccd4d0abb206472bee0ce3b32"
+checksum = "3fb1c873e1b9b056a4dc4c0c198b24c3ffa059243875552b2bd0933b1aee4ce2"
 dependencies = [
  "serde_derive",
 ]
 
 [[package]]
 name = "serde_derive"
-version = "1.0.196"
+version = "1.0.197"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "33c85360c95e7d137454dc81d9a4ed2b8efd8fbe19cee57357b32b9771fccb67"
+checksum = "7eb0b34b42edc17f6b7cac84a52a1c5f0e1bb2227e997ca9011ea3dd34e8610b"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.48",
+ "syn 2.0.50",
 ]
 
 [[package]]
@@ -4440,9 +4269,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.113"
+version = "1.0.114"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "69801b70b1c3dac963ecb03a364ba0ceda9cf60c71cfe475e99864759c8b8a79"
+checksum = "c5f09b1bd632ef549eaa9f60a1f8de742bdbc698e6cee2095fc84dde5f549ae0"
 dependencies = [
  "itoa",
  "ryu",
@@ -4468,7 +4297,7 @@ checksum = "0b2e6b945e9d3df726b65d6ee24060aff8e3533d431f677a9695db04eff9dfdb"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.48",
+ "syn 2.0.50",
 ]
 
 [[package]]
@@ -4605,12 +4434,12 @@ dependencies = [
 
 [[package]]
 name = "socket2"
-version = "0.5.5"
+version = "0.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b5fac59a5cb5dd637972e5fca70daf0523c9067fcdc4842f053dae04a18f8e9"
+checksum = "05ffd9c0a93b7543e062e759284fcf5f5e3b098501104bfbdde4d404db792871"
 dependencies = [
  "libc",
- "windows-sys 0.48.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -4879,7 +4708,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "rustversion",
- "syn 2.0.48",
+ "syn 2.0.50",
 ]
 
 [[package]]
@@ -4901,9 +4730,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "2.0.48"
+version = "2.0.50"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0f3531638e407dfc0814761abb7c00a5b54992b849452a0646b7f65c9f770f3f"
+checksum = "74f1bdc9872430ce9b75da68329d1c1746faf50ffac5f19e02b71e37ff881ffb"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4972,7 +4801,7 @@ checksum = "a953cb265bef375dae3de6663da4d3804eee9682ea80d8e2542529b73c531c81"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.48",
+ "syn 2.0.50",
 ]
 
 [[package]]
@@ -5044,7 +4873,7 @@ dependencies = [
  "parking_lot",
  "pin-project-lite",
  "signal-hook-registry",
- "socket2 0.5.5",
+ "socket2 0.5.6",
  "tokio-macros",
  "windows-sys 0.48.0",
 ]
@@ -5057,7 +4886,7 @@ checksum = "5b8a1e28f2deaa14e508979454cb3a223b10b938b45af148bc0986de36f1923b"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.48",
+ "syn 2.0.50",
 ]
 
 [[package]]
@@ -5147,7 +4976,7 @@ checksum = "34704c8d6ebcbc939824180af020566b01a7c01f80641264eba0999f6c2b6be7"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.48",
+ "syn 2.0.50",
 ]
 
 [[package]]
@@ -5226,9 +5055,9 @@ checksum = "3354b9ac3fae1ff6755cb6db53683adb661634f67557942dea4facebec0fee4b"
 
 [[package]]
 name = "unicode-normalization"
-version = "0.1.22"
+version = "0.1.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5c5713f0fc4b5db668a2ac63cdb7bb4469d8c9fed047b1d0292cc7b0ce2ba921"
+checksum = "a56d1686db2308d901306f92a263857ef59ea39678a5458e7cb17f01415101f5"
 dependencies = [
  "tinyvec",
 ]
@@ -5355,7 +5184,7 @@ dependencies = [
  "once_cell",
  "proc-macro2",
  "quote",
- "syn 2.0.48",
+ "syn 2.0.50",
  "wasm-bindgen-shared",
 ]
 
@@ -5389,7 +5218,7 @@ checksum = "642f325be6301eb8107a83d12a8ac6c1e1c54345a7ef1a9261962dfefda09e66"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.48",
+ "syn 2.0.50",
  "wasm-bindgen-backend",
  "wasm-bindgen-shared",
 ]
@@ -5466,7 +5295,7 @@ version = "0.52.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "33ab640c8d7e35bf8ba19b884ba838ceb4fba93a4e8c65a9059d08afcfc683d9"
 dependencies = [
- "windows-targets 0.52.0",
+ "windows-targets 0.52.3",
 ]
 
 [[package]]
@@ -5484,7 +5313,7 @@ version = "0.52.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "282be5f36a8ce781fad8c8ae18fa3f9beff57ec1b52cb3de0789201425d9a33d"
 dependencies = [
- "windows-targets 0.52.0",
+ "windows-targets 0.52.3",
 ]
 
 [[package]]
@@ -5504,17 +5333,17 @@ dependencies = [
 
 [[package]]
 name = "windows-targets"
-version = "0.52.0"
+version = "0.52.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8a18201040b24831fbb9e4eb208f8892e1f50a37feb53cc7ff887feb8f50e7cd"
+checksum = "d380ba1dc7187569a8a9e91ed34b8ccfc33123bbacb8c0aed2d1ad7f3ef2dc5f"
 dependencies = [
- "windows_aarch64_gnullvm 0.52.0",
- "windows_aarch64_msvc 0.52.0",
- "windows_i686_gnu 0.52.0",
- "windows_i686_msvc 0.52.0",
- "windows_x86_64_gnu 0.52.0",
- "windows_x86_64_gnullvm 0.52.0",
- "windows_x86_64_msvc 0.52.0",
+ "windows_aarch64_gnullvm 0.52.3",
+ "windows_aarch64_msvc 0.52.3",
+ "windows_i686_gnu 0.52.3",
+ "windows_i686_msvc 0.52.3",
+ "windows_x86_64_gnu 0.52.3",
+ "windows_x86_64_gnullvm 0.52.3",
+ "windows_x86_64_msvc 0.52.3",
 ]
 
 [[package]]
@@ -5525,9 +5354,9 @@ checksum = "2b38e32f0abccf9987a4e3079dfb67dcd799fb61361e53e2882c3cbaf0d905d8"
 
 [[package]]
 name = "windows_aarch64_gnullvm"
-version = "0.52.0"
+version = "0.52.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cb7764e35d4db8a7921e09562a0304bf2f93e0a51bfccee0bd0bb0b666b015ea"
+checksum = "68e5dcfb9413f53afd9c8f86e56a7b4d86d9a2fa26090ea2dc9e40fba56c6ec6"
 
 [[package]]
 name = "windows_aarch64_msvc"
@@ -5543,9 +5372,9 @@ checksum = "dc35310971f3b2dbbf3f0690a219f40e2d9afcf64f9ab7cc1be722937c26b4bc"
 
 [[package]]
 name = "windows_aarch64_msvc"
-version = "0.52.0"
+version = "0.52.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bbaa0368d4f1d2aaefc55b6fcfee13f41544ddf36801e793edbbfd7d7df075ef"
+checksum = "8dab469ebbc45798319e69eebf92308e541ce46760b49b18c6b3fe5e8965b30f"
 
 [[package]]
 name = "windows_i686_gnu"
@@ -5561,9 +5390,9 @@ checksum = "a75915e7def60c94dcef72200b9a8e58e5091744960da64ec734a6c6e9b3743e"
 
 [[package]]
 name = "windows_i686_gnu"
-version = "0.52.0"
+version = "0.52.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a28637cb1fa3560a16915793afb20081aba2c92ee8af57b4d5f28e4b3e7df313"
+checksum = "2a4e9b6a7cac734a8b4138a4e1044eac3404d8326b6c0f939276560687a033fb"
 
 [[package]]
 name = "windows_i686_msvc"
@@ -5579,9 +5408,9 @@ checksum = "8f55c233f70c4b27f66c523580f78f1004e8b5a8b659e05a4eb49d4166cca406"
 
 [[package]]
 name = "windows_i686_msvc"
-version = "0.52.0"
+version = "0.52.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ffe5e8e31046ce6230cc7215707b816e339ff4d4d67c65dffa206fd0f7aa7b9a"
+checksum = "28b0ec9c422ca95ff34a78755cfa6ad4a51371da2a5ace67500cf7ca5f232c58"
 
 [[package]]
 name = "windows_x86_64_gnu"
@@ -5597,9 +5426,9 @@ checksum = "53d40abd2583d23e4718fddf1ebec84dbff8381c07cae67ff7768bbf19c6718e"
 
 [[package]]
 name = "windows_x86_64_gnu"
-version = "0.52.0"
+version = "0.52.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3d6fa32db2bc4a2f5abeacf2b69f7992cd09dca97498da74a151a3132c26befd"
+checksum = "704131571ba93e89d7cd43482277d6632589b18ecf4468f591fbae0a8b101614"
 
 [[package]]
 name = "windows_x86_64_gnullvm"
@@ -5609,9 +5438,9 @@ checksum = "0b7b52767868a23d5bab768e390dc5f5c55825b6d30b86c844ff2dc7414044cc"
 
 [[package]]
 name = "windows_x86_64_gnullvm"
-version = "0.52.0"
+version = "0.52.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1a657e1e9d3f514745a572a6846d3c7aa7dbe1658c056ed9c3344c4109a6949e"
+checksum = "42079295511643151e98d61c38c0acc444e52dd42ab456f7ccfd5152e8ecf21c"
 
 [[package]]
 name = "windows_x86_64_msvc"
@@ -5627,9 +5456,9 @@ checksum = "ed94fce61571a4006852b7389a063ab983c02eb1bb37b47f8272ce92d06d9538"
 
 [[package]]
 name = "windows_x86_64_msvc"
-version = "0.52.0"
+version = "0.52.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dff9641d1cd4be8d1a070daf9e3773c5f67e78b4d9d42263020c057706765c04"
+checksum = "0770833d60a970638e989b3fa9fd2bb1aaadcf88963d1659fd7d9990196ed2d6"
 
 [[package]]
 name = "winnow"
@@ -5729,7 +5558,7 @@ checksum = "9ce1b18ccd8e73a9321186f97e46f9f04b778851177567b1975109d26a08d2a6"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.48",
+ "syn 2.0.50",
 ]
 
 [[package]]
@@ -5750,5 +5579,5 @@ checksum = "ce36e65b0d2999d2aafac989fb249189a141aee1f53c612c1f37d72631959f69"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.48",
+ "syn 2.0.50",
 ]

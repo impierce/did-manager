@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["consumer", "did_jwk", "did_key", "did_web"]
+members = ["common", "consumer", "did_jwk", "did_key", "did_web"]
 
 [workspace.package]
 homepage = "https://www.impierce.com/"
@@ -9,11 +9,9 @@ repository = "https://github.com/impierce/did-manager"
 rust-version = "1.75"
 
 [workspace.dependencies]
-identity_iota = { version = "1.1.0" }
-identity_stronghold = { version = "1.1.0" }
+# TODO: temporarily pin until https://github.com/iotaledger/identity.rs/pull/1303 is merged
+identity_iota = { git = "https://github.com/iotaledger/identity.rs.git", rev = "b424d3d" }
+identity_stronghold = { git = "https://github.com/iotaledger/identity.rs.git", rev = "b424d3d" }
 iota-sdk = { version = "1.0", features = ["stronghold"] }
+log = "0.4"
 tokio = { version = "1", features = ["full"] }
-
-# TODO: Temporarily fixes percent-encoding for did:web method id (https://github.com/iotaledger/identity.rs/issues/1299)
-#[patch.crates-io]
-#did_url = { git = "https://github.com/iotaledger/did_url.git" }
