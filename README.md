@@ -14,4 +14,4 @@ Implementation of [identity.rs](https://github.com/iotaledger/identity.rs) inter
 | [did:jwk](https://github.com/quartzjer/did-jwk/blob/main/spec.md)                                 | :ballot_box_with_check: | :ballot_box_with_check: |
 | [did:iota](https://wiki.iota.org/identity.rs/references/specifications/iota-did-method-spec/)     |                         |                         |
 | [did:iota:smr](https://wiki.iota.org/identity.rs/references/specifications/iota-did-method-spec/) |                         |                         |
-| [did:iota:rms](https://wiki.iota.org/identity.rs/references/specifications/iota-did-method-spec/) |                         |                         |
+| [did:iota:rms](https://wiki.iota.org/identity.rs/references/specifications/iota-did-method-spec/) | :ballot_box_with_check: |                         |

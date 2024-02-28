@@ -1,9 +1,18 @@
 use common::JwkStorageWrapper;
-use identity_iota::{core::ToJson, did::CoreDID, document::CoreDocument, storage::KeyId};
-use ssi_dids::{DIDMethod, Source};
+use identity_iota::{
+    core::ToJson,
+    did::{CoreDID, DID},
+    document::CoreDocument,
+    storage::KeyId,
+    verification::VerificationMethod,
+};
 use std::io::{Error, ErrorKind};
 
-pub async fn produce_did_web(storage: JwkStorageWrapper, key_id: &KeyId) -> std::result::Result<CoreDocument, Error> {
+pub async fn produce_did_web(
+    storage: JwkStorageWrapper,
+    key_id: &KeyId,
+    domain: String,
+) -> std::result::Result<CoreDocument, Error> {
     // let exists = storage.key_storage().exists(key_id).await.unwrap();
 
     // if !exists {
@@ -15,7 +24,7 @@ pub async fn produce_did_web(storage: JwkStorageWrapper, key_id: &KeyId) -> std:
         JwkStorageWrapper::PKCS11 => todo!(),
     };
 
-    let jwk: ssi_jwk::JWK = serde_json::from_value(public_key_jwk.to_json_value().unwrap()).unwrap();
+    // let jwk: ssi_jwk::JWK = serde_json::from_value(public_key_jwk.to_json_value().unwrap()).unwrap();
 
     println!(
         "Producing DID for key_id=[{:?}] from storage=[{:?}] ...",
@@ -23,23 +32,35 @@ pub async fn produce_did_web(storage: JwkStorageWrapper, key_id: &KeyId) -> std:
         "TODO_get_name"
     );
 
-    let did_str = did_web_extern::DIDWeb.generate(&Source::Key(&jwk));
-    println!("DIDWeb.generate(): {:?}", did_str);
+    let did_str = format!("did:web:{}", domain); // TODO: handle percent encoding
 
-    if let Some(did_str) = did_web_extern::DIDWeb.generate(&Source::Key(&jwk)) {
-        println!("DID: {:?}", did_str);
+    // if let Some(did_str) = did_web_extern::DIDWeb.generate(&Source::Key(&jwk)) {
+    println!("DID: {:?}", did_str);
 
-        let controller = CoreDID::parse(did_str).unwrap();
+    let controller = CoreDID::parse(&did_str).unwrap();
 
-        let document = CoreDocument::builder(Default::default())
-            .id(controller)
-            .build()
+    let verification_method =
+        VerificationMethod::new_from_jwk(controller.clone(), public_key_jwk.clone(), Some(controller.method_id()))
             .unwrap();
 
-        return Ok(document);
-    };
+    let document = CoreDocument::builder(Default::default())
+        .id(controller)
+        .verification_method(verification_method)
+        .build()
+        .unwrap();
 
-    return Err(Error::new(ErrorKind::Other, "Done without result"));
+    // TODO: percent encode domain
+
+    let url: String = format!(
+        "Host this document under the following address: https://{}/.well-known/did.json:",
+        domain
+    );
+
+    println!("{}", url);
+
+    println!("{}", document.to_json_pretty().unwrap());
+
+    return Ok(document);
 }
 
 #[cfg(test)]
@@ -77,9 +98,13 @@ mod tests {
         let key_id = stronghold_storage.insert(jwk.clone()).await.unwrap();
         println!("====== Done");
 
-        let document = produce_did_web(JwkStorageWrapper::Stronghold(stronghold_storage), &key_id)
-            .await
-            .unwrap();
+        let document = produce_did_web(
+            JwkStorageWrapper::Stronghold(stronghold_storage),
+            &key_id,
+            "localhost".to_string(),
+        )
+        .await
+        .unwrap();
 
         // Start mock server and assert
         let mock_server = MockServer::start().await;

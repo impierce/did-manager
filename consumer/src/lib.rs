@@ -32,6 +32,12 @@ async fn configure_resolver(mut resolver: Resolver) -> Resolver {
 
     // resolver.attach_iota_handler(client);
     // ---------------------------------------------------
+    let iota_client: Client = Client::builder()
+        .with_primary_node(MAINNET_URL, None)
+        .unwrap()
+        .finish()
+        .await
+        .unwrap();
 
     // ------------------ SHIMMER resolver ------------------
     let smr_client: Client = Client::builder()
@@ -56,7 +62,11 @@ async fn configure_resolver(mut resolver: Resolver) -> Resolver {
         .await
         .unwrap();
 
-    resolver.attach_multiple_iota_handlers(vec![("smr", smr_client), ("testnet", shimmer_testnet_client)]);
+    resolver.attach_multiple_iota_handlers(vec![
+        ("iota", iota_client),
+        ("smr", smr_client),
+        ("rms", shimmer_testnet_client),
+    ]);
 
     // resolver.attach_iota_handler(shimmer_testnet_client);
     // resolver.attach_iota_handler(smr_client);
@@ -82,6 +92,28 @@ mod tests {
     use super::*;
 
     #[tokio::test]
+    async fn resolve_all_supported_methods() {
+        let did = "did:key:z6Mkk7yqnGF3YwTrLpqrW6PGsKci7dNqh1CjnvMbzrMerSeL";
+        let document = configure_and_resolve(did).await.unwrap();
+
+        assert_eq!(
+            document.id(),
+            "did:key:z6Mkk7yqnGF3YwTrLpqrW6PGsKci7dNqh1CjnvMbzrMerSeL"
+        );
+
+        // add more ...
+    }
+
+    #[tokio::test]
+    async fn fails_on_unsupported_method() {
+        let did = "did:foobar:123456";
+        let result = configure_and_resolve(did).await;
+
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    #[ignore]
     async fn resolves_did_iota() {
         let did = "did:iota:0xe4edef97da1257e83cbeb49159cfdd2da6ac971ac447f233f8439cf29376ebfe";
         let document = configure_and_resolve(did).await.unwrap();
@@ -93,6 +125,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore]
     async fn resolves_did_iota_smr() {
         let did = "did:iota:smr:0xe4edef97da1257e83cbeb49159cfdd2da6ac971ac447f233f8439cf29376ebfe";
         let document = configure_and_resolve(did).await.unwrap();

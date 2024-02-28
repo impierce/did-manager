@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["common", "consumer", "did_jwk", "did_key", "did_web"]
+members = ["common", "consumer", "did_jwk", "did_key", "did_web", "producer"]
 
 [workspace.package]
 homepage = "https://www.impierce.com/"
