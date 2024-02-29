@@ -18,20 +18,12 @@ async fn configure_resolver(mut resolver: Resolver) -> Resolver {
     resolver.attach_handler("key".to_owned(), resolve_did_key);
     resolver.attach_handler("web".to_owned(), resolve_did_web);
 
-    // ------------------ IOTA resolver ------------------
+    // ------------------ IOTA resolvers ------------------
     static MAINNET_URL: &str = "https://api.stardust-mainnet.iotaledger.net";
     static SHIMMER_URL: &str = "https://api.shimmer.network";
     static TESTNET_URL: &str = "https://api.testnet.shimmer.network";
+    // ----------------------------------------------------
 
-    // let client: Client = Client::builder()
-    //     .with_primary_node(MAINNET_URL, None)
-    //     .unwrap()
-    //     .finish()
-    //     .await
-    //     .unwrap();
-
-    // resolver.attach_iota_handler(client);
-    // ---------------------------------------------------
     let iota_client: Client = Client::builder()
         .with_primary_node(MAINNET_URL, None)
         .unwrap()
@@ -39,22 +31,13 @@ async fn configure_resolver(mut resolver: Resolver) -> Resolver {
         .await
         .unwrap();
 
-    // ------------------ SHIMMER resolver ------------------
     let smr_client: Client = Client::builder()
         .with_primary_node(SHIMMER_URL, None)
         .unwrap()
         .finish()
         .await
         .unwrap();
-    // let arc_client = std::sync::Arc::new(smr_client);
 
-    // resolver.attach_handler("smr".to_owned(), move |did: CoreDID| {
-    //     let future_client = arc_client.clone();
-    //     async move { future_client.resolve_did(&did).await }
-    // });
-    // ---------------------------------------------------
-
-    // ------------------ SHIMMER resolver ------------------
     let shimmer_testnet_client: Client = Client::builder()
         .with_primary_node(TESTNET_URL, None)
         .unwrap()
@@ -67,22 +50,6 @@ async fn configure_resolver(mut resolver: Resolver) -> Resolver {
         ("smr", smr_client),
         ("rms", shimmer_testnet_client),
     ]);
-
-    // resolver.attach_iota_handler(shimmer_testnet_client);
-    // resolver.attach_iota_handler(smr_client);
-
-    // let arc_client = std::sync::Arc::new(shimmer_testnet_client);
-
-    // println!("client info: {:?}", arc_client.network_name().await.unwrap());
-
-    // resolver.attach_handler("iota".to_owned(), move |did: IotaDID| {
-    //     let future_client = arc_client.clone();
-    //     async move {
-    //         // println!("client network: {:?}", future_client.network_name().await.unwrap());
-    //         future_client.resolve_did(&did).await
-    //     }
-    // });
-    // ---------------------------------------------------
 
     resolver
 }
