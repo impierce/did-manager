@@ -25,7 +25,7 @@ pub async fn produce(
     method: Method,
     stronghold_path: Option<String>,
     password: Option<String>,
-) -> std::result::Result<CoreDocument, Box<dyn std::error::Error>> {
+) -> std::result::Result<CoreDocument, std::io::Error> {
     iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
 
     // Read provided stronghold
@@ -89,7 +89,7 @@ pub async fn produce(
 
     match core_document {
         Some(core_document) => Ok(core_document),
-        None => Err("No core document produced".into()),
+        None => Err(std::io::Error::other("No core_document produced")),
     }
 }
 
