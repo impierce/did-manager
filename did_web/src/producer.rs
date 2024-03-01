@@ -1,7 +1,7 @@
-use common::JwkStorageWrapper;
 use identity_iota::{
     core::ToJson, did::CoreDID, document::CoreDocument, storage::KeyId, verification::VerificationMethod,
 };
+use shared::JwkStorageWrapper;
 use std::io::Error;
 
 pub async fn produce_did_web(
@@ -82,7 +82,7 @@ pub async fn produce_did_web(
     println!("================================================");
     println!("{}", document.to_json_pretty().unwrap());
 
-    return Ok(document);
+    Ok(document)
 }
 
 #[cfg(test)]
@@ -91,13 +91,13 @@ mod tests {
 
     use super::*;
 
-    use common::test_utils::{get_test_jwk, random_stronghold_path};
     use identity_iota::core::ToJson;
     use identity_iota::did::DID;
     use identity_iota::storage::JwkStorage;
     use identity_stronghold::StrongholdStorage;
     use iota_sdk::client::secret::stronghold::StrongholdSecretManager;
     use iota_sdk::client::Password;
+    use shared::test_utils::{get_test_jwk, random_stronghold_path};
     use wiremock::matchers::{method, path};
     use wiremock::{Mock, MockServer, ResponseTemplate};
 

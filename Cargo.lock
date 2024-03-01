@@ -638,15 +638,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "337cdbf3f1a0e643b4a7d1a2ffa39d22342fb6ee25739b5cfb997c28b3586422"
 
 [[package]]
-name = "common"
-version = "0.1.0"
-dependencies = [
- "identity_iota",
- "identity_stronghold",
- "rand 0.8.5",
-]
-
-[[package]]
 name = "concurrent-queue"
 version = "2.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1113,7 +1104,6 @@ dependencies = [
 name = "did_jwk"
 version = "0.1.0"
 dependencies = [
- "common",
  "did-jwk",
  "identity_iota",
  "identity_stronghold",
@@ -1122,6 +1112,7 @@ dependencies = [
  "iota_stronghold",
  "rand 0.8.5",
  "serde_json",
+ "shared",
  "ssi-dids",
  "ssi-jwk",
  "tokio",
@@ -1131,7 +1122,6 @@ dependencies = [
 name = "did_key"
 version = "0.1.0"
 dependencies = [
- "common",
  "did-key",
  "did-method-key",
  "identity_iota",
@@ -1141,6 +1131,7 @@ dependencies = [
  "iota_stronghold",
  "jsonwebkey",
  "serde_json",
+ "shared",
  "ssi-dids",
  "ssi-jwk",
  "tokio",
@@ -1168,7 +1159,6 @@ dependencies = [
 name = "did_web"
 version = "0.1.0"
 dependencies = [
- "common",
  "did-web",
  "identity_iota",
  "identity_stronghold",
@@ -1176,6 +1166,7 @@ dependencies = [
  "iota_stronghold",
  "rand 0.8.5",
  "serde_json",
+ "shared",
  "ssi-dids",
  "ssi-jwk",
  "tokio",
@@ -3681,7 +3672,6 @@ dependencies = [
 name = "producer"
 version = "0.1.0"
 dependencies = [
- "common",
  "did_jwk",
  "did_key",
  "did_web",
@@ -3690,6 +3680,7 @@ dependencies = [
  "iota-sdk",
  "iota_stronghold",
  "rand 0.8.5",
+ "shared",
  "tokio",
  "url",
 ]
@@ -4374,6 +4365,15 @@ dependencies = [
  "cfg-if",
  "cpufeatures",
  "digest 0.10.7",
+]
+
+[[package]]
+name = "shared"
+version = "0.1.0"
+dependencies = [
+ "identity_iota",
+ "identity_stronghold",
+ "rand 0.8.5",
 ]
 
 [[package]]

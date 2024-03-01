@@ -22,8 +22,7 @@ pub async fn resolve_did_jwk(did: CoreDID) -> std::result::Result<CoreDocument, 
     // let document = key.get_did_document(Config::default());
     println!("document: {:#?}", document);
     println!("metadata: {:#?}", metadata);
-    let document = CoreDocument::from_json(&document.to_json().unwrap());
-    document
+    CoreDocument::from_json(&document.to_json().unwrap())
 }
 
 #[cfg(test)]

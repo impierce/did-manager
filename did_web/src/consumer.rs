@@ -23,8 +23,7 @@ pub async fn resolve_did_web(did: CoreDID) -> std::result::Result<CoreDocument, 
     // let document = key.get_did_document(Config::default());
     println!("document: {}", document.clone().unwrap().to_json_pretty().unwrap());
     println!("metadata: {:#?}", metadata);
-    let document = CoreDocument::from_json(&document.to_json().unwrap());
-    document
+    CoreDocument::from_json(&document.to_json().unwrap())
 }
 
 async fn configure() -> Resolver {
@@ -33,6 +32,7 @@ async fn configure() -> Resolver {
     resolver
 }
 
+#[allow(dead_code)]
 async fn resolve_did(did: &str) -> std::result::Result<CoreDocument, Box<dyn std::error::Error>> {
     let did = CoreDID::parse(did)?;
     let resolver: Resolver = configure().await;

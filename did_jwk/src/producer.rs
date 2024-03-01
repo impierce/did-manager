@@ -1,5 +1,5 @@
-use common::JwkStorageWrapper;
 use identity_iota::{core::ToJson, did::CoreDID, document::CoreDocument, storage::KeyId};
+use shared::JwkStorageWrapper;
 use ssi_dids::{DIDMethod, Source};
 use std::io::Error;
 use std::io::ErrorKind;
@@ -32,18 +32,18 @@ pub async fn produce_did_jwk(storage: JwkStorageWrapper, key_id: &str) -> std::r
         return Ok(document);
     };
 
-    return Err(Error::new(ErrorKind::Other, "Done without result"));
+    Err(Error::new(ErrorKind::Other, "Done without result"))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    use common::test_utils::{get_test_jwk, random_stronghold_path};
     use identity_iota::storage::JwkStorage;
     use identity_stronghold::StrongholdStorage;
     use iota_sdk::client::secret::stronghold::StrongholdSecretManager;
     use iota_sdk::client::Password;
+    use shared::test_utils::{get_test_jwk, random_stronghold_path};
 
     #[tokio::test]
     async fn produces_did_jwk() {

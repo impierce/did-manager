@@ -1,4 +1,3 @@
-use common::JwkStorageWrapper;
 use identity_iota::{
     document::CoreDocument,
     storage::JwkStorage,
@@ -14,6 +13,7 @@ use iota_sdk::{
     crypto::signatures::ed25519::SecretKey,
 };
 use rand::distributions::DistString;
+use shared::JwkStorageWrapper;
 
 pub enum Method {
     Jwk,
@@ -23,8 +23,8 @@ pub enum Method {
 
 pub async fn produce(
     method: Method,
-    stronghold_path: Option<String>,
-    password: Option<String>,
+    _stronghold_path: Option<String>,
+    _password: Option<String>,
 ) -> std::result::Result<CoreDocument, std::io::Error> {
     iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
 

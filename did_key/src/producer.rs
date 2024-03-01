@@ -1,4 +1,3 @@
-use common::JwkStorageWrapper;
 use identity_iota::{
     core::ToJson,
     did::{CoreDID, DID},
@@ -6,6 +5,7 @@ use identity_iota::{
     storage::KeyId,
     verification::VerificationMethod,
 };
+use shared::JwkStorageWrapper;
 use ssi_dids::{DIDMethod, Source};
 use std::io::Error;
 
@@ -36,7 +36,7 @@ pub async fn produce_did_from_key(
             &serde_json::from_str(&public_key_jwk.to_json().unwrap()).unwrap(),
         ))
         .unwrap();
-    let did = CoreDID::parse(&did_str).unwrap();
+    let did = CoreDID::parse(did_str).unwrap();
     println!("DID: {}", did);
 
     let verification_method =
@@ -56,12 +56,12 @@ pub async fn produce_did_from_key(
 mod tests {
     use super::*;
 
-    use common::test_utils::{get_test_jwk, random_stronghold_path};
     use identity_iota::core::ToJson;
     use identity_iota::storage::JwkStorage;
     use identity_stronghold::StrongholdStorage;
     use iota_sdk::client::secret::stronghold::StrongholdSecretManager;
     use iota_sdk::client::Password;
+    use shared::test_utils::{get_test_jwk, random_stronghold_path};
 
     #[tokio::test]
     async fn produces_did_key() {
