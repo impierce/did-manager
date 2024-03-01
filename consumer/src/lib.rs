@@ -73,7 +73,7 @@ mod tests {
 
     #[tokio::test]
     async fn fails_on_unsupported_method() {
-        let did = "did:foobar:123456";
+        let did = "did:foo:bar";
         let result = configure_and_resolve(did).await;
 
         assert!(result.is_err());

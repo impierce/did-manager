@@ -25,6 +25,8 @@ pub async fn produce(
     method: Method,
     _stronghold_path: Option<String>,
     _password: Option<String>,
+    host: Option<url::Host>,
+    port: Option<u16>,
 ) -> std::result::Result<CoreDocument, std::io::Error> {
     iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
 
@@ -75,14 +77,10 @@ pub async fn produce(
             Some(core_document)
         }
         Method::Web => {
-            let core_document = did_web::producer::produce_did_web(
-                storage,
-                &key_id,
-                url::Url::parse("http://localhost").unwrap().host().unwrap().to_owned(),
-                Some(1234),
-            )
-            .await
-            .unwrap();
+            let core_document =
+                did_web::producer::produce_did_web(storage, &key_id, host.expect("host not specified"), port)
+                    .await
+                    .unwrap();
             Some(core_document)
         }
     };
@@ -95,11 +93,22 @@ pub async fn produce(
 
 #[cfg(test)]
 mod tests {
+    use identity_iota::core::ToJson;
+
     use super::*;
 
     #[tokio::test]
     async fn produce_all() {
-        let document = produce(Method::Web, None, None).await;
+        let document = produce(
+            Method::Web,
+            None,
+            None,
+            Some(url::Host::parse("localhost").unwrap()),
+            Some(8080),
+        )
+        .await;
+
+        println!("document: {}", document.as_ref().unwrap().to_json_pretty().unwrap());
         assert!(document.is_ok())
     }
 }
