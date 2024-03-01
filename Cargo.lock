@@ -1179,6 +1179,8 @@ dependencies = [
  "ssi-dids",
  "ssi-jwk",
  "tokio",
+ "url",
+ "urlencoding",
  "wiremock",
 ]
 
@@ -3678,6 +3680,19 @@ dependencies = [
 [[package]]
 name = "producer"
 version = "0.1.0"
+dependencies = [
+ "common",
+ "did_jwk",
+ "did_key",
+ "did_web",
+ "identity_iota",
+ "identity_stronghold",
+ "iota-sdk",
+ "iota_stronghold",
+ "rand 0.8.5",
+ "tokio",
+ "url",
+]
 
 [[package]]
 name = "quote"
@@ -5099,6 +5114,12 @@ dependencies = [
  "percent-encoding",
  "serde",
 ]
+
+[[package]]
+name = "urlencoding"
+version = "2.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "daf8dba3b7eb870caf1ddeed7bc9d2a049f3cfdfae7cb521b087cc33ae4c49da"
 
 [[package]]
 name = "utf-8"

@@ -6,7 +6,7 @@ use identity_iota::document::CoreDocument;
 use identity_iota::resolver::Resolver;
 use iota_sdk::client::Client;
 
-async fn configure_and_resolve(did: &str) -> std::result::Result<CoreDocument, Box<dyn std::error::Error>> {
+pub async fn configure_and_resolve(did: &str) -> std::result::Result<CoreDocument, Box<dyn std::error::Error>> {
     let did = CoreDID::parse(did)?;
     let resolver: Resolver = configure_resolver(Resolver::new()).await;
     let document: CoreDocument = resolver.resolve(&did).await?;

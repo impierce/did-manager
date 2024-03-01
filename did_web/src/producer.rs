@@ -1,17 +1,14 @@
 use common::JwkStorageWrapper;
 use identity_iota::{
-    core::ToJson,
-    did::{CoreDID, DID},
-    document::CoreDocument,
-    storage::KeyId,
-    verification::VerificationMethod,
+    core::ToJson, did::CoreDID, document::CoreDocument, storage::KeyId, verification::VerificationMethod,
 };
-use std::io::{Error, ErrorKind};
+use std::io::Error;
 
 pub async fn produce_did_web(
     storage: JwkStorageWrapper,
     key_id: &KeyId,
-    domain: String,
+    host: url::Host,
+    port: Option<u16>,
 ) -> std::result::Result<CoreDocument, Error> {
     // let exists = storage.key_storage().exists(key_id).await.unwrap();
 
@@ -24,40 +21,65 @@ pub async fn produce_did_web(
         JwkStorageWrapper::PKCS11 => todo!(),
     };
 
-    // let jwk: ssi_jwk::JWK = serde_json::from_value(public_key_jwk.to_json_value().unwrap()).unwrap();
-
     println!(
         "Producing DID for key_id=[{:?}] from storage=[{:?}] ...",
         key_id.as_str(),
         "TODO_get_name"
     );
 
-    let did_str = format!("did:web:{}", domain); // TODO: handle percent encoding
+    // Construct the URL from host and (optional) port
+    // TODO: is there a better default than having to parse to create a new Url?
+    let mut url = url::Url::parse("https://localhost").unwrap();
+    url.set_host(Some(&host.to_string())).unwrap();
+    url.set_port(port).unwrap();
+
+    println!("URL: {}", url.as_str());
+    // println!("Encoded: {:?}", urlencoding::encode(url.as_str()));
+
+    let host_port = format!("{}:{}", url.host_str().unwrap(), url.port().unwrap());
+    let host_port_encoded = urlencoding::encode(&host_port);
+    // println!("Encoded: {:?}", host_port_encoded);
+
+    let did_str = format!("did:web:{}", host_port_encoded);
+
+    // format!("did:web:{}%3A{}", host, port) // url-encoding ":" --> "%3A"
+
+    // let did_str = match port {
+    //     Some(p) => format!("did:web:{}%3A{}", host, p),
+    //     None => format!("did:web:{}", host),
+    // };
+
+    // let url = url::Url::parse(&format!("https://{}/.well-known/did.json", host)).unwrap();
+    // println!("{}", url.port().unwrap());
 
     // if let Some(did_str) = did_web_extern::DIDWeb.generate(&Source::Key(&jwk)) {
     println!("DID: {:?}", did_str);
 
     let controller = CoreDID::parse(&did_str).unwrap();
 
+    // println!("Controller: {:?}", controller.method_id());
+
     let verification_method =
-        VerificationMethod::new_from_jwk(controller.clone(), public_key_jwk.clone(), Some(controller.method_id()))
-            .unwrap();
+        VerificationMethod::new_from_jwk(controller.clone(), public_key_jwk.clone(), Some("key-0")).unwrap();
+
+    // let assertion_method =
+    //     VerificationMethod::builder(BTreeMap::from([("foo".to_string(), "bar".to_json_value().unwrap())]))
+    //         .id(DIDUrl::new(did, url))
+    //         .build()
+    //         .unwrap();
 
     let document = CoreDocument::builder(Default::default())
         .id(controller)
         .verification_method(verification_method)
+        // .assertion_method(assertion_method)
         .build()
         .unwrap();
 
-    // TODO: percent encode domain
+    // TODO: Add "@context" to the document
 
-    let url: String = format!(
-        "Host this document under the following address: https://{}/.well-known/did.json:",
-        domain
-    );
-
-    println!("{}", url);
-
+    println!("Host the following json under the following url:\n================================================");
+    println!("{}", url.join(".well-known/did.json").unwrap());
+    println!("================================================");
     println!("{}", document.to_json_pretty().unwrap());
 
     return Ok(document);
@@ -65,10 +87,13 @@ pub async fn produce_did_web(
 
 #[cfg(test)]
 mod tests {
+    use crate::consumer::resolve_did_web;
+
     use super::*;
 
     use common::test_utils::{get_test_jwk, random_stronghold_path};
     use identity_iota::core::ToJson;
+    use identity_iota::did::DID;
     use identity_iota::storage::JwkStorage;
     use identity_stronghold::StrongholdStorage;
     use iota_sdk::client::secret::stronghold::StrongholdSecretManager;
@@ -101,23 +126,26 @@ mod tests {
         let document = produce_did_web(
             JwkStorageWrapper::Stronghold(stronghold_storage),
             &key_id,
-            "localhost".to_string(),
+            url::Host::parse("localhost").unwrap(),
+            Some(1234),
         )
         .await
         .unwrap();
+
+        println!("Document: {}", document.to_json_pretty().unwrap());
 
         // Start mock server and assert
         let mock_server = MockServer::start().await;
 
         Mock::given(method("GET"))
             .and(path("/.well-known/did.json"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(document.to_json().unwrap()))
+            .respond_with(ResponseTemplate::new(200).set_body_json(document))
             .mount(&mock_server)
             .await;
 
         let did = format!("did:web:localhost%3A{}", mock_server.address().port());
-        // let document = resolve_did(&did).await.unwrap();
+        let document = resolve_did_web(CoreDID::parse(&did).unwrap()).await.unwrap();
 
-        // assert_eq!(document.id().as_str(), did);
+        assert_eq!(document.id().as_str(), did);
     }
 }
