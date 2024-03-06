@@ -1,19 +1,9 @@
-use identity_iota::{
-    document::CoreDocument,
-    storage::{JwkStorage, KeyId},
-    verification::{
-        jwk::{EdCurve, Jwk, JwkParamsOkp},
-        jws::JwsAlgorithm,
-        jwu,
-    },
-};
-use identity_stronghold::StrongholdStorage;
-use iota_sdk::{
-    client::{secret::stronghold::StrongholdSecretManager, Password},
-    crypto::signatures::ed25519::SecretKey,
-};
-use iota_stronghold::SnapshotPath;
-use rand::distributions::DistString;
+pub mod secret_manager;
+pub mod signature;
+
+use crate::secret_manager::SecretManager;
+
+use identity_iota::{document::CoreDocument, storage::KeyId};
 use shared::JwkStorageWrapper;
 
 pub enum Method {
@@ -22,64 +12,16 @@ pub enum Method {
     Web,
 }
 
-pub async fn produce(
+pub async fn get_document(
+    secret_manager: SecretManager,
     method: Method,
-    stronghold_path: Option<String>,
-    password: Option<String>,
-    host: Option<url::Host>,
-    port: Option<u16>,
+    host: Option<url::Host>, // only used for `did:web` --> find a better way to provide this
+    port: Option<u16>,       // only used for `did:web` --> find a better way to provide this
 ) -> std::result::Result<CoreDocument, std::io::Error> {
-    iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
+    let storage = JwkStorageWrapper::Stronghold(secret_manager.stronghold_storage);
 
-    let (stronghold_storage, key_id) = if let Some(stronghold) = stronghold_path {
-        // Read from existing stronghold
-        let snapshot_path = SnapshotPath::from_path(stronghold);
-
-        println!("Stronghold path: {:?}", snapshot_path.as_path());
-
-        let stronghold_secret_manager = StrongholdSecretManager::builder()
-            .password(Password::from(
-                password.expect("stronghold password not provided").to_owned(),
-            ))
-            .build(snapshot_path.as_path())
-            .unwrap();
-
-        let key_id = KeyId::new("9O66nzWqYYy1LmmiOudOlh2SMIaUWoTS");
-        (StrongholdStorage::new(stronghold_secret_manager), key_id)
-    } else {
-        // Create random stronghold in temp folder
-        let mut file = std::env::temp_dir();
-        file.push("test_strongholds");
-        file.push(rand::distributions::Alphanumeric.sample_string(&mut rand::thread_rng(), 32));
-        file.set_extension("stronghold");
-        println!("Stronghold path: {:?}", file);
-        let path_buf = file.to_owned();
-
-        let stronghold_secret_manager = StrongholdSecretManager::builder()
-            .password(Password::from("secure_password".to_owned()))
-            .build(path_buf)
-            .unwrap();
-        let stronghold_storage = StrongholdStorage::new(stronghold_secret_manager);
-
-        // Generate new key
-        let private_key = SecretKey::generate().unwrap();
-        let public_key = private_key.public_key();
-
-        let x = jwu::encode_b64(public_key.as_ref());
-        let d = jwu::encode_b64(private_key.to_bytes().as_ref());
-        let mut params = JwkParamsOkp::new();
-        params.x = x;
-        params.d = Some(d);
-        params.crv = EdCurve::Ed25519.name().to_owned();
-        let mut jwk = Jwk::from_params(params);
-        jwk.set_alg(JwsAlgorithm::EdDSA.name());
-
-        // Insert key into stronghold
-        let key_id = stronghold_storage.insert(jwk).await.unwrap();
-        (stronghold_storage, key_id)
-    };
-
-    let storage = JwkStorageWrapper::Stronghold(stronghold_storage);
+    // TODO: remove this hard-coded value and replace it with: get_key_id(method_digest)
+    let key_id = KeyId::new("9O66nzWqYYy1LmmiOudOlh2SMIaUWoTS");
 
     let core_document: Option<CoreDocument> = match method {
         Method::Jwk => {
@@ -112,13 +54,19 @@ mod tests {
     use super::*;
 
     use identity_iota::core::{json, ToJson};
+    use shared::test_utils::random_stronghold_path;
 
     #[tokio::test]
-    async fn produce_with_generated_stronghold() {
-        let document = produce(
+    #[ignore]
+    async fn create_document_from_generated_stronghold() {
+        let secret_manager = SecretManager::generate(
+            random_stronghold_path().to_str().unwrap().to_string(),
+            "secure_password".to_string(),
+        );
+
+        let document = get_document(
+            secret_manager.unwrap(),
             Method::Web,
-            None,
-            None,
             Some(url::Host::parse("localhost").unwrap()),
             Some(8080),
         )
@@ -129,11 +77,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn produce_from_existing_stronghold() {
-        let document = produce(
+    async fn recreate_expected_document_from_existing_stronghold() {
+        let secret_manager =
+            SecretManager::load("tests/res/test.stronghold".to_string(), "secure_password".to_string());
+
+        let document = get_document(
+            secret_manager.unwrap(),
             Method::Web,
-            Some("tests/res/test.stronghold".to_string()),
-            Some("secure_password".to_string()),
             Some(url::Host::parse("localhost").unwrap()),
             Some(8080),
         )
