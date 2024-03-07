@@ -1,28 +1,39 @@
+use anyhow::Result;
 use identity_iota::storage::{JwkStorage, KeyId};
+// use oid4vc_core::authentication::sign::ExternalSign;
 
-use crate::secret_manager::SecretManager;
+use crate::SecretManager;
 
-pub async fn sign(secret_manager: SecretManager, data: &[u8]) -> Result<Vec<u8>, std::io::Error> {
-    let key_id = KeyId::new("9O66nzWqYYy1LmmiOudOlh2SMIaUWoTS");
-    let public_key = secret_manager.stronghold_storage.get_public_key(&key_id).await.unwrap();
-    let signature = secret_manager
-        .stronghold_storage
-        .sign(&key_id, data, &public_key)
-        .await
-        .unwrap();
-    Ok(signature)
+impl SecretManager {
+    pub async fn sign(&self, data: &[u8]) -> Result<Vec<u8>, std::io::Error> {
+        // TODO: remove this hard-coded value and replace it with: get_key_id(method_digest)
+        let key_id = KeyId::new("9O66nzWqYYy1LmmiOudOlh2SMIaUWoTS");
+        let public_key = self.stronghold_storage.get_public_key(&key_id).await.unwrap();
+        let signature = self.stronghold_storage.sign(&key_id, data, &public_key).await.unwrap();
+        Ok(signature)
+    }
 }
+
+// impl ExternalSign for SecretManager {
+//     fn sign(&self, message: &str) -> Result<Vec<u8>> {
+//         let signature = tokio::runtime::Runtime::new()
+//             .unwrap()
+//             .block_on(self.sign(message.as_bytes()))
+//             .unwrap();
+//         Ok(signature)
+//     }
+// }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn successfully_signs() {
+    async fn produces_the_expected_signature() {
         let secret_manager =
             SecretManager::load("tests/res/test.stronghold".to_string(), "secure_password".to_string()).unwrap();
 
-        let signature = sign(secret_manager, "foobar".as_bytes()).await;
+        let signature = secret_manager.sign("foobar".as_bytes()).await;
 
         assert!(signature.is_ok());
 

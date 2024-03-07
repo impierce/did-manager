@@ -80,7 +80,7 @@ pub async fn produce_did_web(
         "@context".to_string(),
         json!([
             "https://www.w3.org/ns/did/v1",
-            // "https://w3id.org/security/suites/ed25519-2020/v1"
+            "https://w3id.org/security/suites/ed25519-2020/v1"
         ]),
     );
 

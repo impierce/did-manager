@@ -6,8 +6,9 @@ use log::info;
 use std::io::{Error, ErrorKind};
 
 /// Generates or loads a Stronghold
+#[derive(Clone)]
 pub struct SecretManager {
-    pub stronghold_storage: StrongholdStorage,
+    pub(crate) stronghold_storage: StrongholdStorage,
 }
 
 impl SecretManager {
@@ -65,10 +66,6 @@ impl SecretManager {
         Ok(SecretManager {
             stronghold_storage: StrongholdStorage::new(stronghold_secret_manager),
         })
-    }
-
-    pub fn _sign() -> Result<(), std::io::Error> {
-        Ok(())
     }
 }
 

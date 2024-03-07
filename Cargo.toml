@@ -8,6 +8,9 @@ license = "Apache-2.0"
 repository = "https://github.com/impierce/did-manager"
 rust-version = "1.75"
 
+# [dependencies]
+# producer = { path = "producer" }
+
 [workspace.dependencies]
 # TODO: temporarily pin until https://github.com/iotaledger/identity.rs/pull/1303 is merged
 identity_iota = { git = "https://github.com/iotaledger/identity.rs.git", rev = "b424d3d" }
