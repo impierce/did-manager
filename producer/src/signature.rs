@@ -1,6 +1,5 @@
 use anyhow::Result;
 use identity_iota::storage::{JwkStorage, KeyId};
-// use oid4vc_core::authentication::sign::ExternalSign;
 
 use crate::SecretManager;
 
@@ -13,16 +12,6 @@ impl SecretManager {
         Ok(signature)
     }
 }
-
-// impl ExternalSign for SecretManager {
-//     fn sign(&self, message: &str) -> Result<Vec<u8>> {
-//         let signature = tokio::runtime::Runtime::new()
-//             .unwrap()
-//             .block_on(self.sign(message.as_bytes()))
-//             .unwrap();
-//         Ok(signature)
-//     }
-// }
 
 #[cfg(test)]
 mod tests {

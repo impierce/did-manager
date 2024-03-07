@@ -13,8 +13,6 @@ did_key = { path = "../did_key" }
 did_web = { path = "../did_web" }
 shared = { path = "../shared" }
 
-oid4vc-core = { git = "https://github.com/impierce/openid4vc.git", rev = "ebd7a83" }
-
 anyhow = "1.0"
 hex = "0.4"
 identity_iota.workspace = true
