@@ -1138,6 +1138,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "did_manager"
+version = "0.1.0"
+dependencies = [
+ "consumer",
+ "producer",
+]
+
+[[package]]
 name = "did_url"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
