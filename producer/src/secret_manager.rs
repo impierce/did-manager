@@ -1,3 +1,7 @@
+use identity_iota::{
+    storage::{JwkStorage, KeyId, KeyType},
+    verification::jws::JwsAlgorithm,
+};
 use identity_stronghold::StrongholdStorage;
 use iota_sdk::client::secret::stronghold::StrongholdSecretManager;
 use iota_sdk::client::Password;
@@ -5,17 +9,18 @@ use iota_stronghold::SnapshotPath;
 use log::info;
 use std::io::{Error, ErrorKind};
 
-/// Generates or loads a Stronghold
+/// Generates or loads a Stronghold and uses the specified `KeyId` for all cryptographic operations
 #[derive(Clone)]
 pub struct SecretManager {
     pub(crate) stronghold_storage: StrongholdStorage,
+    pub(crate) key_id: KeyId,
 }
 
 impl SecretManager {
-    /// Generates a new Stronghold
-    pub fn generate(snapshot_path: String, password: String) -> Result<Self, std::io::Error> {
+    /// Generates a new Stronghold and a new Ed25519 key (only if not exists)
+    pub async fn generate(snapshot_path: String, password: String) -> Result<Self, std::io::Error> {
         if std::path::Path::new(&snapshot_path).try_exists()? == true {
-            return Err(Error::new(ErrorKind::Other, "Stronghold already exist"));
+            return Err(Error::new(ErrorKind::Other, "Stronghold already exists"));
         };
 
         let snapshot_path = SnapshotPath::from_path(snapshot_path);
@@ -27,44 +32,53 @@ impl SecretManager {
             .build(snapshot_path.as_path())
             .unwrap();
 
-        // TODO: generate a new key
-        // let private_key = SecretKey::generate().unwrap();
-        // let public_key = private_key.public_key();
+        let stronghold_storage = StrongholdStorage::new(stronghold_secret_manager);
 
-        // let x = jwu::encode_b64(public_key.as_ref());
-        // let d = jwu::encode_b64(private_key.to_bytes().as_ref());
-        // let mut params = JwkParamsOkp::new();
-        // params.x = x;
-        // params.d = Some(d);
-        // params.crv = EdCurve::Ed25519.name().to_owned();
-        // let mut jwk = Jwk::from_params(params);
-        // jwk.set_alg(JwsAlgorithm::EdDSA.name());
+        // Generate new Ed25519 key
+        let jwk_gen_output = stronghold_storage
+            .generate(KeyType::new("Ed25519"), JwsAlgorithm::EdDSA)
+            .await
+            .unwrap();
 
-        // // Insert key into stronghold
-        // let key_id = stronghold_storage.insert(jwk).await.unwrap();
+        info!("Generated new Ed25519 key with {:?}", &jwk_gen_output.key_id);
 
         Ok(SecretManager {
-            stronghold_storage: StrongholdStorage::new(stronghold_secret_manager),
+            stronghold_storage,
+            key_id: jwk_gen_output.key_id,
         })
     }
 
-    /// Loads an existing Stronghold as specified in the environment variables
-    pub fn load(snapshot_path: String, password: String) -> Result<Self, std::io::Error> {
+    /// Loads an existing Stronghold and verifies the specified key exists
+    pub async fn load(snapshot_path: String, password: String, key_id: String) -> Result<Self, std::io::Error> {
         if std::path::Path::new(&snapshot_path).try_exists()? == false {
             return Err(Error::new(ErrorKind::Other, "Stronghold does not exist"));
         };
 
         let snapshot_path = SnapshotPath::from_path(snapshot_path);
+        let password = Password::from(password);
+        let key_id = KeyId::new(key_id);
 
         info!("Loading existing Stronghold from {:?} ...", snapshot_path.as_path());
 
         let stronghold_secret_manager = StrongholdSecretManager::builder()
-            .password(Password::from(password))
+            .password(password)
             .build(snapshot_path.as_path())
             .map_err(|e| Error::new(ErrorKind::Other, e))?;
 
+        let stronghold_storage = StrongholdStorage::new(stronghold_secret_manager);
+
+        if stronghold_storage.exists(&key_id).await.unwrap() {
+            info!("Successfully verified key exists with {:?}", key_id);
+        } else {
+            return Err(Error::new(
+                ErrorKind::Other,
+                "Specified key does not exist in stronghold",
+            ));
+        }
+
         Ok(SecretManager {
-            stronghold_storage: StrongholdStorage::new(stronghold_secret_manager),
+            stronghold_storage,
+            key_id,
         })
     }
 }
@@ -75,27 +89,42 @@ mod tests {
 
     use shared::test_utils::random_stronghold_path;
 
+    const SNAPSHOT_PATH: &str = "tests/res/test.stronghold";
+    const PASSWORD: &str = "secure_password";
+    const KEY_ID: &str = "9O66nzWqYYy1LmmiOudOlh2SMIaUWoTS";
+
     #[tokio::test]
     async fn successfully_loads_an_existing_stronghold() {
-        let res = SecretManager::load("tests/res/test.stronghold".to_string(), "secure_password".to_string());
+        let res = SecretManager::load(SNAPSHOT_PATH.to_owned(), PASSWORD.to_owned(), KEY_ID.to_owned()).await;
         assert!(res.is_ok());
     }
 
     #[tokio::test]
     async fn fails_to_load_an_existing_stronghold_when_password_is_incorrect() {
-        let res = SecretManager::load("tests/res/test.stronghold".to_string(), "wrong_password".to_string());
+        let res = SecretManager::load(SNAPSHOT_PATH.to_owned(), "wrong_password".to_owned(), KEY_ID.to_owned()).await;
+        assert!(res.is_err());
+    }
+
+    #[tokio::test]
+    async fn fails_to_load_an_existing_stronghold_when_key_does_not_exist() {
+        let res = SecretManager::load(
+            SNAPSHOT_PATH.to_owned(),
+            PASSWORD.to_owned(),
+            "non_existing_key_id".to_owned(),
+        )
+        .await;
         assert!(res.is_err());
     }
 
     #[tokio::test]
     async fn fails_to_load_when_stronghold_file_does_not_exist() {
-        let res = SecretManager::load("non/existing/stronghold".to_string(), "".to_string());
+        let res = SecretManager::load("non/existing/path".to_string(), PASSWORD.to_owned(), KEY_ID.to_owned()).await;
         assert!(res.is_err());
     }
 
     #[tokio::test]
     async fn fails_to_generate_a_new_stronghold_when_file_already_exists() {
-        let res = SecretManager::generate("tests/res/test.stronghold".to_string(), "secure_password".to_string());
+        let res = SecretManager::generate(SNAPSHOT_PATH.to_owned(), PASSWORD.to_owned()).await;
         assert!(res.is_err());
     }
 
@@ -105,8 +134,9 @@ mod tests {
 
         let res = SecretManager::generate(
             random_stronghold_path().to_str().unwrap().to_string(),
-            "new_password".to_string(),
-        );
+            PASSWORD.to_owned(),
+        )
+        .await;
         assert!(res.is_ok());
     }
 }
