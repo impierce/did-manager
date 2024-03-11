@@ -679,6 +679,7 @@ dependencies = [
  "did_web",
  "identity_iota",
  "iota-sdk",
+ "signature 2.2.0",
  "tokio",
 ]
 
@@ -3694,6 +3695,7 @@ dependencies = [
  "serde",
  "serde_json",
  "shared",
+ "signature 2.2.0",
  "tokio",
  "url",
 ]
