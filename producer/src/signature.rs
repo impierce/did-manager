@@ -4,7 +4,7 @@ use identity_iota::storage::JwkStorage;
 use crate::SecretManager;
 
 impl SecretManager {
-    pub async fn sign(&self, data: &[u8]) -> Result<Vec<u8>, std::io::Error> {
+    pub async fn sign(&self, data: &[u8]) -> Result<Vec<u8>> {
         let public_key = self.stronghold_storage.get_public_key(&self.key_id).await.unwrap();
         let signature = self
             .stronghold_storage

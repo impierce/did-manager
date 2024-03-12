@@ -1,4 +1,5 @@
 pub mod did_document;
+pub mod oid4vc_core;
 pub mod secret_manager;
 pub mod signature;
 
