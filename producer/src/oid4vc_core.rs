@@ -6,7 +6,13 @@ use crate::SecretManager;
 
 impl Sign for SecretManager {
     fn key_id(&self) -> Option<String> {
-        todo!()
+        block_on(async {
+            self.produce_document(Method::Key)
+                .await
+                .ok()
+                .and_then(|document| document.verification_method().first().cloned())
+                .map(|first| first.id().to_string())
+        })
     }
 
     fn sign(&self, message: &str) -> anyhow::Result<Vec<u8>> {
@@ -21,12 +27,10 @@ impl Sign for SecretManager {
 impl Subject for SecretManager {
     fn identifier(&self) -> anyhow::Result<String> {
         block_on(async {
-            self.produce_document_json(Method::Key)
+            self.produce_document(Method::Key)
                 .await
-                .ok()
-                .and_then(|document| document.get("id").cloned())
-                .and_then(|id| id.as_str().map(|id| id.to_string()))
-                .ok_or(anyhow::anyhow!("No id found"))
+                .map(|document| document.id().to_string())
+                .map_err(|e| anyhow::anyhow!(e))
         })
     }
 }

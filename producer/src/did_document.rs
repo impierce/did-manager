@@ -1,6 +1,5 @@
-use identity_iota::{core::ToJson, document::CoreDocument};
+use identity_iota::document::CoreDocument;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use shared::JwkStorageWrapper;
 
 use crate::SecretManager;
@@ -13,7 +12,7 @@ pub enum Method {
 }
 
 impl SecretManager {
-    pub async fn produce_document_json(&self, method: Method) -> Result<Value, std::io::Error> {
+    pub async fn produce_document(&self, method: Method) -> Result<CoreDocument, std::io::Error> {
         let storage = JwkStorageWrapper::Stronghold(self.stronghold_storage.clone());
 
         let host: Option<url::Host> = Some(url::Host::parse("localhost").unwrap()); // TODO
@@ -42,7 +41,7 @@ impl SecretManager {
         };
 
         match core_document {
-            Some(core_document) => Ok(core_document.to_json_value().unwrap()),
+            Some(core_document) => Ok(core_document),
             None => Err(std::io::Error::other("No core_document produced")),
         }
     }
@@ -70,7 +69,7 @@ mod tests {
         .unwrap();
 
         // TODO: Some(url::Host::parse("localhost").unwrap()), Some(8080)
-        let document = secret_manager.produce_document_json(Method::Web).await;
+        let document = secret_manager.produce_document(Method::Web).await;
 
         println!("document: {}", document.as_ref().unwrap().to_json_pretty().unwrap());
         assert!(document.is_ok())
@@ -83,20 +82,20 @@ mod tests {
             .unwrap();
 
         // TODO: Some(url::Host::parse("localhost").unwrap()), Some(8080)
-        let document = secret_manager.produce_document_json(Method::Web).await;
+        let document = secret_manager.produce_document(Method::Web).await;
 
         assert_eq!(
             document
                 .unwrap()
-                .get("verificationMethod")
-                .unwrap()
-                .as_array()
-                .unwrap()
+                .verification_method()
                 .first()
                 .unwrap()
-                .get("publicKeyJwk")
+                .data()
+                .public_key_jwk()
+                .unwrap()
+                .to_json_value()
                 .unwrap(),
-            &json!({
+            json!({
                 "kty": "OKP",
                 "alg": "EdDSA",
                 "kid": "aHq-0PIf6_ljLhyx4W86Gviqb-671OAI67E6vXpZc7Q",
