@@ -13,7 +13,7 @@ did_key = { path = "../did_key" }
 did_web = { path = "../did_web" }
 shared = { path = "../shared" }
 
-oid4vc-core = { git = "https://github.com/impierce/openid4vc.git", rev = "ebd7a83" }
+oid4vc-core = { git = "https://git@github.com/impierce/openid4vc.git", rev = "ebd7a83f8494d55b57f569e43e3001d32cda583a" }
 
 anyhow = "1.0"
 async-trait = "0.1"
