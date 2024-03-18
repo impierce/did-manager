@@ -13,8 +13,6 @@ did_key = { path = "../did_key" }
 did_web = { path = "../did_web" }
 shared = { path = "../shared" }
 
-oid4vc-core = { git = "https://git@github.com/impierce/openid4vc.git", rev = "ebd7a83f8494d55b57f569e43e3001d32cda583a" }
-
 anyhow = "1.0"
 async-trait = "0.1"
 base64-url = "2.0"
@@ -25,6 +23,7 @@ identity_stronghold.workspace = true
 iota-sdk.workspace = true
 iota_stronghold = { version = "2.0" }
 log = "0.4"
+oid4vc-core = { git = "https://git@github.com/impierce/openid4vc.git", rev = "10a6bd7" }
 rand = "0.8"
 serde = "1.0"
 serde_json = "1.0"
