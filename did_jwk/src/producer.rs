@@ -1,4 +1,5 @@
 use identity_iota::{core::ToJson, did::CoreDID, document::CoreDocument, storage::KeyId};
+use log::info;
 use shared::JwkStorageWrapper;
 use ssi_dids::{DIDMethod, Source};
 use std::io::Error;
@@ -14,13 +15,10 @@ pub async fn produce_did_jwk(storage: JwkStorageWrapper, key_id: &str) -> std::r
 
     let jwk: ssi_jwk::JWK = serde_json::from_value(public_key_jwk.to_json_value().unwrap()).unwrap();
 
-    println!(
-        "Producing DID for key_id=[{:?}] from storage=[{:?}] ...",
-        key_id, "TODO_get_name"
-    );
+    info!("Producing did:jwk for key_id=[{:?}] ...", key_id);
 
     if let Some(did_str) = did_jwk_extern::DIDJWK.generate(&Source::Key(&jwk)) {
-        println!("DID: {:?}", did_str);
+        info!("DID: {:?}", did_str);
 
         let controller = CoreDID::parse(did_str).unwrap();
 
@@ -61,7 +59,7 @@ mod tests {
         // Insert into stronghold
         let key_id = stronghold_storage.insert(jwk).await.unwrap();
 
-        // println!("key_id: {:?}", key_id);
+        // info!("key_id: {:?}", key_id);
 
         // let storage = Storage::new(stronghold_storage.clone(), stronghold_storage.clone());
         let storage = JwkStorageWrapper::Stronghold(stronghold_storage);

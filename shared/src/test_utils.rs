@@ -5,6 +5,7 @@ use identity_iota::{
         jws::JwsAlgorithm,
     },
 };
+use log::info;
 use rand::distributions::DistString;
 
 pub fn get_test_jwk() -> Jwk {
@@ -30,7 +31,7 @@ pub fn get_test_jwk() -> Jwk {
     let mut jwk = Jwk::from_params(params);
     jwk.set_alg(JwsAlgorithm::EdDSA.name());
 
-    println!("JWK: {}", jwk.params().to_json().unwrap());
+    info!("JWK: {}", jwk.params().to_json().unwrap());
 
     jwk
 }
@@ -40,6 +41,6 @@ pub fn random_stronghold_path() -> std::path::PathBuf {
     file.push("test_strongholds");
     file.push(rand::distributions::Alphanumeric.sample_string(&mut rand::thread_rng(), 32));
     file.set_extension("stronghold");
-    println!("Stronghold path: {:?}", file);
+    info!("Stronghold path: {:?}", file);
     file.to_owned()
 }

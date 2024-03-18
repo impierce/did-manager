@@ -52,6 +52,7 @@ mod tests {
     use super::*;
 
     use identity_iota::core::{json, ToJson};
+    use log::info;
     use shared::test_utils::random_stronghold_path;
 
     const SNAPSHOT_PATH: &str = "tests/res/test.stronghold";
@@ -59,7 +60,6 @@ mod tests {
     const KEY_ID: &str = "9O66nzWqYYy1LmmiOudOlh2SMIaUWoTS";
 
     #[tokio::test]
-    #[ignore]
     async fn create_document_from_generated_stronghold() {
         let secret_manager = SecretManager::generate(
             random_stronghold_path().to_str().unwrap().to_string(),
@@ -71,7 +71,7 @@ mod tests {
         // TODO: Some(url::Host::parse("localhost").unwrap()), Some(8080)
         let document = secret_manager.produce_document(Method::Web).await;
 
-        println!("document: {}", document.as_ref().unwrap().to_json_pretty().unwrap());
+        info!("document: {}", document.as_ref().unwrap().to_json_pretty().unwrap());
         assert!(document.is_ok())
     }
 

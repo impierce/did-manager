@@ -19,7 +19,7 @@ pub struct SecretManager {
 impl SecretManager {
     /// Generates a new Stronghold and a new Ed25519 key (only if not exists)
     pub async fn generate(snapshot_path: String, password: String) -> Result<Self, std::io::Error> {
-        if std::path::Path::new(&snapshot_path).try_exists()? == true {
+        if std::path::Path::new(&snapshot_path).try_exists()? {
             return Err(Error::new(ErrorKind::Other, "Stronghold already exists"));
         };
 
@@ -50,7 +50,7 @@ impl SecretManager {
 
     /// Loads an existing Stronghold and verifies the specified key exists
     pub async fn load(snapshot_path: String, password: String, key_id: String) -> Result<Self, std::io::Error> {
-        if std::path::Path::new(&snapshot_path).try_exists()? == false {
+        if !(std::path::Path::new(&snapshot_path).try_exists()?) {
             return Err(Error::new(ErrorKind::Other, "Stronghold does not exist"));
         };
 

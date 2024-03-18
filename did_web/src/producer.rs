@@ -5,6 +5,7 @@ use identity_iota::{
     storage::KeyId,
     verification::VerificationMethod,
 };
+use log::info;
 use serde_json::json;
 use shared::JwkStorageWrapper;
 use std::io::Error;
@@ -26,11 +27,7 @@ pub async fn produce_did_web(
         JwkStorageWrapper::PKCS11 => todo!(),
     };
 
-    println!(
-        "Producing DID for key_id=[{:?}] from storage=[{:?}] ...",
-        key_id.as_str(),
-        "TODO_get_name"
-    );
+    info!("Producing did:web for key_id=[{:?}] ...", key_id.as_str(),);
 
     // Construct the URL from host and (optional) port
     // TODO: is there a better default than having to parse to create a new Url?
@@ -38,7 +35,7 @@ pub async fn produce_did_web(
     url.set_host(Some(&host.to_string())).unwrap();
     url.set_port(port).unwrap();
 
-    println!("URL: {}", url.as_str());
+    info!("URL: {}", url.as_str());
 
     let host_port = if port.is_some() {
         format!("{}:{}", url.host_str().unwrap(), url.port().unwrap())
@@ -57,14 +54,14 @@ pub async fn produce_did_web(
     // };
 
     // let url = url::Url::parse(&format!("https://{}/.well-known/did.json", host)).unwrap();
-    // println!("{}", url.port().unwrap());
+    // info!("{}", url.port().unwrap());
 
     // if let Some(did_str) = did_web_extern::DIDWeb.generate(&Source::Key(&jwk)) {
-    println!("DID: {:?}", did_str);
+    info!("DID: {:?}", did_str);
 
     let controller = CoreDID::parse(&did_str).unwrap();
 
-    // println!("Controller: {:?}", controller.method_id());
+    // info!("Controller: {:?}", controller.method_id());
 
     let verification_method =
         VerificationMethod::new_from_jwk(controller.clone(), public_key_jwk.clone(), Some("key-0")).unwrap();
@@ -93,19 +90,19 @@ pub async fn produce_did_web(
 
     // TODO: Add "@context" to the document
 
-    println!("Host the following json under the following url:\n================================================");
-    println!("{}", url.join(".well-known/did.json").unwrap());
-    println!("================================================");
-    println!("{}", document.to_json_pretty().unwrap());
+    info!("Host the following json under the following url:\n================================================");
+    info!("{}", url.join(".well-known/did.json").unwrap());
+    info!("================================================");
+    info!("{}", document.to_json_pretty().unwrap());
 
     Ok(document)
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::consumer::resolve_did_web;
-
     use super::*;
+
+    use crate::consumer::resolve_did_web;
 
     use identity_iota::core::ToJson;
     use identity_iota::did::DID;
@@ -122,7 +119,7 @@ mod tests {
     async fn produces_did_web() {
         iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
 
-        println!("====== Preparing Stronghold");
+        info!("====== Preparing Stronghold");
 
         // Create stronghold
         let stronghold = StrongholdSecretManager::builder()
@@ -134,10 +131,10 @@ mod tests {
 
         // Generate key
         let jwk = get_test_jwk();
-        // println!("JWK: {}", jwk.params().to_json().unwrap());
+        // info!("JWK: {}", jwk.params().to_json().unwrap());
         // Insert into stronghold
         let key_id = stronghold_storage.insert(jwk.clone()).await.unwrap();
-        println!("====== Done");
+        info!("====== Done");
 
         // Start mock server and assert
         let mock_server = MockServer::start().await;
@@ -151,7 +148,7 @@ mod tests {
         .await
         .unwrap();
 
-        println!("Document: {}", document.to_json_pretty().unwrap());
+        info!("Document: {}", document.to_json_pretty().unwrap());
 
         Mock::given(method("GET"))
             .and(path("/.well-known/did.json"))

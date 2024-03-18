@@ -13,4 +13,5 @@ test = []
 [dependencies]
 identity_iota.workspace = true
 identity_stronghold.workspace = true
+log.workspace = true
 rand = "0.8"

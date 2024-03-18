@@ -5,6 +5,7 @@ use identity_iota::{
     storage::KeyId,
     verification::VerificationMethod,
 };
+use log::info;
 use shared::JwkStorageWrapper;
 use ssi_dids::{DIDMethod, Source};
 use std::io::Error;
@@ -25,11 +26,7 @@ pub async fn produce_did_from_key(
         JwkStorageWrapper::PKCS11 => todo!(),
     };
 
-    println!(
-        "Producing DID for key_id=[{:?}] from storage=[{:?}] ...",
-        key_id.as_str(),
-        "TODO_get_name"
-    );
+    info!("Producing did:key for key_id=[{:?}] ...", key_id.as_str(),);
 
     let did_str = did_method_key::DIDKey
         .generate(&Source::Key(
@@ -37,7 +34,7 @@ pub async fn produce_did_from_key(
         ))
         .unwrap();
     let did = CoreDID::parse(did_str).unwrap();
-    println!("DID: {}", did);
+    info!("DID: {}", did);
 
     let verification_method =
         VerificationMethod::new_from_jwk(did.clone(), public_key_jwk.clone(), Some(did.method_id())).unwrap();
@@ -47,7 +44,7 @@ pub async fn produce_did_from_key(
         .verification_method(verification_method)
         .build()
         .unwrap();
-    println!("DID Document: {}", document.to_json_pretty().unwrap());
+    info!("DID Document: {}", document.to_json_pretty().unwrap());
 
     Ok(document)
 }
@@ -67,7 +64,7 @@ mod tests {
     async fn produces_did_key() {
         iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
 
-        println!("====== Preparing Stronghold");
+        info!("====== Preparing Stronghold");
 
         // Create stronghold
         let stronghold = StrongholdSecretManager::builder()
@@ -81,12 +78,12 @@ mod tests {
 
         // Insert into stronghold
         let key_id = stronghold_storage.insert(jwk.clone()).await.unwrap();
-        println!("====== Done");
+        info!("====== Done");
 
         let expected_did = did_method_key::DIDKey
             .generate(&Source::Key(&serde_json::from_str(&jwk.to_json().unwrap()).unwrap()))
             .unwrap();
-        println!("Expected DID: {}", expected_did);
+        info!("Expected DID: {}", expected_did);
 
         let document = produce_did_from_key(JwkStorageWrapper::Stronghold(stronghold_storage), &key_id)
             .await
