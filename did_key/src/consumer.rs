@@ -1,4 +1,4 @@
-use did_key_extern::{resolve, Config, DIDCore, Fingerprint};
+use did_key_extern::{resolve, DIDCore, Fingerprint, CONFIG_JOSE_PUBLIC};
 use identity_iota::core::{FromJson, ToJson};
 use identity_iota::did::{CoreDID, DID};
 use identity_iota::document::CoreDocument;
@@ -9,7 +9,7 @@ pub async fn resolve_did_key(did: CoreDID) -> std::result::Result<CoreDocument, 
     info!("Resolving DID: {}", did);
     let key = resolve(did.as_str()).unwrap();
     info!("key fingerprint: {:?}", key.fingerprint());
-    let document = key.get_did_document(Config::default());
+    let document = key.get_did_document(CONFIG_JOSE_PUBLIC);
     info!("document: {:#?}", document);
     CoreDocument::from_json(&document.to_json().unwrap())
 }
