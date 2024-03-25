@@ -6,8 +6,11 @@ use crate::SecretManager;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub enum Method {
+    #[serde(rename = "did:jwk")]
     Jwk,
+    #[serde(rename = "did:key")]
     Key,
+    #[serde(rename = "did:web")]
     Web,
 }
 
@@ -26,9 +29,7 @@ impl SecretManager {
                 Some(core_document)
             }
             Method::Key => {
-                let core_document = did_key::producer::produce_did_from_key(storage, &self.key_id)
-                    .await
-                    .unwrap();
+                let core_document = did_key::producer::produce_did_key(storage, &self.key_id).await.unwrap();
                 Some(core_document)
             }
             Method::Web => {

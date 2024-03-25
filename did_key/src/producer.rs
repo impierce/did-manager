@@ -10,10 +10,7 @@ use shared::JwkStorageWrapper;
 use ssi_dids::{DIDMethod, Source};
 use std::io::Error;
 
-pub async fn produce_did_from_key(
-    storage: JwkStorageWrapper,
-    key_id: &KeyId,
-) -> std::result::Result<CoreDocument, Error> {
+pub async fn produce_did_key(storage: JwkStorageWrapper, key_id: &KeyId) -> std::result::Result<CoreDocument, Error> {
     // TODO: Check if key exists in key_id_storage, if not return error
     // let exists = storage.key_storage().exists(key_id).await.unwrap();
 
@@ -85,7 +82,7 @@ mod tests {
             .unwrap();
         info!("Expected DID: {}", expected_did);
 
-        let document = produce_did_from_key(JwkStorageWrapper::Stronghold(stronghold_storage), &key_id)
+        let document = produce_did_key(JwkStorageWrapper::Stronghold(stronghold_storage), &key_id)
             .await
             .unwrap();
 
