@@ -11,11 +11,12 @@ rust-version.workspace = true
 did_jwk = { path = "../did_jwk" }
 did_key = { path = "../did_key" }
 did_web = { path = "../did_web" }
+consumer = { path = "../consumer" }
 shared = { path = "../shared" }
 
 anyhow = "1.0"
 async-trait = "0.1"
-base64-url = "2.0"
+base64 = "0.22"
 futures = "0.3"
 hex = "0.4"
 identity_iota.workspace = true

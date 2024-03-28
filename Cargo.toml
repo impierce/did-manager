@@ -22,11 +22,8 @@ repository = "https://github.com/impierce/did-manager"
 rust-version = "1.75"
 
 [workspace.dependencies]
-# TODO: temporarily pin until https://github.com/iotaledger/identity.rs/pull/1303 is merged
-identity_iota = { git = "https://github.com/iotaledger/identity.rs.git", rev = "b424d3d" }
-identity_stronghold = { git = "https://github.com/iotaledger/identity.rs.git", rev = "b424d3d", features = [
-    "send-sync-storage",
-] }
+identity_iota = { version = "1.2.0" }
+identity_stronghold = { version = "1.2.0", features = ["send-sync-storage"] }
 iota-sdk = { version = "1.0", features = ["stronghold"] }
 log = "0.4"
 signature = "2.2"
