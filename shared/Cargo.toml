@@ -1,0 +1,17 @@
+[package]
+name = "shared"
+version = "0.1.0"
+edition = "2021"
+homepage.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[features]
+test = []
+
+[dependencies]
+identity_iota.workspace = true
+identity_stronghold.workspace = true
+log.workspace = true
+rand = "0.8"

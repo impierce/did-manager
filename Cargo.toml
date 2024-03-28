@@ -1,0 +1,30 @@
+[package]
+name = "did_manager"
+version = "0.1.0"
+edition = "2021"
+description = "Resolve, create and sign DIDs for various methods"
+homepage = "https://www.impierce.com/"
+license = "Apache-2.0"
+repository = "https://github.com/impierce/did-manager"
+
+[workspace]
+resolver = "2"
+members = ["consumer", "did_jwk", "did_key", "did_web", "producer", "shared"]
+
+[dependencies]
+consumer = { path = "consumer" }
+producer = { path = "producer" }
+
+[workspace.package]
+homepage = "https://www.impierce.com/"
+license = "Apache-2.0"
+repository = "https://github.com/impierce/did-manager"
+rust-version = "1.75"
+
+[workspace.dependencies]
+identity_iota = { version = "1.2.0" }
+identity_stronghold = { version = "1.2.0", features = ["send-sync-storage"] }
+iota-sdk = { version = "1.0", features = ["stronghold"] }
+log = "0.4"
+signature = "2.2"
+tokio = { version = "1", features = ["full"] }
