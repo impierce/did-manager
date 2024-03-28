@@ -18,7 +18,7 @@ impl SecretManager {
     pub async fn produce_document(&self, method: Method) -> Result<CoreDocument, std::io::Error> {
         let storage = JwkStorageWrapper::Stronghold(self.stronghold_storage.clone());
 
-        let host: Option<url::Host> = Some(url::Host::parse("localhost").unwrap()); // TODO
+        let host: url::Host = url::Host::parse("localhost").unwrap(); // TODO
         let port: Option<u16> = None; // TODO
 
         let core_document: Option<CoreDocument> = match method {
@@ -33,10 +33,9 @@ impl SecretManager {
                 Some(core_document)
             }
             Method::Web => {
-                let core_document =
-                    did_web::producer::produce_did_web(storage, &self.key_id, host.expect("host not specified"), port)
-                        .await
-                        .unwrap();
+                let core_document = did_web::producer::produce_did_web(storage, &self.key_id, host, port)
+                    .await
+                    .unwrap();
                 Some(core_document)
             }
         };
