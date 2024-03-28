@@ -55,7 +55,7 @@ mod tests {
     use identity_stronghold::StrongholdStorage;
     use iota_sdk::client::secret::stronghold::StrongholdSecretManager;
     use iota_sdk::client::Password;
-    use shared::test_utils::{get_test_jwk, random_stronghold_path};
+    use shared::test_utils::{random_stronghold_path, test_jwk};
 
     #[tokio::test]
     async fn produces_did_key() {
@@ -71,7 +71,7 @@ mod tests {
 
         let stronghold_storage = StrongholdStorage::new(stronghold);
 
-        let jwk = get_test_jwk();
+        let jwk = test_jwk();
 
         // Insert into stronghold
         let key_id = stronghold_storage.insert(jwk.clone()).await.unwrap();
