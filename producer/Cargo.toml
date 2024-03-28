@@ -33,5 +33,4 @@ tokio.workspace = true
 url = "2.5"
 
 [dev-dependencies]
-# shared = { path = "../shared", features = ["test"] }
 tokio.workspace = true

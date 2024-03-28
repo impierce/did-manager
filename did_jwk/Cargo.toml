@@ -11,10 +11,6 @@ rust-version.workspace = true
 shared = { path = "../shared" }
 did-jwk-extern = { version = "0.1.1", package = "did-jwk" }
 identity_iota.workspace = true
-#identity_iota = { version = "1.1.0", features = ["memstore"] }
-# identity_iota = { git = "https://github.com/iotaledger/identity.rs.git", branch = "main", features = [
-#     "memstore",
-# ] }
 identity_stronghold.workspace = true
 iota-sdk.workspace = true
 log.workspace = true
