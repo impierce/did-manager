@@ -65,10 +65,6 @@ impl Verify for SecretManager {
 
         let document = resolver.resolve(did_url.did().as_str()).await.unwrap();
 
-        println!("Document: {:#?}", document);
-
-        println!("Fragment: {:?}", did_url.fragment());
-
         let verification_method = document
             .resolve_method(
                 DIDUrlQuery::from(&did_url),
@@ -82,8 +78,6 @@ impl Verify for SecretManager {
                 ),
             ))?;
 
-        println!("Verification Method: {:#?}", verification_method);
-
         let public_key_jwk = verification_method
             .data()
             .public_key_jwk()
@@ -95,8 +89,6 @@ impl Verify for SecretManager {
             identity_iota::verification::jwk::JwkParams::Rsa(_) => todo!(),
             identity_iota::verification::jwk::JwkParams::Oct(_) => todo!(),
         };
-
-        println!("Public Key: {:?}", x);
 
         Ok(URL_SAFE_NO_PAD.decode(x.as_bytes()).unwrap())
     }
@@ -122,7 +114,6 @@ mod tests {
         let mut url = RelativeDIDUrl::new();
         url.set_fragment(Some(core_did.method_id())).unwrap();
         let did_url = DIDUrl::new(CoreDID::parse(core_did).unwrap(), Some(url));
-        println!("{:?}", did_url);
         let pub_key = res.public_key(&did_url.to_string()).await.unwrap();
         assert_eq!(
             STANDARD.encode(&pub_key),
@@ -139,7 +130,6 @@ mod tests {
         let mut url = RelativeDIDUrl::new();
         url.set_fragment(Some("#0")).unwrap();
         let did_url = DIDUrl::new(CoreDID::parse(core_did).unwrap(), Some(url));
-        println!("{:?}", did_url);
         let pub_key = res.public_key(&did_url.to_string()).await.unwrap();
         assert_eq!(
             STANDARD.encode(&pub_key),
@@ -156,7 +146,6 @@ mod tests {
         let mut url = RelativeDIDUrl::new();
         url.set_fragment(Some("#foobar")).unwrap();
         let did_url = DIDUrl::new(CoreDID::parse(core_did).unwrap(), Some(url));
-        println!("{:?}", did_url);
         assert!(res.public_key(&did_url.to_string()).await.is_err());
     }
 }
