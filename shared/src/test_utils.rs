@@ -1,10 +1,12 @@
-use identity_iota::{
-    core::ToJson,
-    verification::{
-        jwk::{EdCurve, Jwk, JwkParamsOkp},
-        jws::JwsAlgorithm,
-    },
+use identity_iota::core::ToJson;
+use identity_iota::storage::{JwkStorage, KeyId};
+use identity_iota::verification::{
+    jwk::{EdCurve, Jwk, JwkParamsOkp},
+    jws::JwsAlgorithm,
 };
+use identity_stronghold::StrongholdStorage;
+use iota_sdk::client::secret::stronghold::StrongholdSecretManager;
+use iota_sdk::client::Password;
 use log::debug;
 use rand::distributions::DistString;
 
@@ -28,4 +30,21 @@ pub fn random_stronghold_path() -> std::path::PathBuf {
     file.set_extension("stronghold");
     debug!("Stronghold path: {:?}", file);
     file.to_owned()
+}
+
+pub async fn new_stronghold_storage() -> (StrongholdStorage, KeyId) {
+    iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
+
+    let stronghold = StrongholdSecretManager::builder()
+        .password(Password::from("secure_password".to_owned()))
+        .build(random_stronghold_path())
+        .unwrap();
+
+    let stronghold_storage = StrongholdStorage::new(stronghold);
+
+    let jwk = test_jwk();
+
+    let key_id = stronghold_storage.insert(jwk.clone()).await.unwrap();
+
+    (stronghold_storage, key_id)
 }

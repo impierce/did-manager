@@ -51,34 +51,16 @@ mod tests {
     use super::*;
 
     use identity_iota::core::ToJson;
-    use identity_iota::storage::JwkStorage;
-    use identity_stronghold::StrongholdStorage;
-    use iota_sdk::client::secret::stronghold::StrongholdSecretManager;
-    use iota_sdk::client::Password;
-    use shared::test_utils::{random_stronghold_path, test_jwk};
+    use shared::test_utils::{new_stronghold_storage, test_jwk};
 
     #[tokio::test]
     async fn produces_did_key() {
-        iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
-
-        info!("====== Preparing Stronghold");
-
-        // Create stronghold
-        let stronghold = StrongholdSecretManager::builder()
-            .password(Password::from("secure_password".to_owned()))
-            .build(random_stronghold_path())
-            .unwrap();
-
-        let stronghold_storage = StrongholdStorage::new(stronghold);
-
-        let jwk = test_jwk();
-
-        // Insert into stronghold
-        let key_id = stronghold_storage.insert(jwk.clone()).await.unwrap();
-        info!("====== Done");
+        let (stronghold_storage, key_id) = new_stronghold_storage().await;
 
         let expected_did = did_method_key::DIDKey
-            .generate(&Source::Key(&serde_json::from_str(&jwk.to_json().unwrap()).unwrap()))
+            .generate(&Source::Key(
+                &serde_json::from_str(&test_jwk().to_json().unwrap()).unwrap(),
+            ))
             .unwrap();
         info!("Expected DID: {}", expected_did);
 

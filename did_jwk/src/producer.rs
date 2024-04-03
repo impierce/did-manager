@@ -37,31 +37,12 @@ pub async fn produce_did_jwk(storage: JwkStorageWrapper, key_id: &str) -> std::r
 mod tests {
     use super::*;
 
-    use identity_iota::storage::JwkStorage;
-    use identity_stronghold::StrongholdStorage;
-    use iota_sdk::client::secret::stronghold::StrongholdSecretManager;
-    use iota_sdk::client::Password;
-    use shared::test_utils::{random_stronghold_path, test_jwk};
+    use shared::test_utils::new_stronghold_storage;
 
     #[tokio::test]
     async fn produces_did_jwk() {
-        iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
+        let (stronghold_storage, key_id) = new_stronghold_storage().await;
 
-        // Create stronghold
-        let stronghold_secret_manager = StrongholdSecretManager::builder()
-            .password(Password::from("secure_password".to_owned()))
-            .build(random_stronghold_path())
-            .unwrap();
-        let stronghold_storage = StrongholdStorage::new(stronghold_secret_manager);
-
-        let jwk = test_jwk();
-
-        // Insert into stronghold
-        let key_id = stronghold_storage.insert(jwk).await.unwrap();
-
-        // info!("key_id: {:?}", key_id);
-
-        // let storage = Storage::new(stronghold_storage.clone(), stronghold_storage.clone());
         let storage = JwkStorageWrapper::Stronghold(stronghold_storage);
         let result = produce_did_jwk(storage, key_id.as_str()).await;
 

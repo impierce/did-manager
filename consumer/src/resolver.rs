@@ -23,6 +23,7 @@ impl Resolver {
     }
 }
 
+// TODO: error handling (return Result), use expect() for Client::builder()
 async fn configure_resolver(mut resolver: IdentityResolver) -> IdentityResolver {
     resolver.attach_handler("jwk".to_owned(), resolve_did_jwk);
     resolver.attach_handler("key".to_owned(), resolve_did_key);
@@ -79,7 +80,7 @@ mod tests {
             "did:key:z6Mkk7yqnGF3YwTrLpqrW6PGsKci7dNqh1CjnvMbzrMerSeL"
         );
 
-        // add more ...
+        // TODO: add more ...
     }
 
     #[tokio::test]

@@ -1240,6 +1240,7 @@ dependencies = [
  "shared",
  "ssi-dids",
  "ssi-jwk",
+ "test-log",
  "tokio",
  "url",
  "urlencoding",
@@ -1455,6 +1456,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7268b386296a025e474d5140678f75d6de9493ae55a5d709eeb9dd08149945e1"
 dependencies = [
  "cfg-if",
+]
+
+[[package]]
+name = "env_filter"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a009aa4810eb158359dda09d0c87378e4bbb89b5a801f016885a4707ba24f7ea"
+dependencies = [
+ "log",
+]
+
+[[package]]
+name = "env_logger"
+version = "0.11.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "38b35839ba51819680ba087cd351788c9a3c476841207e0b8cee0b04722343b9"
+dependencies = [
+ "env_filter",
+ "log",
 ]
 
 [[package]]
@@ -3300,7 +3320,7 @@ dependencies = [
 [[package]]
 name = "oid4vc-core"
 version = "0.1.0"
-source = "git+https://git@github.com/impierce/openid4vc.git?rev=10a6bd7#10a6bd7ba2607095a193c60fd9568d9bd4132872"
+source = "git+https://git@github.com/impierce/openid4vc.git?rev=3fb6045#3fb60458d0b1cfe23ee0b5d8abd40f844843e186"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -4579,6 +4599,8 @@ version = "0.1.0"
 dependencies = [
  "identity_iota",
  "identity_stronghold",
+ "iota-sdk",
+ "iota_stronghold",
  "log",
  "rand 0.8.5",
 ]
@@ -5026,6 +5048,27 @@ dependencies = [
  "fastrand 2.0.1",
  "rustix 0.38.31",
  "windows-sys 0.52.0",
+]
+
+[[package]]
+name = "test-log"
+version = "0.2.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7b319995299c65d522680decf80f2c108d85b861d81dfe340a10d16cee29d9e6"
+dependencies = [
+ "env_logger",
+ "test-log-macros",
+]
+
+[[package]]
+name = "test-log-macros"
+version = "0.2.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c8f546451eaa38373f549093fe9fd05e7d2bade739e2ddf834b9968621d60107"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.53",
 ]
 
 [[package]]

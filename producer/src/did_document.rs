@@ -19,7 +19,7 @@ impl SecretManager {
         let storage = JwkStorageWrapper::Stronghold(self.stronghold_storage.clone());
 
         let host: url::Host = url::Host::parse("localhost").unwrap(); // TODO
-        let port: Option<u16> = None; // TODO
+        let port: Option<u16> = None; // TODO: default?
 
         let core_document: Option<CoreDocument> = match method {
             Method::Jwk => {

@@ -14,14 +14,9 @@ pub async fn resolve_did_web(did: CoreDID) -> std::result::Result<CoreDocument, 
 
     if let Some(error) = result.error.clone() {
         info!("Error: {:?}", error);
-        // return Err(identity_iota::core::Error::OneOrSetEmpty);
-        // return Err(Error::other(error));
     }
 
     info!("result: {:#?}", result);
-    // let key = resolve(did.as_str()).unwrap();
-    // info!("key: {:?}", key.fingerprint());
-    // let document = key.get_did_document(Config::default());
     info!("document: {}", document.clone().unwrap().to_json_pretty().unwrap());
     info!("metadata: {:#?}", metadata);
     CoreDocument::from_json(&document.to_json().unwrap())
@@ -48,7 +43,6 @@ mod tests {
     use wiremock::matchers::{method, path};
     use wiremock::{Mock, MockServer, ResponseTemplate};
 
-    /// Issue: https://github.com/iotaledger/identity.rs/issues/1299
     #[tokio::test]
     async fn resolves_did_web() {
         let mock_server = MockServer::start().await;
