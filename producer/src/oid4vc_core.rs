@@ -30,10 +30,10 @@ impl Sign for SecretManager {
 }
 
 impl Subject for SecretManager {
-    /// Returns the id of the DID document for the default method (`did:jwk`).
+    /// Returns the id of the DID document for the default method (`did:key`).
     fn identifier(&self) -> anyhow::Result<String> {
         block_on(async {
-            self.produce_document(Method::Jwk)
+            self.produce_document(Method::Key)
                 .await
                 .map(|document| document.id().to_string())
                 .map_err(|e| anyhow::anyhow!(e))
