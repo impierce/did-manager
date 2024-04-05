@@ -10,13 +10,6 @@ rust-version.workspace = true
 [dependencies]
 shared = { path = "../shared" }
 did-web-extern = { version = "0.2.2", package = "did-web" }
-# TODO: https://github.com/iotaledger/identity.rs/issues/1299
-# identity_iota = { git = "https://github.com/iotaledger/identity.rs.git", rev = "4635a47", features = [
-#     "memstore",
-# ] }
-# identity_iota = { git = "https://github.com/iotaledger/identity.rs.git", branch = "main", features = [
-#     "memstore",
-# ] }
 identity_iota.workspace = true
 identity_stronghold.workspace = true
 iota-sdk.workspace = true
@@ -32,7 +25,5 @@ urlencoding = "2.1"
 iota_stronghold = { version = "2.0" }
 rand = "0.8.5"
 shared = { path = "../shared", features = ["test"] }
-# iota-crypto = { version = "0.23", default-features = false, features = [
-#     "ed25519",
-# ] }
+test-log.workspace = true
 wiremock = "0.5"

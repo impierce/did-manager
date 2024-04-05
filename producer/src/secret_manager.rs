@@ -67,12 +67,19 @@ impl SecretManager {
 
         let stronghold_storage = StrongholdStorage::new(stronghold_secret_manager);
 
+        // TODO: make vault_path configurable (current issue: StrongholdStorage from `identity_stronghold` uses a static VAULT_PATH)
+        let location = iota_stronghold::Location::generic(
+            "iota_identity_vault".as_bytes().to_vec(),
+            key_id.to_string().as_bytes().to_vec(),
+        );
+        info!("location: {:?}", location);
+
         if stronghold_storage.exists(&key_id).await.unwrap() {
             info!("Successfully verified key exists with {:?}", key_id);
         } else {
             return Err(Error::new(
                 ErrorKind::Other,
-                "Specified key does not exist in stronghold",
+                format!("Specified key does not exist in stronghold with {:?}", key_id),
             ));
         }
 
@@ -138,5 +145,14 @@ mod tests {
         )
         .await;
         assert!(res.is_ok());
+    }
+
+    #[tokio::test]
+    async fn can_deserialize_method() {
+        let secret_manager = SecretManager::load(SNAPSHOT_PATH.to_owned(), PASSWORD.to_owned(), KEY_ID.to_owned())
+            .await
+            .unwrap();
+        let id = secret_manager.identifier_for_method("did:key").unwrap();
+        assert_eq!(id, "did:key:z6MkiieyoLMSVsJAZv7Jje5wWSkDEymUgkyF8kbcrjZpX3qd");
     }
 }

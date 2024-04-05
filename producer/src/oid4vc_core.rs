@@ -1,9 +1,11 @@
+use base64::engine::general_purpose::URL_SAFE_NO_PAD;
+use base64::Engine;
 use did_jwk::consumer::resolve_did_jwk;
 use did_key::consumer::resolve_did_key;
 use did_web::consumer::resolve_did_web;
 use futures::executor::block_on;
 use identity_iota::did::{DIDUrl, DID};
-use identity_iota::resolver::{self, Resolver};
+use identity_iota::resolver::Resolver;
 use oid4vc_core::{Sign, Subject, Verify};
 
 use crate::did_document::Method;
@@ -30,9 +32,10 @@ impl Sign for SecretManager {
 }
 
 impl Subject for SecretManager {
+    /// Returns the id of the DID document for the default method (`did:jwk`).
     fn identifier(&self) -> anyhow::Result<String> {
         block_on(async {
-            self.produce_document(Method::Key)
+            self.produce_document(Method::Jwk)
                 .await
                 .map(|document| document.id().to_string())
                 .map_err(|e| anyhow::anyhow!(e))
@@ -40,12 +43,27 @@ impl Subject for SecretManager {
     }
 }
 
+// TODO: this should be `impl Subject for SecretManager`
+impl SecretManager {
+    /// Returns the id of the DID document for the given method.
+    pub fn identifier_for_method(&self, method: &str) -> anyhow::Result<String> {
+        let method: Method = serde_json::from_str(&format!("{:?}", method)).unwrap();
+        block_on(async {
+            self.produce_document(method)
+                .await
+                .map(|document| document.id().to_string())
+                .map_err(|e| anyhow::anyhow!(e))
+        })
+    }
+}
+
+// TODO: shouldn't this be in consumer::Resolver? Does it even make sense to have a separate Resolver or should everything be in SecretManager?
 #[async_trait::async_trait]
 impl Verify for SecretManager {
-    async fn public_key(&self, kid: &str) -> anyhow::Result<Vec<u8>> {
-        let mut resolver: Resolver = resolver::Resolver::new();
+    async fn public_key(&self, did_url: &str) -> anyhow::Result<Vec<u8>> {
+        let mut resolver: Resolver = Resolver::new();
 
-        let did_url: DIDUrl = kid.parse()?;
+        let did_url: DIDUrl = did_url.parse()?;
         let did = did_url.did();
 
         // Attach the appropriate handler for the given DID method.
@@ -58,10 +76,15 @@ impl Verify for SecretManager {
 
         let document = resolver.resolve(did).await?;
 
+        println!("DOCUMENT: {:#?}", document);
+
         // Resolve the method data from the given `kid`.
         let method_data = document
-            .resolve_method(kid, None)
-            .ok_or(anyhow::anyhow!("Verification method not found for DID URL: {}", kid))?
+            .resolve_method(&did_url, None)
+            .ok_or(anyhow::anyhow!(
+                "Verification method not found for DID URL: {}",
+                did_url
+            ))?
             .data();
 
         method_data
@@ -74,9 +97,103 @@ impl Verify for SecretManager {
                     public_key
                         .try_okp_params()
                         .map(|okp_params| okp_params.x.as_bytes().to_vec())
+                        .or_else(|_| {
+                            public_key
+                                .try_ec_params()
+                                .map(|ec_params| ec_params.x.as_bytes().to_vec())
+                        })
                         .ok()
                 })
             })
-            .ok_or(anyhow::anyhow!("Failed to decode public key for DID URL: {}", kid))
+            .map(|public_key| URL_SAFE_NO_PAD.decode(public_key.as_slice()).unwrap())
+            .ok_or(anyhow::anyhow!("Failed to decode public key for DID URL: {}", did_url))
+
+        // let did_url = identity_iota::did::DIDUrl::parse(did_url).unwrap();
+
+        // let resolver = consumer::resolver::Resolver::new().await;
+
+        // let document = resolver.resolve(did_url.did().as_str()).await.unwrap();
+
+        // let verification_method = document
+        //     .resolve_method(
+        //         DIDUrlQuery::from(&did_url),
+        //         Some(identity_iota::verification::MethodScope::VerificationMethod),
+        //     )
+        //     .ok_or(Error::new(
+        //         ErrorKind::NotFound,
+        //         format!(
+        //             "No verification method found for fragment=[{}]",
+        //             did_url.fragment().unwrap()
+        //         ),
+        //     ))?;
+
+        // let public_key_jwk = verification_method
+        //     .data()
+        //     .public_key_jwk()
+        //     .ok_or(Error::new(ErrorKind::NotFound, "No JWK found"))?;
+
+        // let x = match public_key_jwk.params() {
+        //     identity_iota::verification::jwk::JwkParams::Okp(okp) => okp.x.as_str(),
+        //     identity_iota::verification::jwk::JwkParams::Ec(ec) => ec.x.as_str(),
+        //     identity_iota::verification::jwk::JwkParams::Rsa(_) => todo!(),
+        //     identity_iota::verification::jwk::JwkParams::Oct(_) => todo!(),
+        // };
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use base64::{engine::general_purpose::STANDARD, Engine};
+    use identity_iota::did::{CoreDID, DIDUrl, RelativeDIDUrl};
+
+    const SNAPSHOT_PATH: &str = "tests/res/test.stronghold";
+    const PASSWORD: &str = "secure_password";
+    const KEY_ID: &str = "9O66nzWqYYy1LmmiOudOlh2SMIaUWoTS";
+
+    #[tokio::test]
+    async fn successfully_finds_an_existing_public_key_in_did_key_by_fragment() {
+        let res = SecretManager::load(SNAPSHOT_PATH.to_owned(), PASSWORD.to_owned(), KEY_ID.to_owned())
+            .await
+            .unwrap();
+        let core_did = CoreDID::parse("did:key:z6MkiieyoLMSVsJAZv7Jje5wWSkDEymUgkyF8kbcrjZpX3qd").unwrap();
+        let mut url = RelativeDIDUrl::new();
+        url.set_fragment(Some(core_did.method_id())).unwrap();
+        let did_url = DIDUrl::new(CoreDID::parse(core_did).unwrap(), Some(url));
+        let pub_key = res.public_key(&did_url.to_string()).await.unwrap();
+        assert_eq!(
+            STANDARD.encode(&pub_key),
+            "P2BkYS6z4UHmsxn6FX1oHsyx7eiUSFEMJ1D/RC8M0+w="
+        );
+    }
+
+    #[tokio::test]
+    async fn successfully_finds_an_existing_public_key_in_did_jwk_by_fragment() {
+        let res = SecretManager::load(SNAPSHOT_PATH.to_owned(), PASSWORD.to_owned(), KEY_ID.to_owned())
+            .await
+            .unwrap();
+        let core_did = CoreDID::parse("did:jwk:eyJjcnYiOiJQLTI1NiIsImt0eSI6IkVDIiwieCI6ImFjYklRaXVNczNpOF91c3pFakoydHBUdFJNNEVVM3l6OTFQSDZDZEgyVjAiLCJ5IjoiX0tjeUxqOXZXTXB0bm1LdG00NkdxRHo4d2Y3NEk1TEtncmwyR3pIM25TRSJ9").unwrap();
+        let mut url = RelativeDIDUrl::new();
+        url.set_fragment(Some("#0")).unwrap();
+        let did_url = DIDUrl::new(CoreDID::parse(core_did).unwrap(), Some(url));
+        println!("HHERERE: {}", did_url.to_string());
+        let pub_key = res.public_key(&did_url.to_string()).await.unwrap();
+        assert_eq!(
+            STANDARD.encode(&pub_key),
+            "acbIQiuMs3i8/uszEjJ2tpTtRM4EU3yz91PH6CdH2V0="
+        );
+    }
+
+    #[tokio::test]
+    async fn throws_error_when_no_public_key_found_in_document_for_fragment() {
+        let res = SecretManager::load(SNAPSHOT_PATH.to_owned(), PASSWORD.to_owned(), KEY_ID.to_owned())
+            .await
+            .unwrap();
+        let core_did = CoreDID::parse("did:jwk:eyJjcnYiOiJQLTI1NiIsImt0eSI6IkVDIiwieCI6ImFjYklRaXVNczNpOF91c3pFakoydHBUdFJNNEVVM3l6OTFQSDZDZEgyVjAiLCJ5IjoiX0tjeUxqOXZXTXB0bm1LdG00NkdxRHo4d2Y3NEk1TEtncmwyR3pIM25TRSJ9").unwrap();
+        let mut url = RelativeDIDUrl::new();
+        url.set_fragment(Some("#foobar")).unwrap();
+        let did_url = DIDUrl::new(CoreDID::parse(core_did).unwrap(), Some(url));
+        assert!(res.public_key(&did_url.to_string()).await.is_err());
     }
 }
