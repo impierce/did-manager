@@ -3860,6 +3860,7 @@ dependencies = [
  "serde_json",
  "shared",
  "signature 2.2.0",
+ "thiserror",
  "tokio",
  "url",
 ]

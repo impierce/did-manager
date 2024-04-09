@@ -2,7 +2,7 @@ use identity_iota::document::CoreDocument;
 use serde::{Deserialize, Serialize};
 use shared::JwkStorageWrapper;
 
-use crate::SecretManager;
+use crate::{error::ProducerError, SecretManager};
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub enum Method {
@@ -15,7 +15,7 @@ pub enum Method {
 }
 
 impl SecretManager {
-    pub async fn produce_document(&self, method: Method) -> Result<CoreDocument, std::io::Error> {
+    pub async fn produce_document(&self, method: Method) -> Result<CoreDocument, ProducerError> {
         let storage = JwkStorageWrapper::Stronghold(self.stronghold_storage.clone());
 
         let host: url::Host = url::Host::parse("localhost").unwrap(); // TODO
@@ -42,7 +42,7 @@ impl SecretManager {
 
         match core_document {
             Some(core_document) => Ok(core_document),
-            None => Err(std::io::Error::other("No core_document produced")),
+            None => Err(ProducerError::Generic("Failed to produce document".to_string())),
         }
     }
 }

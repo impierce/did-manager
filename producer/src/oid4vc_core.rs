@@ -1,5 +1,3 @@
-use std::io::{Error, ErrorKind};
-
 use futures::executor::block_on;
 use identity_iota::did::DID;
 use identity_iota::document::DIDUrlQuery;
@@ -7,6 +5,7 @@ use identity_iota::verification::jwk::JwkParams;
 use oid4vc_core::{Sign, Subject, Verify};
 
 use crate::did_document::Method;
+use crate::error::ProducerError;
 use crate::SecretManager;
 
 impl Sign for SecretManager {
@@ -44,13 +43,13 @@ impl Subject for SecretManager {
 // TODO: this should be `impl Subject for SecretManager`
 impl SecretManager {
     /// Returns the id of the DID document for the given method.
-    pub fn identifier_for_method(&self, method: &str) -> anyhow::Result<String> {
+    pub fn identifier_for_method(&self, method: &str) -> Result<String, ProducerError> {
         let method: Method = serde_json::from_str(&format!("{:?}", method)).unwrap();
         block_on(async {
             self.produce_document(method)
                 .await
                 .map(|document| document.id().to_string())
-                .map_err(|e| anyhow::anyhow!(e))
+                .map_err(|e| ProducerError::Generic(e.to_string()))
         })
     }
 }
@@ -70,13 +69,10 @@ impl Verify for SecretManager {
                 DIDUrlQuery::from(&did_url),
                 Some(identity_iota::verification::MethodScope::VerificationMethod),
             )
-            .ok_or(Error::new(
-                ErrorKind::NotFound,
-                format!(
-                    "No verification method found for fragment=[{}]",
-                    did_url.fragment().unwrap()
-                ),
-            ))?;
+            .ok_or(ProducerError::Generic(format!(
+                "No verification method found for fragment=[{}]",
+                did_url.fragment().unwrap()
+            )))?;
 
         // Try decode from `MethodData` directly, else use public JWK params.
         verification_method
