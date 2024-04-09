@@ -67,11 +67,11 @@ impl SecretManager {
 
         let stronghold_storage = StrongholdStorage::new(stronghold_secret_manager);
 
+        let vault_path = "iota_identity_vault".as_bytes().to_vec();
+        let record_path = key_id.to_string().as_bytes().to_vec();
+
         // TODO: make vault_path configurable (current issue: StrongholdStorage from `identity_stronghold` uses a static VAULT_PATH)
-        let location = iota_stronghold::Location::generic(
-            "iota_identity_vault".as_bytes().to_vec(),
-            key_id.to_string().as_bytes().to_vec(),
-        );
+        let location = iota_stronghold::Location::generic(vault_path, record_path);
         info!("location: {:?}", location);
 
         if stronghold_storage.exists(&key_id).await.unwrap() {
