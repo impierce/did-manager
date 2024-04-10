@@ -16,4 +16,4 @@ identity_stronghold.workspace = true
 iota-sdk.workspace = true
 iota_stronghold = { version = "2.0" }
 log.workspace = true
-rand = "0.8"
+rand.workspace = true
