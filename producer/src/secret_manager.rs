@@ -6,7 +6,7 @@ use identity_stronghold::StrongholdStorage;
 use iota_sdk::client::secret::stronghold::StrongholdSecretManager;
 use iota_sdk::client::Password;
 use iota_stronghold::SnapshotPath;
-use log::info;
+use log::{debug, info};
 use std::io::{Error, ErrorKind};
 
 /// Generates or loads a Stronghold and uses the specified `KeyId` for all cryptographic operations
@@ -72,7 +72,7 @@ impl SecretManager {
             "iota_identity_vault".as_bytes().to_vec(),
             key_id.to_string().as_bytes().to_vec(),
         );
-        info!("location: {:?}", location);
+        debug!("Location: {:?}", location);
 
         if stronghold_storage.exists(&key_id).await.unwrap() {
             info!("Successfully verified key exists with {:?}", key_id);

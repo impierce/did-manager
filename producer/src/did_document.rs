@@ -2,6 +2,7 @@ use identity_iota::document::CoreDocument;
 use serde::{Deserialize, Serialize};
 use shared::JwkStorageWrapper;
 
+use crate::iota::produce::{produce_did_iota, IotaMethod};
 use crate::SecretManager;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -12,6 +13,8 @@ pub enum Method {
     Key,
     #[serde(rename = "did:web")]
     Web,
+    #[serde(rename = "did:iota:rms")]
+    IotaTestnet,
 }
 
 impl SecretManager {
@@ -34,6 +37,12 @@ impl SecretManager {
             }
             Method::Web => {
                 let core_document = did_web::producer::produce_did_web(storage, &self.key_id, host, port)
+                    .await
+                    .unwrap();
+                Some(core_document)
+            }
+            Method::IotaTestnet => {
+                let core_document = produce_did_iota(storage, &self.key_id, IotaMethod::Testnet)
                     .await
                     .unwrap();
                 Some(core_document)
