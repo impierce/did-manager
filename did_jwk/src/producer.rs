@@ -27,6 +27,8 @@ pub async fn produce_did_jwk(storage: JwkStorageWrapper, key_id: &str) -> std::r
             .build()
             .unwrap();
 
+        info!("DID Document: {}", document.to_json_pretty().unwrap());
+
         return Ok(document);
     };
 

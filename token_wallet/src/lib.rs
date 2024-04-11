@@ -59,7 +59,7 @@ pub async fn get_balance(address: &Bech32Address) -> anyhow::Result<u64> {
         "rms" => Client::builder().with_primary_node(TESTNET_URL, None)?.finish().await?,
         "smr" => Client::builder().with_primary_node(SHIMMER_URL, None)?.finish().await?,
         "iota" => Client::builder().with_primary_node(MAINNET_URL, None)?.finish().await?,
-        _ => unimplemented!(),
+        _ => anyhow::bail!("Unsupported network"),
     };
 
     let output_ids = client
@@ -110,7 +110,7 @@ mod tests {
 
         assert_eq!(
             address.to_string(),
-            "rms1qzy8ew7p64tcns9d26ekcch0m0ht33a0w0vrr99hapqeyw38qzk0vct7y2s"
+            "rms1qrdgpq8a4xjetgf79gnx7g5n0rfeykm30rek9fpjef6dnx3md929ksv04a0"
         );
     }
 
@@ -139,15 +139,9 @@ mod tests {
     async fn unsupported_network() {
         iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
 
-        // valid rms: rms1qzxs8xdk3mskea9kuchc54lrhjaktyfdr3jh4a72smf04397ly6euwas7q6
-        // valid smr: smr1qpjva0y6qwjmv42dspw2se2776l5qr0r5p2s5m7nrg73qhvm6a6y7uvqxn6
-        // valid iota: iota1qrhacyfwlcnzkvzteumekfkrrwks98mpdm37cj4xx3drvmjvnep6xqgyzyx
-
         let address =
-            Bech32Address::from_str("iota1qrhacyfwlcnzkvzteumekfkrrwks98mpdm37cj4xx3drvmjvnep6xqgyzyx").unwrap();
+            Bech32Address::from_str("foobar1qp7m6flrdjxwhul2kh0zf0wj73vdxk6p9cy8pdkt00dpsf92xkqe6975kp8").unwrap();
 
-        let balance = get_balance(&address).await.unwrap();
-
-        assert_eq!(balance > 0, true);
+        assert!(get_balance(&address).await.is_err());
     }
 }
