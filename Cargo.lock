@@ -3863,6 +3863,8 @@ dependencies = [
  "serde_json",
  "shared",
  "signature 2.2.0",
+ "test-log",
+ "token_wallet",
  "tokio",
  "url",
 ]
@@ -5145,6 +5147,19 @@ name = "tinyvec_macros"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
+
+[[package]]
+name = "token_wallet"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "iota-sdk",
+ "iota_stronghold",
+ "log",
+ "rand 0.8.5",
+ "test-log",
+ "tokio",
+]
 
 [[package]]
 name = "tokio"

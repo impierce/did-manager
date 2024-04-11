@@ -1,0 +1,19 @@
+[package]
+name = "token_wallet"
+version = "0.1.0"
+edition = "2021"
+homepage.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+anyhow = "1.0"
+iota-sdk.workspace = true
+log.workspace = true
+rand.workspace = true
+
+[dev-dependencies]
+iota_stronghold = { version = "2.0" }
+test-log.workspace = true
+tokio.workspace = true

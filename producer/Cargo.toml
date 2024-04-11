@@ -13,6 +13,7 @@ did_key = { path = "../did_key" }
 did_web = { path = "../did_web" }
 consumer = { path = "../consumer" }
 shared = { path = "../shared" }
+token_wallet = { path = "../token_wallet" }
 
 anyhow = "1.0"
 async-trait = "0.1"
@@ -25,7 +26,7 @@ iota-sdk.workspace = true
 iota_stronghold = { version = "2.0" }
 log = "0.4"
 oid4vc-core = { git = "https://git@github.com/impierce/openid4vc.git", rev = "0c5526c" }
-rand = "0.8"
+rand.workspace = true
 serde = "1.0"
 serde_json = "1.0"
 signature.workspace = true
@@ -33,4 +34,5 @@ tokio.workspace = true
 url = "2.5"
 
 [dev-dependencies]
+test-log.workspace = true
 tokio.workspace = true
