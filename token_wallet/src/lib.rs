@@ -13,11 +13,16 @@ static SHIMMER_URL: &str = "https://api.shimmer.network";
 static TESTNET_URL: &str = "https://api.testnet.shimmer.network";
 
 /// Returns the first address derived from the underlying Stronghold snapshot.
-pub async fn get_first_address(secret_manager: &SecretManager) -> anyhow::Result<Bech32Address> {
+pub async fn get_first_address(secret_manager: &SecretManager, network: &str) -> anyhow::Result<Bech32Address> {
     create_and_store_mnemonic(secret_manager).await?;
 
+    let network = match network {
+        "rms" | "smr" => network,
+        _ => anyhow::bail!("Unsupported network"),
+    };
+
     // TODO: make dynamic
-    let bech32_hrp = Hrp::from_str("rms").unwrap();
+    let bech32_hrp = Hrp::from_str(network).unwrap();
 
     let address = secret_manager
         .generate_ed25519_addresses(
@@ -54,7 +59,7 @@ async fn create_and_store_mnemonic(secret_manager: &SecretManager) -> anyhow::Re
     Ok(())
 }
 
-pub async fn get_balance(address: &Bech32Address) -> anyhow::Result<u64> {
+pub async fn get_current_balance(address: &Bech32Address) -> anyhow::Result<u64> {
     let client = match address.hrp().to_string().as_str() {
         "rms" => Client::builder().with_primary_node(TESTNET_URL, None)?.finish().await?,
         "smr" => Client::builder().with_primary_node(SHIMMER_URL, None)?.finish().await?,
@@ -106,7 +111,7 @@ mod tests {
                 .unwrap(),
         );
 
-        let address = get_first_address(&secret_manager).await.unwrap();
+        let address = get_first_address(&secret_manager, "rms").await.unwrap();
 
         assert_eq!(
             address.to_string(),
@@ -128,9 +133,9 @@ mod tests {
                 .unwrap(),
         );
 
-        let address = get_first_address(&secret_manager).await.unwrap();
+        let address = get_first_address(&secret_manager, "rms").await.unwrap();
 
-        let balance = get_balance(&address).await.unwrap();
+        let balance = get_current_balance(&address).await.unwrap();
 
         assert_eq!(balance > 0, true);
     }
@@ -142,6 +147,6 @@ mod tests {
         let address =
             Bech32Address::from_str("foobar1qp7m6flrdjxwhul2kh0zf0wj73vdxk6p9cy8pdkt00dpsf92xkqe6975kp8").unwrap();
 
-        assert!(get_balance(&address).await.is_err());
+        assert!(get_current_balance(&address).await.is_err());
     }
 }
