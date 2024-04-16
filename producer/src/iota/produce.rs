@@ -5,6 +5,10 @@ use identity_iota::{
     storage::KeyId,
     verification::{MethodScope, VerificationMethod},
 };
+use iota_sdk::{
+    client::{api::GetAddressesOptions, constants::SHIMMER_TESTNET_BECH32_HRP},
+    types::block::address::Bech32Address,
+};
 use log::info;
 use shared::JwkStorageWrapper;
 use std::io::Error;
@@ -26,7 +30,9 @@ pub async fn produce_did_iota(
     // TODO: check if key exists for given key_id?
 
     let public_key_jwk = match storage {
-        JwkStorageWrapper::Stronghold(stronghold_storage) => stronghold_storage.get_public_key(key_id).await.unwrap(),
+        JwkStorageWrapper::Stronghold(ref stronghold_storage) => {
+            stronghold_storage.get_public_key(key_id).await.unwrap()
+        }
         JwkStorageWrapper::PKCS11 => todo!(),
     };
 
@@ -53,7 +59,7 @@ pub async fn produce_did_iota(
 
     let mut iota_document = IotaDocument::new(&network);
 
-    // Placeholder until published to network
+    // Placeholder until document is published to network
     let controller = IotaDID::placeholder(&network);
 
     let verification_method =
@@ -63,11 +69,38 @@ pub async fn produce_did_iota(
         .insert_method(verification_method, MethodScope::VerificationMethod)
         .ok();
 
-    let published_document = publish_iota_document(iota_document).await.unwrap();
+    let governor = create_new_governor_and_state_controller(&storage).await;
+
+    let published_document = publish_iota_document(iota_document, governor).await.unwrap();
 
     info!("DID Document: {}", published_document.to_json_pretty().unwrap());
 
     Ok(published_document)
+}
+
+/// First address: funding address, second address: governor address
+async fn create_new_governor_and_state_controller(storage: &JwkStorageWrapper) -> Bech32Address {
+    info!("Creating new Governor and State Controller ...");
+    let stronghold_storage = match storage {
+        JwkStorageWrapper::Stronghold(s) => s,
+        JwkStorageWrapper::PKCS11 => todo!(),
+    };
+
+    let addresses = stronghold_storage
+        .as_secret_manager()
+        .generate_ed25519_addresses(
+            GetAddressesOptions::default()
+                .with_range(0..2)
+                .with_bech32_hrp(SHIMMER_TESTNET_BECH32_HRP),
+        )
+        .await
+        .unwrap();
+
+    // info!("Addresses: {:#?}", addresses);
+    // TODO: funding address == governor address --> should be a different index or even different key
+    let governor = addresses[0];
+    info!("Governor address: {}", governor);
+    governor
 }
 
 #[cfg(test)]
@@ -80,7 +113,11 @@ mod tests {
 
     const SNAPSHOT_PATH: &str = "tests/res/test.stronghold";
     const PASSWORD: &str = "secure_password";
+    // const KEY_ID: &str = "7GvXZGN3YoDmZRLXLJDVNFR6yJzB8nKz";
     const KEY_ID: &str = "9O66nzWqYYy1LmmiOudOlh2SMIaUWoTS";
+
+    // const SNAPSHOT_PATH: &str = "tests/res/alice.stronghold"; // Alice
+    // const KEY_ID: &str = "HG75tNwdZuIeQZT2a5Syfg1pZhkiv0k2"; // Alice
 
     #[test(tokio::test)]
     async fn produce_did_iota_testnet() {

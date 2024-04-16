@@ -1,24 +1,28 @@
 use consumer::resolver::Resolver;
+use identity_iota::core::ToJson;
 use identity_iota::did::DID;
 use identity_iota::document::CoreDocument;
 use identity_iota::iota::{IotaDID, IotaDocument, IotaIdentityClientExt, NetworkName};
-use iota_sdk::client::node_api::indexer::query_parameters::QueryParameter;
-use iota_sdk::client::Client;
 use iota_sdk::client::{
+    node_api::indexer::query_parameters::QueryParameter,
     secret::{stronghold::StrongholdSecretManager, SecretManager as ExternSecretManager},
-    Password,
+    Client, Password,
 };
-use iota_sdk::types::block::output::AliasId;
+use iota_sdk::types::block::address::Bech32Address;
+use iota_sdk::types::block::output::{AliasId, MinimumStorageDepositBasicOutput};
 use log::{debug, info, warn};
-use token_wallet::get_first_address;
+use token_wallet::get_address_balance;
 
 static MAINNET_URL: &str = "https://api.stardust-mainnet.iotaledger.net";
 static SHIMMER_URL: &str = "https://api.shimmer.network";
 static TESTNET_URL: &str = "https://api.testnet.shimmer.network";
 
-pub async fn publish_iota_document(document: IotaDocument) -> anyhow::Result<CoreDocument> {
-    info!("{}", document.id());
-
+/// Publishes a given `IotaDocument` to the Tangle network.
+/// It resolves the DID first to check if it's already published.
+pub async fn publish_iota_document(
+    document: IotaDocument,
+    governor_address: Bech32Address,
+) -> anyhow::Result<CoreDocument> {
     let client = match document.id().network_str() {
         "rms" => Client::builder().with_primary_node(TESTNET_URL, None)?.finish().await?,
         "smr" => Client::builder().with_primary_node(SHIMMER_URL, None)?.finish().await?,
@@ -28,7 +32,8 @@ pub async fn publish_iota_document(document: IotaDocument) -> anyhow::Result<Cor
 
     info!("Getting address from Stronghold ...");
 
-    const SNAPSHOT_PATH: &str = "tests/res/test.stronghold";
+    // const SNAPSHOT_PATH: &str = "tests/res/test.stronghold";
+    const SNAPSHOT_PATH: &str = "tests/res/alice.stronghold";
     const PASSWORD: &str = "secure_password";
     let secret_manager: ExternSecretManager = ExternSecretManager::Stronghold(
         StrongholdSecretManager::builder()
@@ -37,54 +42,94 @@ pub async fn publish_iota_document(document: IotaDocument) -> anyhow::Result<Cor
     );
 
     // State Controller & Governor
-    let wallet_address = get_first_address(&secret_manager, document.id().network_str()).await?;
+    // let wallet_address = get_first_address(&secret_manager, document.id().network_str()).await?;
 
-    // Query the network for the given State Controller address
-    let output_ids = client
-        .alias_output_ids(vec![QueryParameter::StateController(wallet_address)])
+    // Query the network for the given Governor address
+    let alias_output_ids = client
+        .alias_output_ids(vec![QueryParameter::Governor(governor_address)])
         .await?
         .items;
-    debug!("Output IDs: {:?}", output_ids);
+    debug!("Output IDs: {:?}", alias_output_ids);
 
-    // Convert first OutputId to AliasId
-    // TODO: How to handle multiple OutputIds?
-    let alias_id: AliasId = output_ids.iter().next().unwrap().into();
-    debug!("Alias ID: {:?}", alias_id);
+    let document = match alias_output_ids.len() {
+        0 => {
+            info!("No AliasOutput found for the given State Controller address.");
 
-    // Convert to DID
-    let iota_did = IotaDID::from_alias_id(&alias_id.to_string(), &NetworkName::try_from("rms").unwrap());
-    info!("DID: {:?}", iota_did.as_str());
+            // Check available funds for storage deposit
+            let balance = get_address_balance(&governor_address).await?;
 
-    // Resolve what's already published
-    debug!("Creating resolver ...");
-    let resolver = Resolver::new().await;
+            // calculate_storage_deposit(&client).await?;
 
-    debug!("Resolving document ...");
-    // let published_address = "did:iota:rms:0x4a55dd9720372deb80bebd2e87e9a1e7273a178ba76b14eefa5b072f4f3c1c5f";
-    let result = resolver.resolve(iota_did.as_str()).await;
-    if result.is_ok() {
-        info!("Successfully resolved!");
-        return Ok(result.unwrap());
-    } else {
-        warn!("Failed to resolve: {:?}", result);
+            // Create new Alias
+            let alias_output = client
+                .new_did_output(governor_address.into_inner(), document.clone(), None)
+                .await?;
 
-        // Publish the document
-        let alias_output = client
-            .new_did_output(wallet_address.into_inner(), document.clone(), None)
-            .await?;
+            info!(
+                "Publishing new AliasOutput to the Tangle (network: `{}`) ...",
+                client.network_name().await?
+            );
 
-        info!(
-            "Publishing new AliasOutput to the Tangle (network: `{}`) ...",
-            client.network_name().await?
-        );
+            // TODO: check for balance?
+            // After successful publish, return left over funds
 
-        // ==== Uncomment this to actually publish ====
-        // let document: IotaDocument = client.publish_did_output(&secret_manager, alias_output).await?;
+            // let document: IotaDocument = client.publish_did_output(&secret_manager, alias_output).await?;
 
-        info!("Successfully published AliasOutput.");
-    }
+            info!("Successfully published AliasOutput.");
+            document.core_document().to_owned()
+        }
+        1 => {
+            info!("Found AliasOutput for the given State Controller address.");
+            // Convert first OutputId to AliasId
+            // TODO: How to handle multiple OutputIds?
+            let alias_id: AliasId = alias_output_ids.iter().next().unwrap().into();
+            // info!("Alias ID: {:?}", alias_id);
 
-    Ok(document.core_document().to_owned())
+            // Convert to DID
+            let iota_did = IotaDID::from_alias_id(&alias_id.to_string(), &NetworkName::try_from("rms").unwrap());
+            info!("DID: `{}`", iota_did.as_str());
+
+            // Resolve what's already published
+            debug!("Creating resolver ...");
+            let resolver = Resolver::new().await;
+
+            debug!("Resolving document ...");
+            // let published_address = "did:iota:rms:0x4a55dd9720372deb80bebd2e87e9a1e7273a178ba76b14eefa5b072f4f3c1c5f";
+            let resolved_document = resolver
+                .resolve(iota_did.as_str())
+                .await
+                .expect("TODO: handle resolver error");
+            info!("Successfully resolved document!");
+
+            // TODO: Hardening (does this check have to be implemented in the first version?)
+            // TODO: compare that the given document and the resolved document are the same (except for the id?)
+            // TODO: - use .resolve_method()?
+            info!("Given document: {}", document.core_document().to_json_pretty()?);
+            info!("Resolved document: {}", resolved_document.to_json_pretty()?);
+            resolved_document
+        }
+        _ => {
+            warn!("Found multiple AliasOutputs for the given State Controller address.");
+            // TODO: hardening: iterate all AliasOutputs, resolve the DID and compare the verificationMethod with the given document
+            unimplemented!("TODO: handle multiple AliasOutputs")
+        }
+    };
+
+    Ok(document)
+}
+
+/// TODO: calculate storage deposit for alias output
+async fn calculate_storage_deposit(client: &Client) -> anyhow::Result<u64> {
+    let rent_structure = client.get_rent_structure().await?;
+    let token_supply = client.get_token_supply().await?;
+
+    let storage_deposit_amount = MinimumStorageDepositBasicOutput::new(rent_structure, token_supply)
+        .with_storage_deposit_return()?
+        .with_expiration()?
+        .finish()?;
+
+    info!("Storage deposit amount: {:?}", storage_deposit_amount);
+    Ok(storage_deposit_amount)
 }
 
 #[cfg(test)]
@@ -113,7 +158,9 @@ mod tests {
             .unwrap();
 
         let iota_document = IotaDocument::new(&NetworkName::try_from("rms").unwrap());
+        let governor_address =
+            Bech32Address::try_from_str("rms1qp5z3cdpqmhttmgr9z6h3ufupluhvhnjatxl7mzfx4hdw9qsy0kd53qpemp").unwrap();
 
-        publish_iota_document(iota_document).await.unwrap();
+        publish_iota_document(iota_document, governor_address).await.unwrap();
     }
 }
