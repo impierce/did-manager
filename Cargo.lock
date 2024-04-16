@@ -5153,6 +5153,9 @@ name = "token_wallet"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "identity_iota",
+ "identity_stronghold",
+ "iota-crypto",
  "iota-sdk",
  "iota_stronghold",
  "log",

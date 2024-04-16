@@ -9,11 +9,14 @@ rust-version.workspace = true
 
 [dependencies]
 anyhow = "1.0"
-iota-sdk.workspace = true
+iota-sdk = { version = "1.0", features = ["storage", "stronghold"] }
 log.workspace = true
 rand.workspace = true
 
 [dev-dependencies]
+identity_iota.workspace = true
+identity_stronghold.workspace = true
+iota-crypto = { version = "0.23" }
 iota_stronghold = { version = "2.0" }
 test-log.workspace = true
 tokio.workspace = true
