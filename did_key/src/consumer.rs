@@ -33,7 +33,9 @@ async fn resolve_did(did: &str) -> Result<CoreDocument, ConsumerError> {
 mod tests {
     use super::*;
 
-    #[tokio::test]
+    use test_log::test;
+
+    #[test(tokio::test)]
     async fn resolves_did_key() {
         let did = "did:key:z6Mkk7yqnGF3YwTrLpqrW6PGsKci7dNqh1CjnvMbzrMerSeL";
         let document = resolve_did(did).await.unwrap();

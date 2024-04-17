@@ -31,4 +31,5 @@ url = "2.5"
 [dev-dependencies]
 base64 = "0.22"
 hex = "0.4"
+test-log.workspace = true
 tokio.workspace = true

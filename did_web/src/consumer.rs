@@ -41,10 +41,11 @@ async fn resolve_did(did: &str) -> Result<CoreDocument, ConsumerError> {
 mod tests {
     use super::*;
 
+    use test_log::test;
     use wiremock::matchers::{method, path};
     use wiremock::{Mock, MockServer, ResponseTemplate};
 
-    #[tokio::test]
+    #[test(tokio::test)]
     async fn resolves_did_web() {
         let mock_server = MockServer::start().await;
 

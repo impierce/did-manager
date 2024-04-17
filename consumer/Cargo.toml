@@ -17,3 +17,6 @@ identity_iota.workspace = true
 iota-sdk.workspace = true
 signature.workspace = true
 tokio.workspace = true
+
+[dev-dependencies]
+test-log.workspace = true

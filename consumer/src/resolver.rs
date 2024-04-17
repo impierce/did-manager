@@ -70,7 +70,9 @@ async fn configure_resolver(mut resolver: IdentityResolver) -> IdentityResolver 
 mod tests {
     use super::*;
 
-    #[tokio::test]
+    use test_log::test;
+
+    #[test(tokio::test)]
     async fn resolve_all_supported_methods() {
         let resolver = Resolver::new().await;
         let did = "did:key:z6Mkk7yqnGF3YwTrLpqrW6PGsKci7dNqh1CjnvMbzrMerSeL";
@@ -84,7 +86,7 @@ mod tests {
         // TODO: add more ...
     }
 
-    #[tokio::test]
+    #[test(tokio::test)]
     async fn fails_on_unsupported_method() {
         let resolver = Resolver::new().await;
         let did = "did:foo:bar";
@@ -93,8 +95,8 @@ mod tests {
         assert!(result.is_err());
     }
 
-    #[tokio::test]
     #[ignore]
+    #[test(tokio::test)]
     async fn resolves_did_iota() {
         let resolver = Resolver::new().await;
         let did = "did:iota:0xe4edef97da1257e83cbeb49159cfdd2da6ac971ac447f233f8439cf29376ebfe";
@@ -106,8 +108,8 @@ mod tests {
         );
     }
 
-    #[tokio::test]
     #[ignore]
+    #[test(tokio::test)]
     async fn resolves_did_iota_smr() {
         let resolver = Resolver::new().await;
         let did = "did:iota:smr:0xe4edef97da1257e83cbeb49159cfdd2da6ac971ac447f233f8439cf29376ebfe";
@@ -119,7 +121,7 @@ mod tests {
         );
     }
 
-    #[tokio::test]
+    #[test(tokio::test)]
     async fn resolves_did_iota_rms() {
         // TODO: are these tests really necessary? (they're essentially just testing the resolver from identity.rs and require internet)
         let resolver = Resolver::new().await;

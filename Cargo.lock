@@ -696,6 +696,7 @@ dependencies = [
  "iota-sdk",
  "shared",
  "signature 2.2.0",
+ "test-log",
  "tokio",
 ]
 
@@ -3858,6 +3859,7 @@ dependencies = [
  "serde_json",
  "shared",
  "signature 2.2.0",
+ "test-log",
  "tokio",
  "url",
 ]

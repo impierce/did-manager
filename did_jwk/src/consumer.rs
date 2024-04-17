@@ -27,7 +27,9 @@ pub async fn resolve_did_jwk(did: CoreDID) -> Result<CoreDocument, ConsumerError
 mod tests {
     use super::*;
 
-    #[tokio::test]
+    use test_log::test;
+
+    #[test(tokio::test)]
     async fn resolves_did_jwk() {
         let did = "did:jwk:eyJjcnYiOiJQLTI1NiIsImt0eSI6IkVDIiwieCI6ImFjYklRaXVNczNpOF91c3pFakoydHBUdFJNNEVVM3l6OTFQSDZDZEgyVjAiLCJ5IjoiX0tjeUxqOXZXTXB0bm1LdG00NkdxRHo4d2Y3NEk1TEtncmwyR3pIM25TRSJ9";
         let document = resolve_did_jwk(CoreDID::parse(did).unwrap()).await.unwrap();

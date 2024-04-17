@@ -95,24 +95,25 @@ mod tests {
     use super::*;
 
     use shared::test_utils::random_stronghold_path;
+    use test_log::test;
 
     const SNAPSHOT_PATH: &str = "tests/res/test.stronghold";
     const PASSWORD: &str = "secure_password";
     const KEY_ID: &str = "9O66nzWqYYy1LmmiOudOlh2SMIaUWoTS";
 
-    #[tokio::test]
+    #[test(tokio::test)]
     async fn successfully_loads_an_existing_stronghold() {
         let res = SecretManager::load(SNAPSHOT_PATH.to_owned(), PASSWORD.to_owned(), KEY_ID.to_owned()).await;
         assert!(res.is_ok());
     }
 
-    #[tokio::test]
+    #[test(tokio::test)]
     async fn fails_to_load_an_existing_stronghold_when_password_is_incorrect() {
         let res = SecretManager::load(SNAPSHOT_PATH.to_owned(), "wrong_password".to_owned(), KEY_ID.to_owned()).await;
         assert!(res.is_err());
     }
 
-    #[tokio::test]
+    #[test(tokio::test)]
     async fn fails_to_load_an_existing_stronghold_when_key_does_not_exist() {
         let res = SecretManager::load(
             SNAPSHOT_PATH.to_owned(),
@@ -123,19 +124,19 @@ mod tests {
         assert!(res.is_err());
     }
 
-    #[tokio::test]
+    #[test(tokio::test)]
     async fn fails_to_load_when_stronghold_file_does_not_exist() {
         let res = SecretManager::load("non/existing/path".to_string(), PASSWORD.to_owned(), KEY_ID.to_owned()).await;
         assert!(res.is_err());
     }
 
-    #[tokio::test]
+    #[test(tokio::test)]
     async fn fails_to_generate_a_new_stronghold_when_file_already_exists() {
         let res = SecretManager::generate(SNAPSHOT_PATH.to_owned(), PASSWORD.to_owned()).await;
         assert!(res.is_err());
     }
 
-    #[tokio::test]
+    #[test(tokio::test)]
     async fn successfully_generates_a_new_stronghold() {
         iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
 
@@ -147,7 +148,7 @@ mod tests {
         assert!(res.is_ok());
     }
 
-    #[tokio::test]
+    #[test(tokio::test)]
     async fn can_deserialize_method() {
         let secret_manager = SecretManager::load(SNAPSHOT_PATH.to_owned(), PASSWORD.to_owned(), KEY_ID.to_owned())
             .await

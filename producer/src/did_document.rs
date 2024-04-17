@@ -55,12 +55,13 @@ mod tests {
     use identity_iota::core::{json, ToJson};
     use log::info;
     use shared::test_utils::random_stronghold_path;
+    use test_log::test;
 
     const SNAPSHOT_PATH: &str = "tests/res/test.stronghold";
     const PASSWORD: &str = "secure_password";
     const KEY_ID: &str = "9O66nzWqYYy1LmmiOudOlh2SMIaUWoTS";
 
-    #[tokio::test]
+    #[test(tokio::test)]
     async fn create_document_from_generated_stronghold() {
         iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
 
@@ -78,7 +79,7 @@ mod tests {
         assert!(document.is_ok())
     }
 
-    #[tokio::test]
+    #[test(tokio::test)]
     async fn recreate_expected_document_from_existing_stronghold() {
         let secret_manager = SecretManager::load(SNAPSHOT_PATH.to_owned(), PASSWORD.to_owned(), KEY_ID.to_owned())
             .await

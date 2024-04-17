@@ -101,12 +101,13 @@ mod tests {
 
     use base64::{engine::general_purpose::STANDARD, Engine as _};
     use identity_iota::did::{CoreDID, DIDUrl, RelativeDIDUrl};
+    use test_log::test;
 
     const SNAPSHOT_PATH: &str = "tests/res/test.stronghold";
     const PASSWORD: &str = "secure_password";
     const KEY_ID: &str = "9O66nzWqYYy1LmmiOudOlh2SMIaUWoTS";
 
-    #[tokio::test]
+    #[test(tokio::test)]
     async fn successfully_finds_an_existing_public_key_in_did_key_by_fragment() {
         let res = SecretManager::load(SNAPSHOT_PATH.to_owned(), PASSWORD.to_owned(), KEY_ID.to_owned())
             .await
@@ -122,7 +123,7 @@ mod tests {
         );
     }
 
-    #[tokio::test]
+    #[test(tokio::test)]
     async fn successfully_finds_an_existing_public_key_in_did_jwk_by_fragment() {
         let res = SecretManager::load(SNAPSHOT_PATH.to_owned(), PASSWORD.to_owned(), KEY_ID.to_owned())
             .await
@@ -138,7 +139,7 @@ mod tests {
         );
     }
 
-    #[tokio::test]
+    #[test(tokio::test)]
     async fn throws_error_when_no_public_key_found_in_document_for_fragment() {
         let res = SecretManager::load(SNAPSHOT_PATH.to_owned(), PASSWORD.to_owned(), KEY_ID.to_owned())
             .await
