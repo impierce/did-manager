@@ -127,7 +127,7 @@ mod tests {
               "verificationMethod": [
                 {
                   "id": format!("did:web:localhost%3A{}#key-0", mock_server_port),
-                  "type": "JsonWebKey",
+                  "type": "JsonWebKey", // TODO: should be "JsonWebKey2020"?
                   "controller": format!("did:web:localhost%3A{}", mock_server_port),
                   "publicKeyJwk": {
                     "kty": "OKP",

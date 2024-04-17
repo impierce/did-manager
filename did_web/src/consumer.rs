@@ -2,7 +2,7 @@ use identity_iota::core::{FromJson, ToJson};
 use identity_iota::did::{CoreDID, DID};
 use identity_iota::document::CoreDocument;
 use identity_iota::resolver::Resolver;
-use log::info;
+use log::{debug, info};
 use shared::error::ConsumerError;
 use ssi_dids::did_resolve::ResolutionInputMetadata;
 use ssi_dids::DIDMethod;
@@ -15,11 +15,12 @@ pub async fn resolve_did_web(did: CoreDID) -> Result<CoreDocument, ConsumerError
 
     if let Some(error) = result.error.clone() {
         info!("Error: {:?}", error);
+        return Err(ConsumerError::Generic(error));
     }
 
-    info!("result: {:#?}", result);
-    info!("document: {}", document.clone().unwrap().to_json_pretty().unwrap());
-    info!("metadata: {:#?}", metadata);
+    debug!("Result: {:#?}", result);
+    debug!("Document: {:#?}", document);
+    debug!("Metadata: {:#?}", metadata);
     CoreDocument::from_json(&document.to_json().unwrap()).map_err(|e| ConsumerError::Generic(e.to_string()))
 }
 
@@ -54,18 +55,21 @@ mod tests {
             .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
               "@context": "https://www.w3.org/ns/did/v1",
               "id": format!("did:web:localhost%3A{}", mock_server.address().port()),
-              "verificationMethod": [{
-                "id": "did:web:localhost#key-0",
-                "type": "Ed25519VerificationKey2018",
-                "controller": "did:web:localhost",
-                "publicKeyJwk": {
-                  "key_id": "ed25519-2020-10-18",
-                  "kty": "OKP",
-                  "crv": "Ed25519",
-                  "x": "G80iskrv_nE69qbGLSpeOHJgmV4MKIzsy5l5iT6pCww"
+              "verificationMethod": [
+                {
+                  "id": "did:web:localhost#key-0",
+                  "type": "Ed25519VerificationKey2018",
+                  "controller": "did:web:localhost",
+                  "publicKeyJwk": {
+                    "kty": "OKP",
+                    "crv": "Ed25519",
+                    "x": "G80iskrv_nE69qbGLSpeOHJgmV4MKIzsy5l5iT6pCww"
+                  }
                 }
-              }],
-              "assertionMethod": ["did:web:localhost#key-0"]
+              ],
+              "assertionMethod": [
+                "did:web:localhost#key-0"
+              ]
             })))
             .mount(&mock_server)
             .await;

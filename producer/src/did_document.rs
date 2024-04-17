@@ -75,7 +75,7 @@ mod tests {
         // TODO: Some(url::Host::parse("localhost").unwrap()), Some(8080)
         let document = secret_manager.produce_document(DidMethod::Web).await;
 
-        info!("document: {}", document.as_ref().unwrap().to_json_pretty().unwrap());
+        info!("Document: {}", document.as_ref().unwrap().to_json_pretty().unwrap());
         assert!(document.is_ok())
     }
 
