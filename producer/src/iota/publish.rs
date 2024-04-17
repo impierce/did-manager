@@ -3,6 +3,7 @@ use identity_iota::core::ToJson;
 use identity_iota::did::DID;
 use identity_iota::document::CoreDocument;
 use identity_iota::iota::{IotaClientExt, IotaDID, IotaDocument, IotaIdentityClientExt};
+use iota_sdk::client::api::GetAddressesOptions;
 use iota_sdk::client::{
     node_api::indexer::query_parameters::QueryParameter, secret::SecretManager as ExternSecretManager, Client,
 };
@@ -44,6 +45,25 @@ pub async fn publish_iota_document(
             let balance = get_address_balance(&governor_address).await?;
 
             // calculate_storage_deposit(&client).await?;
+            // TODO: temporary hardcoded: check if balance is enough for storage deposit
+            if balance < 89300 {
+                let funding_address = secret_manager
+                    .generate_ed25519_addresses(
+                        GetAddressesOptions::default()
+                            .with_range(0..1)
+                            .with_bech32_hrp(client.get_bech32_hrp().await?),
+                    )
+                    .await
+                    .unwrap()
+                    .first()
+                    .unwrap()
+                    .to_owned();
+                anyhow::bail!(
+                    "Insufficient balance for storage deposit: {}. Please send some funds to `{}`",
+                    balance,
+                    funding_address
+                );
+            }
 
             // Create new Alias
             let alias_output = client

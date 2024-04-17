@@ -6,7 +6,7 @@ use identity_iota::verification::{
 };
 use identity_stronghold::StrongholdStorage;
 use iota_sdk::client::secret::stronghold::StrongholdSecretManager;
-use iota_sdk::client::Password;
+use iota_sdk::client::{generate_mnemonic, Password};
 use log::debug;
 use rand::distributions::DistString;
 
@@ -39,6 +39,8 @@ pub async fn new_stronghold_storage() -> (StrongholdStorage, KeyId) {
         .password(Password::from("secure_password".to_owned()))
         .build(random_stronghold_path())
         .unwrap();
+
+    stronghold.store_mnemonic(generate_mnemonic().unwrap()).await.ok();
 
     let stronghold_storage = StrongholdStorage::new(stronghold);
 
