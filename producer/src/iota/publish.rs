@@ -2,11 +2,9 @@ use consumer::resolver::Resolver;
 use identity_iota::core::ToJson;
 use identity_iota::did::DID;
 use identity_iota::document::CoreDocument;
-use identity_iota::iota::{IotaDID, IotaDocument, IotaIdentityClientExt, NetworkName};
+use identity_iota::iota::{IotaClientExt, IotaDID, IotaDocument, IotaIdentityClientExt};
 use iota_sdk::client::{
-    node_api::indexer::query_parameters::QueryParameter,
-    secret::{stronghold::StrongholdSecretManager, SecretManager as ExternSecretManager},
-    Client, Password,
+    node_api::indexer::query_parameters::QueryParameter, secret::SecretManager as ExternSecretManager, Client,
 };
 use iota_sdk::types::block::address::Bech32Address;
 use iota_sdk::types::block::output::{AliasId, MinimumStorageDepositBasicOutput};
@@ -22,6 +20,7 @@ static TESTNET_URL: &str = "https://api.testnet.shimmer.network";
 pub async fn publish_iota_document(
     document: IotaDocument,
     governor_address: Bech32Address,
+    secret_manager: &ExternSecretManager,
 ) -> anyhow::Result<CoreDocument> {
     let client = match document.id().network_str() {
         "rms" => Client::builder().with_primary_node(TESTNET_URL, None)?.finish().await?,
@@ -29,20 +28,6 @@ pub async fn publish_iota_document(
         "iota" => Client::builder().with_primary_node(MAINNET_URL, None)?.finish().await?,
         _ => anyhow::bail!("Unsupported network"),
     };
-
-    info!("Getting address from Stronghold ...");
-
-    // const SNAPSHOT_PATH: &str = "tests/res/test.stronghold";
-    const SNAPSHOT_PATH: &str = "tests/res/alice.stronghold";
-    const PASSWORD: &str = "secure_password";
-    let secret_manager: ExternSecretManager = ExternSecretManager::Stronghold(
-        StrongholdSecretManager::builder()
-            .password(Password::from(PASSWORD.to_owned()))
-            .build(SNAPSHOT_PATH.to_owned())?,
-    );
-
-    // State Controller & Governor
-    // let wallet_address = get_first_address(&secret_manager, document.id().network_str()).await?;
 
     // Query the network for the given Governor address
     let alias_output_ids = client
@@ -53,7 +38,7 @@ pub async fn publish_iota_document(
 
     let document = match alias_output_ids.len() {
         0 => {
-            info!("No AliasOutput found for the given State Controller address.");
+            info!("No AliasOutput found for the given Governor address.");
 
             // Check available funds for storage deposit
             let balance = get_address_balance(&governor_address).await?;
@@ -73,24 +58,27 @@ pub async fn publish_iota_document(
             // TODO: check for balance?
             // After successful publish, return left over funds
 
-            // let document: IotaDocument = client.publish_did_output(&secret_manager, alias_output).await?;
+            // TODO: handle different types of errors:
+            // - no funding at all: "publish failed: no input with matching ed25519 address provided"
+            // - too little funding: "publish failed: insufficient amount: found 42601, required 89300"
+            let document: IotaDocument = client.publish_did_output(secret_manager, alias_output).await?;
 
             info!("Successfully published AliasOutput.");
             document.core_document().to_owned()
         }
         1 => {
-            info!("Found AliasOutput for the given State Controller address.");
+            info!("Found one AliasOutput for the given State Controller address.");
             // Convert first OutputId to AliasId
             // TODO: How to handle multiple OutputIds?
-            let alias_id: AliasId = alias_output_ids.iter().next().unwrap().into();
+            let alias_id: AliasId = alias_output_ids.first().unwrap().into();
             // info!("Alias ID: {:?}", alias_id);
 
             // Convert to DID
-            let iota_did = IotaDID::from_alias_id(&alias_id.to_string(), &NetworkName::try_from("rms").unwrap());
+            let iota_did = IotaDID::from_alias_id(&alias_id.to_string(), &client.network_name().await?);
             info!("DID: `{}`", iota_did.as_str());
 
             // Resolve what's already published
-            debug!("Creating resolver ...");
+            debug!("Creating new resolver ...");
             let resolver = Resolver::new().await;
 
             debug!("Resolving document ...");
@@ -159,8 +147,14 @@ mod tests {
 
         let iota_document = IotaDocument::new(&NetworkName::try_from("rms").unwrap());
         let governor_address =
-            Bech32Address::try_from_str("rms1qp5z3cdpqmhttmgr9z6h3ufupluhvhnjatxl7mzfx4hdw9qsy0kd53qpemp").unwrap();
+            Bech32Address::try_from_str("rms1qzs0e5qrmljhmgcas9z3xs0v9ejjvfpcwhztfjcdq5slmfr48amwk7vl0xr").unwrap();
 
-        publish_iota_document(iota_document, governor_address).await.unwrap();
+        publish_iota_document(
+            iota_document,
+            governor_address,
+            secret_manager.stronghold_storage.as_secret_manager(),
+        )
+        .await
+        .unwrap();
     }
 }

@@ -122,12 +122,12 @@ mod tests {
     async fn resolves_did_iota_rms() {
         // TODO: are these tests really necessary? (they're essentially just testing the resolver from identity.rs and require internet)
         let resolver = Resolver::new().await;
-        let did = "did:iota:rms:0x4a55dd9720372deb80bebd2e87e9a1e7273a178ba76b14eefa5b072f4f3c1c5f";
+        let did = "did:iota:rms:0x29418b0a0120d10e20d0dacc78896c200ecd1cc1e3b153be482f150859a96739";
         let document = resolver.resolve(did).await.unwrap();
 
         assert_eq!(
             document.id(),
-            "did:iota:rms:0x4a55dd9720372deb80bebd2e87e9a1e7273a178ba76b14eefa5b072f4f3c1c5f"
+            "did:iota:rms:0x29418b0a0120d10e20d0dacc78896c200ecd1cc1e3b153be482f150859a96739"
         );
     }
 }

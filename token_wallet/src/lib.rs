@@ -252,7 +252,7 @@ mod tests {
         // Required amount of tokens:
         // basic output: 42600
         // alias output: 89300
-        let amount = 89300;
+        let amount = 89299;
 
         let transaction = account.send(amount, receiving_address, None).await.unwrap();
 
@@ -266,7 +266,7 @@ mod tests {
 
     #[ignore = "manual test"]
     #[test(tokio::test)]
-    async fn send_tokens_back_to_originating_address() {
+    async fn send_tokens_back_to_funding_address() {
         iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
 
         const SNAPSHOT_PATH: &str = "tests/res/alice.stronghold";

@@ -1,22 +1,15 @@
 use identity_iota::iota::{Error, IotaClientExt, IotaDID, IotaIdentityClientExt};
 use iota_sdk::{
-    client::{
-        secret::{stronghold::StrongholdSecretManager, SecretManager as ExternSecretManager},
-        Client, Password,
-    },
+    client::{secret::SecretManager as ExternSecretManager, Client},
     types::block::address::Address,
 };
 
 /// Destroying an IOTA document involves returning the storage deposit to the original funding address.
-pub async fn destroy_iota_document(did: IotaDID, return_address: Address) -> anyhow::Result<()> {
-    const SNAPSHOT_PATH: &str = "tests/res/alice.stronghold";
-    const PASSWORD: &str = "secure_password";
-    let secret_manager: ExternSecretManager = ExternSecretManager::Stronghold(
-        StrongholdSecretManager::builder()
-            .password(Password::from(PASSWORD.to_owned()))
-            .build(SNAPSHOT_PATH.to_owned())?,
-    );
-
+pub async fn destroy_iota_document(
+    did: IotaDID,
+    return_address: Address,
+    secret_manager: ExternSecretManager,
+) -> anyhow::Result<()> {
     let client: Client = Client::builder()
         .with_primary_node("https://api.testnet.shimmer.network", None)
         .unwrap()
@@ -62,15 +55,26 @@ mod tests {
 
     use super::*;
 
+    use iota_sdk::client::{secret::stronghold::StrongholdSecretManager, Password};
     use test_log::test;
 
     #[ignore = "manual test"]
     #[test(tokio::test)]
     async fn destroy_did_iota_testnet() {
-        destroy_iota_document(
-            IotaDID::from_str("did:iota:rms:0x4d86b6fc2eba464d8ce2d4cd48a4228436a723f7e21a6668ca3904686aa321c1")
+        const SNAPSHOT_PATH: &str = "tests/res/test.stronghold";
+        const PASSWORD: &str = "secure_password";
+        let secret_manager: ExternSecretManager = ExternSecretManager::Stronghold(
+            StrongholdSecretManager::builder()
+                .password(Password::from(PASSWORD.to_owned()))
+                .build(SNAPSHOT_PATH.to_owned())
                 .unwrap(),
-            Address::try_from_bech32("rms1qrdgpq8a4xjetgf79gnx7g5n0rfeykm30rek9fpjef6dnx3md929ksv04a0").unwrap(), // test.stronghold
+        );
+
+        destroy_iota_document(
+            IotaDID::from_str("did:iota:rms:0x4a55dd9720372deb80bebd2e87e9a1e7273a178ba76b14eefa5b072f4f3c1c5f")
+                .unwrap(),
+            Address::try_from_bech32("rms1qrdgpq8a4xjetgf79gnx7g5n0rfeykm30rek9fpjef6dnx3md929ksv04a0").unwrap(),
+            secret_manager,
         )
         .await
         .unwrap();

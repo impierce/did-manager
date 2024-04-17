@@ -69,9 +69,16 @@ pub async fn produce_did_iota(
         .insert_method(verification_method, MethodScope::VerificationMethod)
         .ok();
 
-    let governor = create_new_governor_and_state_controller(&storage).await;
+    let governor = get_governor_address(&storage).await;
 
-    let published_document = publish_iota_document(iota_document, governor).await.unwrap();
+    let secret_manager = match storage {
+        JwkStorageWrapper::Stronghold(ref stronghold_storage) => stronghold_storage.as_secret_manager(),
+        JwkStorageWrapper::PKCS11 => todo!(),
+    };
+
+    let published_document = publish_iota_document(iota_document, governor, secret_manager)
+        .await
+        .unwrap();
 
     info!("DID Document: {}", published_document.to_json_pretty().unwrap());
 
@@ -79,15 +86,13 @@ pub async fn produce_did_iota(
 }
 
 /// First address: funding address, second address: governor address
-async fn create_new_governor_and_state_controller(storage: &JwkStorageWrapper) -> Bech32Address {
-    info!("Creating new Governor and State Controller ...");
-    let stronghold_storage = match storage {
-        JwkStorageWrapper::Stronghold(s) => s,
+async fn get_governor_address(storage: &JwkStorageWrapper) -> Bech32Address {
+    let secret_manager = match storage {
+        JwkStorageWrapper::Stronghold(stronghold_storage) => stronghold_storage.as_secret_manager(),
         JwkStorageWrapper::PKCS11 => todo!(),
     };
 
-    let addresses = stronghold_storage
-        .as_secret_manager()
+    let addresses = secret_manager
         .generate_ed25519_addresses(
             GetAddressesOptions::default()
                 .with_range(0..2)
@@ -96,9 +101,8 @@ async fn create_new_governor_and_state_controller(storage: &JwkStorageWrapper) -
         .await
         .unwrap();
 
-    // info!("Addresses: {:#?}", addresses);
-    // TODO: funding address == governor address --> should be a different index or even different key
-    let governor = addresses[0];
+    // TODO: governor address should use a different different key
+    let governor = addresses[1];
     info!("Governor address: {}", governor);
     governor
 }
@@ -113,11 +117,7 @@ mod tests {
 
     const SNAPSHOT_PATH: &str = "tests/res/test.stronghold";
     const PASSWORD: &str = "secure_password";
-    // const KEY_ID: &str = "7GvXZGN3YoDmZRLXLJDVNFR6yJzB8nKz";
     const KEY_ID: &str = "9O66nzWqYYy1LmmiOudOlh2SMIaUWoTS";
-
-    // const SNAPSHOT_PATH: &str = "tests/res/alice.stronghold"; // Alice
-    // const KEY_ID: &str = "HG75tNwdZuIeQZT2a5Syfg1pZhkiv0k2"; // Alice
 
     #[test(tokio::test)]
     async fn produce_did_iota_testnet() {
@@ -132,7 +132,7 @@ mod tests {
 
         assert_eq!(
             document.id(),
-            "did:iota:rms:0x4a55dd9720372deb80bebd2e87e9a1e7273a178ba76b14eefa5b072f4f3c1c5f"
+            "did:iota:rms:0x29418b0a0120d10e20d0dacc78896c200ecd1cc1e3b153be482f150859a96739"
         );
 
         // Expect public key of first verification method
