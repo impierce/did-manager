@@ -15,7 +15,7 @@ pub async fn produce_did_web(
     key_id: &KeyId,
     host: url::Host,
     port: Option<u16>,
-) -> std::result::Result<CoreDocument, Error> {
+) -> Result<CoreDocument, Error> {
     // TODO: check if key exists for given key_id?
 
     let public_key_jwk = match storage {

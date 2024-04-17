@@ -6,6 +6,8 @@ use identity_iota::document::CoreDocument;
 use identity_iota::resolver::Resolver as IdentityResolver;
 use iota_sdk::client::Client;
 
+use crate::error::ConsumerError;
+
 pub struct Resolver {
     pub(crate) resolver: IdentityResolver,
 }
@@ -16,7 +18,7 @@ impl Resolver {
         Self { resolver }
     }
 
-    pub async fn resolve(&self, did: &str) -> std::result::Result<CoreDocument, Box<dyn std::error::Error>> {
+    pub async fn resolve(&self, did: &str) -> Result<CoreDocument, ConsumerError> {
         let did = CoreDID::parse(did)?;
         let document: CoreDocument = self.resolver.resolve(&did).await?;
         Ok(document)

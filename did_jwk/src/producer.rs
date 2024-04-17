@@ -5,7 +5,7 @@ use ssi_dids::{DIDMethod, Source};
 use std::io::Error;
 use std::io::ErrorKind;
 
-pub async fn produce_did_jwk(storage: JwkStorageWrapper, key_id: &str) -> std::result::Result<CoreDocument, Error> {
+pub async fn produce_did_jwk(storage: JwkStorageWrapper, key_id: &str) -> Result<CoreDocument, Error> {
     let public_key_jwk = match storage {
         JwkStorageWrapper::Stronghold(stronghold_storage) => {
             stronghold_storage.get_public_key(&KeyId::new(key_id)).await.unwrap()

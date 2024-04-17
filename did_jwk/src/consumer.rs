@@ -5,7 +5,9 @@ use log::info;
 use ssi_dids::did_resolve::ResolutionInputMetadata;
 use ssi_dids::DIDMethod;
 
-pub async fn resolve_did_jwk(did: CoreDID) -> Result<CoreDocument, identity_iota::core::Error> {
+use crate::error::ConsumerError;
+
+pub async fn resolve_did_jwk(did: CoreDID) -> Result<CoreDocument, ConsumerError> {
     info!("Resolving DID: {}", did);
     let resolver = did_jwk_extern::DIDJWK.to_resolver();
     let input_metadata = ResolutionInputMetadata::default();
@@ -13,13 +15,13 @@ pub async fn resolve_did_jwk(did: CoreDID) -> Result<CoreDocument, identity_iota
 
     if let Some(error) = result.error.clone() {
         info!("Error: {:?}", error);
-        return Err(identity_iota::core::Error::OneOrSetEmpty);
+        return Err(ConsumerError::Generic(error));
     }
 
     info!("result: {:#?}", result);
     info!("document: {:#?}", document);
     info!("metadata: {:#?}", metadata);
-    CoreDocument::from_json(&document.to_json().unwrap())
+    CoreDocument::from_json(&document.to_json().unwrap()).map_err(|e| ConsumerError::Generic(e.to_string()))
 }
 
 #[cfg(test)]

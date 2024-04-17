@@ -695,6 +695,7 @@ dependencies = [
  "identity_iota",
  "iota-sdk",
  "signature 2.2.0",
+ "thiserror",
  "tokio",
 ]
 
@@ -1174,6 +1175,7 @@ dependencies = [
  "shared",
  "ssi-dids",
  "ssi-jwk",
+ "thiserror",
  "tokio",
 ]
 
@@ -1194,6 +1196,7 @@ dependencies = [
  "shared",
  "ssi-dids",
  "ssi-jwk",
+ "thiserror",
  "tokio",
 ]
 
@@ -1239,6 +1242,7 @@ dependencies = [
  "ssi-dids",
  "ssi-jwk",
  "test-log",
+ "thiserror",
  "tokio",
  "url",
  "urlencoding",

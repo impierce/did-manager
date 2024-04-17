@@ -5,13 +5,15 @@ use identity_iota::document::CoreDocument;
 use identity_iota::resolver::Resolver;
 use log::info;
 
-pub async fn resolve_did_key(did: CoreDID) -> std::result::Result<CoreDocument, identity_iota::core::Error> {
+use crate::error::ConsumerError;
+
+pub async fn resolve_did_key(did: CoreDID) -> Result<CoreDocument, ConsumerError> {
     info!("Resolving DID: {}", did);
     let key = resolve(did.as_str()).unwrap();
     info!("key fingerprint: {:?}", key.fingerprint());
     let document = key.get_did_document(CONFIG_JOSE_PUBLIC);
     info!("document: {:#?}", document);
-    CoreDocument::from_json(&document.to_json().unwrap())
+    CoreDocument::from_json(&document.to_json().unwrap()).map_err(|e| ConsumerError::Generic(e.to_string()))
 }
 
 async fn configure() -> Resolver {
@@ -21,7 +23,7 @@ async fn configure() -> Resolver {
 }
 
 #[allow(dead_code)]
-async fn resolve_did(did: &str) -> std::result::Result<CoreDocument, Box<dyn std::error::Error>> {
+async fn resolve_did(did: &str) -> Result<CoreDocument, ConsumerError> {
     let did = CoreDID::parse(did)?;
     let resolver: Resolver = configure().await;
     let document: CoreDocument = resolver.resolve(&did).await?;

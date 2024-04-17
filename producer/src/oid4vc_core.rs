@@ -20,7 +20,7 @@ impl Sign for SecretManager {
     }
 
     fn sign(&self, message: &str) -> anyhow::Result<Vec<u8>> {
-        block_on(async { self.sign(message.as_bytes()).await })
+        Ok(block_on(async { self.sign(message.as_bytes()).await })?)
     }
 
     fn external_signer(&self) -> Option<std::sync::Arc<dyn oid4vc_core::authentication::sign::ExternalSign>> {

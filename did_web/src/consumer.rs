@@ -6,7 +6,9 @@ use log::info;
 use ssi_dids::did_resolve::ResolutionInputMetadata;
 use ssi_dids::DIDMethod;
 
-pub async fn resolve_did_web(did: CoreDID) -> std::result::Result<CoreDocument, identity_iota::core::Error> {
+use crate::error::ConsumerError;
+
+pub async fn resolve_did_web(did: CoreDID) -> Result<CoreDocument, ConsumerError> {
     info!("Resolving DID: {}", did);
     let resolver = did_web_extern::DIDWeb.to_resolver();
     let input_metadata = ResolutionInputMetadata::default();
@@ -19,7 +21,7 @@ pub async fn resolve_did_web(did: CoreDID) -> std::result::Result<CoreDocument, 
     info!("result: {:#?}", result);
     info!("document: {}", document.clone().unwrap().to_json_pretty().unwrap());
     info!("metadata: {:#?}", metadata);
-    CoreDocument::from_json(&document.to_json().unwrap())
+    CoreDocument::from_json(&document.to_json().unwrap()).map_err(|e| ConsumerError::Generic(e.to_string()))
 }
 
 async fn configure() -> Resolver {
@@ -29,7 +31,7 @@ async fn configure() -> Resolver {
 }
 
 #[allow(dead_code)]
-async fn resolve_did(did: &str) -> std::result::Result<CoreDocument, Box<dyn std::error::Error>> {
+async fn resolve_did(did: &str) -> Result<CoreDocument, ConsumerError> {
     let did = CoreDID::parse(did)?;
     let resolver: Resolver = configure().await;
     let document: CoreDocument = resolver.resolve(&did).await?;
