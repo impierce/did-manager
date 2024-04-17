@@ -5,7 +5,7 @@ use shared::JwkStorageWrapper;
 use crate::{error::ProducerError, SecretManager};
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub enum Method {
+pub enum DidMethod {
     #[serde(rename = "did:jwk")]
     Jwk,
     #[serde(rename = "did:key")]
@@ -15,24 +15,24 @@ pub enum Method {
 }
 
 impl SecretManager {
-    pub async fn produce_document(&self, method: Method) -> Result<CoreDocument, ProducerError> {
+    pub async fn produce_document(&self, did_method: DidMethod) -> Result<CoreDocument, ProducerError> {
         let storage = JwkStorageWrapper::Stronghold(self.stronghold_storage.clone());
 
         let host: url::Host = url::Host::parse("localhost").unwrap(); // TODO
         let port: Option<u16> = None; // TODO: default?
 
-        let core_document: Option<CoreDocument> = match method {
-            Method::Jwk => {
+        let core_document: Option<CoreDocument> = match did_method {
+            DidMethod::Jwk => {
                 let core_document = did_jwk::producer::produce_did_jwk(storage, self.key_id.as_str())
                     .await
                     .unwrap();
                 Some(core_document)
             }
-            Method::Key => {
+            DidMethod::Key => {
                 let core_document = did_key::producer::produce_did_key(storage, &self.key_id).await.unwrap();
                 Some(core_document)
             }
-            Method::Web => {
+            DidMethod::Web => {
                 let core_document = did_web::producer::produce_did_web(storage, &self.key_id, host, port)
                     .await
                     .unwrap();
@@ -71,7 +71,7 @@ mod tests {
         .unwrap();
 
         // TODO: Some(url::Host::parse("localhost").unwrap()), Some(8080)
-        let document = secret_manager.produce_document(Method::Web).await;
+        let document = secret_manager.produce_document(DidMethod::Web).await;
 
         info!("document: {}", document.as_ref().unwrap().to_json_pretty().unwrap());
         assert!(document.is_ok())
@@ -84,7 +84,7 @@ mod tests {
             .unwrap();
 
         // TODO: Some(url::Host::parse("localhost").unwrap()), Some(8080)
-        let document = secret_manager.produce_document(Method::Web).await;
+        let document = secret_manager.produce_document(DidMethod::Web).await;
 
         assert_eq!(
             document

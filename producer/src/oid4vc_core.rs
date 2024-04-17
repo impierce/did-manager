@@ -4,14 +4,14 @@ use identity_iota::document::DIDUrlQuery;
 use identity_iota::verification::jwk::JwkParams;
 use oid4vc_core::{Sign, Subject, Verify};
 
-use crate::did_document::Method;
+use crate::did_document::DidMethod;
 use crate::error::ProducerError;
 use crate::SecretManager;
 
 impl Sign for SecretManager {
     fn key_id(&self) -> Option<String> {
         block_on(async {
-            self.produce_document(Method::Key)
+            self.produce_document(DidMethod::Key)
                 .await
                 .ok()
                 .and_then(|document| document.verification_method().first().cloned())
@@ -31,12 +31,11 @@ impl Sign for SecretManager {
 impl Subject for SecretManager {
     /// Returns the id of the DID document for the default method (`did:key`).
     fn identifier(&self) -> anyhow::Result<String> {
-        block_on(async {
-            self.produce_document(Method::Key)
+        Ok(block_on(async {
+            self.produce_document(DidMethod::Key)
                 .await
                 .map(|document| document.id().to_string())
-                .map_err(|e| anyhow::anyhow!(e))
-        })
+        })?)
     }
 }
 
@@ -44,12 +43,11 @@ impl Subject for SecretManager {
 impl SecretManager {
     /// Returns the id of the DID document for the given method.
     pub fn identifier_for_method(&self, method: &str) -> Result<String, ProducerError> {
-        let method: Method = serde_json::from_str(&format!("{:?}", method)).unwrap();
+        let method: DidMethod = serde_json::from_str(&format!("{:?}", method)).unwrap();
         block_on(async {
             self.produce_document(method)
                 .await
                 .map(|document| document.id().to_string())
-                .map_err(|e| ProducerError::Generic(e.to_string()))
         })
     }
 }
