@@ -144,7 +144,7 @@ async fn calculate_storage_deposit(client: &Client) -> anyhow::Result<u64> {
 mod tests {
     use super::*;
 
-    use crate::{did_document::Method, SecretManager};
+    use crate::{did_document::DidMethod, SecretManager};
 
     use identity_iota::iota::NetworkName;
     use test_log::test;
@@ -161,7 +161,7 @@ mod tests {
             .await
             .unwrap();
 
-        let core_document = SecretManager::produce_document(&secret_manager, Method::IotaTestnet)
+        let core_document = SecretManager::produce_document(&secret_manager, DidMethod::IotaTestnet)
             .await
             .unwrap();
 

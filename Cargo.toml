@@ -37,4 +37,5 @@ log = "0.4"
 rand = "0.8"
 signature = "2.2"
 test-log = "0.2"
+thiserror = "1.0"
 tokio = { version = "1", features = ["full"] }

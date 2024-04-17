@@ -1,16 +1,17 @@
 use identity_iota::{
-    core::ToJson,
+    core::{FromJson, Object, ToJson},
     did::{CoreDID, DID},
     document::CoreDocument,
     storage::KeyId,
     verification::VerificationMethod,
 };
 use log::info;
+use serde_json::json;
 use shared::JwkStorageWrapper;
 use ssi_dids::{DIDMethod, Source};
 use std::io::Error;
 
-pub async fn produce_did_key(storage: JwkStorageWrapper, key_id: &KeyId) -> std::result::Result<CoreDocument, Error> {
+pub async fn produce_did_key(storage: JwkStorageWrapper, key_id: &KeyId) -> Result<CoreDocument, Error> {
     // TODO: Check if key exists in key_id_storage, if not return error
     // let exists = storage.key_storage().exists(key_id).await.unwrap();
 
@@ -33,15 +34,28 @@ pub async fn produce_did_key(storage: JwkStorageWrapper, key_id: &KeyId) -> std:
     let did = CoreDID::parse(did_str).unwrap();
     info!("DID: {}", did);
 
-    let verification_method =
-        VerificationMethod::new_from_jwk(did.clone(), public_key_jwk.clone(), Some(did.method_id())).unwrap();
+    let verification_method = VerificationMethod::from_json_value(json!({
+        "id": format!("{}#{}", did, did.method_id()),
+        "type": "Ed25519VerificationKey2020",
+        "controller": did,
+        "publicKeyMultibase": did.method_id()
+    }))
+    .unwrap();
 
-    let document = CoreDocument::builder(Default::default())
+    let mut properties = Object::new();
+    properties.insert(
+        "@context".to_string(),
+        json!([
+            "https://www.w3.org/ns/did/v1",
+            "https://w3id.org/security/suites/ed25519-2020/v1" // TODO: make dynamic
+        ]),
+    );
+
+    let document = CoreDocument::builder(properties)
         .id(did)
         .verification_method(verification_method)
         .build()
         .unwrap();
-    info!("DID Document: {}", document.to_json_pretty().unwrap());
 
     Ok(document)
 }
@@ -51,31 +65,34 @@ mod tests {
     use super::*;
 
     use identity_iota::core::ToJson;
-    use shared::test_utils::{new_stronghold_storage, test_jwk};
+    use serde_json::json;
+    use shared::test_utils::new_stronghold_storage;
+    use test_log::test;
 
-    #[tokio::test]
+    #[test(tokio::test)]
     async fn produces_did_key() {
         let (stronghold_storage, key_id) = new_stronghold_storage().await;
 
-        let expected_did = did_method_key::DIDKey
-            .generate(&Source::Key(
-                &serde_json::from_str(&test_jwk().to_json().unwrap()).unwrap(),
-            ))
-            .unwrap();
-        info!("Expected DID: {}", expected_did);
-
-        let document = produce_did_key(JwkStorageWrapper::Stronghold(stronghold_storage), &key_id)
-            .await
-            .unwrap();
+        let storage = JwkStorageWrapper::Stronghold(stronghold_storage);
+        let document = produce_did_key(storage, &key_id).await.unwrap();
 
         assert_eq!(
-            document.id().to_string(),
-            "did:key:z6Mkv5KkqNHuR6bPVT8fud3m9JaHBSEjEmiLp7HuGAwtbkk6"
-        );
-
-        assert_eq!(
-            document.verification_method().first().unwrap().id().to_string(),
-            "did:key:z6Mkv5KkqNHuR6bPVT8fud3m9JaHBSEjEmiLp7HuGAwtbkk6#z6Mkv5KkqNHuR6bPVT8fud3m9JaHBSEjEmiLp7HuGAwtbkk6"
+            document.to_json_value().unwrap(),
+            json!({
+              "@context": [
+                "https://www.w3.org/ns/did/v1",
+                "https://w3id.org/security/suites/ed25519-2020/v1"
+              ],
+              "id": "did:key:z6Mkv5KkqNHuR6bPVT8fud3m9JaHBSEjEmiLp7HuGAwtbkk6",
+              "verificationMethod": [
+                {
+                  "id": "did:key:z6Mkv5KkqNHuR6bPVT8fud3m9JaHBSEjEmiLp7HuGAwtbkk6#z6Mkv5KkqNHuR6bPVT8fud3m9JaHBSEjEmiLp7HuGAwtbkk6",
+                  "type": "Ed25519VerificationKey2020",
+                  "controller": "did:key:z6Mkv5KkqNHuR6bPVT8fud3m9JaHBSEjEmiLp7HuGAwtbkk6",
+                  "publicKeyMultibase": "z6Mkv5KkqNHuR6bPVT8fud3m9JaHBSEjEmiLp7HuGAwtbkk6"
+                }
+              ]
+            })
         );
     }
 }
