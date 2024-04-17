@@ -1,9 +1,15 @@
+use identity_iota::core::Object;
+use identity_iota::verification::VerificationMethod;
 use identity_iota::{core::ToJson, did::CoreDID, document::CoreDocument, storage::KeyId};
 use log::info;
+use serde_json::json;
 use shared::JwkStorageWrapper;
 use ssi_dids::{DIDMethod, Source};
 use std::io::Error;
 use std::io::ErrorKind;
+
+// See specification: "Since did:jwk only contains a single key, the DID URL fragment identifier is always a fixed #0 value."
+const FRAGMENT: &str = "0";
 
 pub async fn produce_did_jwk(storage: JwkStorageWrapper, key_id: &str) -> Result<CoreDocument, Error> {
     let public_key_jwk = match storage {
@@ -22,8 +28,21 @@ pub async fn produce_did_jwk(storage: JwkStorageWrapper, key_id: &str) -> Result
 
         let controller = CoreDID::parse(did_str).unwrap();
 
-        let document = CoreDocument::builder(Default::default())
+        let verification_method =
+            VerificationMethod::new_from_jwk(controller.clone(), public_key_jwk.clone(), Some(FRAGMENT)).unwrap();
+
+        let mut properties = Object::new();
+        properties.insert(
+            "@context".to_string(),
+            json!([
+                "https://www.w3.org/ns/did/v1",
+                "https://w3id.org/security/suites/ed25519-2020/v1" // TODO: make dynamic
+            ]),
+        );
+
+        let document = CoreDocument::builder(properties)
             .id(controller)
+            .verification_method(verification_method)
             .build()
             .unwrap();
 
@@ -37,16 +56,40 @@ pub async fn produce_did_jwk(storage: JwkStorageWrapper, key_id: &str) -> Result
 mod tests {
     use super::*;
 
+    use serde_json::json;
     use shared::test_utils::new_stronghold_storage;
+    use test_log::test;
 
-    #[tokio::test]
+    #[test(tokio::test)]
     async fn produces_did_jwk() {
         let (stronghold_storage, key_id) = new_stronghold_storage().await;
 
         let storage = JwkStorageWrapper::Stronghold(stronghold_storage);
-        let result = produce_did_jwk(storage, key_id.as_str()).await;
+        let document = produce_did_jwk(storage, key_id.as_str()).await.unwrap();
 
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap().id().to_string(), "did:jwk:eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJTRklDVzczSEN3Sm9CVENpQUNGMUUzV21yaDVMRTB4al9HMUpWU2VYUy1NIiwia3R5IjoiT0tQIiwieCI6IjZCeG92MWxoSFltQVVHMWNibDM1eUcyYzZtcFpsOVdkeXNqSUhhSjdhODgifQ")
+        assert_eq!(
+            document.to_json_value().unwrap(),
+            json!({
+              "@context": [
+                "https://www.w3.org/ns/did/v1",
+                "https://w3id.org/security/suites/ed25519-2020/v1"
+              ],
+              "id": "did:jwk:eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJTRklDVzczSEN3Sm9CVENpQUNGMUUzV21yaDVMRTB4al9HMUpWU2VYUy1NIiwia3R5IjoiT0tQIiwieCI6IjZCeG92MWxoSFltQVVHMWNibDM1eUcyYzZtcFpsOVdkeXNqSUhhSjdhODgifQ",
+              "verificationMethod": [
+                {
+                  "id": "did:jwk:eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJTRklDVzczSEN3Sm9CVENpQUNGMUUzV21yaDVMRTB4al9HMUpWU2VYUy1NIiwia3R5IjoiT0tQIiwieCI6IjZCeG92MWxoSFltQVVHMWNibDM1eUcyYzZtcFpsOVdkeXNqSUhhSjdhODgifQ#0",
+                  "type": "JsonWebKey",
+                  "controller": "did:jwk:eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJTRklDVzczSEN3Sm9CVENpQUNGMUUzV21yaDVMRTB4al9HMUpWU2VYUy1NIiwia3R5IjoiT0tQIiwieCI6IjZCeG92MWxoSFltQVVHMWNibDM1eUcyYzZtcFpsOVdkeXNqSUhhSjdhODgifQ",
+                  "publicKeyJwk": {
+                    "kty": "OKP",
+                    "alg": "EdDSA",
+                    "kid": "SFICW73HCwJoBTCiACF1E3Wmrh5LE0xj_G1JVSeXS-M",
+                    "crv": "Ed25519",
+                    "x": "6Bxov1lhHYmAUG1cbl35yG2c6mpZl9WdysjIHaJ7a88"
+                  }
+                }
+              ]
+            })
+        );
     }
 }

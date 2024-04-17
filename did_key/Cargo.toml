@@ -22,7 +22,4 @@ ssi-jwk = "0.1.2"
 tokio.workspace = true
 
 [dev-dependencies]
-iota-crypto = { version = "0.23", default-features = false, features = [
-    "ed25519",
-] }
-iota_stronghold = { version = "2.0" }
+test-log.workspace = true

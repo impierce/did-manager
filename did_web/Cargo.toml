@@ -22,7 +22,6 @@ url = "2.5"
 urlencoding = "2.1"
 
 [dev-dependencies]
-iota_stronghold = { version = "2.0" }
 shared = { path = "../shared", features = ["test"] }
 test-log.workspace = true
 wiremock = "0.5"

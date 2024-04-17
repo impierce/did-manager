@@ -5,7 +5,7 @@ use identity_iota::{
     storage::KeyId,
     verification::VerificationMethod,
 };
-use log::info;
+use log::{debug, info};
 use serde_json::json;
 use shared::JwkStorageWrapper;
 use std::io::Error;
@@ -31,7 +31,7 @@ pub async fn produce_did_web(
     url.set_host(Some(&host.to_string())).unwrap();
     url.set_port(port).unwrap();
 
-    info!("HOST: {}", url.as_str());
+    debug!("HOST: {}", url.as_str());
 
     let host_port = if port.is_some() {
         format!("{}:{}", url.host_str().unwrap(), url.port().unwrap())
@@ -62,7 +62,6 @@ pub async fn produce_did_web(
     let document = CoreDocument::builder(properties)
         .id(controller)
         .verification_method(verification_method)
-        // .assertion_method(assertion_method)
         .build()
         .unwrap();
 
@@ -83,7 +82,6 @@ mod tests {
     use crate::consumer::resolve_did_web;
 
     use identity_iota::core::ToJson;
-    use identity_iota::did::DID;
     use shared::test_utils::new_stronghold_storage;
     use test_log::test;
     use wiremock::matchers::{method, path};
@@ -96,11 +94,13 @@ mod tests {
         // Start mock server and assert
         let mock_server = MockServer::start().await;
 
+        let mock_server_port: u16 = mock_server.address().port();
+
         let document = produce_did_web(
             JwkStorageWrapper::Stronghold(stronghold_storage),
             &key_id,
             url::Host::parse("localhost").unwrap(),
-            Some(mock_server.address().port()),
+            Some(mock_server_port),
         )
         .await
         .unwrap();
@@ -113,9 +113,32 @@ mod tests {
             .mount(&mock_server)
             .await;
 
-        let did = format!("did:web:localhost%3A{}", mock_server.address().port());
+        let did = format!("did:web:localhost%3A{}", mock_server_port);
         let document = resolve_did_web(CoreDID::parse(&did).unwrap()).await.unwrap();
 
-        assert_eq!(document.id().as_str(), did);
+        assert_eq!(
+            document.to_json_value().unwrap(),
+            json!({
+              "@context": [
+                "https://www.w3.org/ns/did/v1",
+                "https://w3id.org/security/suites/ed25519-2020/v1"
+              ],
+              "id": format!("did:web:localhost%3A{}", mock_server_port),
+              "verificationMethod": [
+                {
+                  "id": format!("did:web:localhost%3A{}#key-0", mock_server_port),
+                  "type": "JsonWebKey",
+                  "controller": format!("did:web:localhost%3A{}", mock_server_port),
+                  "publicKeyJwk": {
+                    "kty": "OKP",
+                    "alg": "EdDSA",
+                    "kid": "SFICW73HCwJoBTCiACF1E3Wmrh5LE0xj_G1JVSeXS-M",
+                    "crv": "Ed25519",
+                    "x": "6Bxov1lhHYmAUG1cbl35yG2c6mpZl9WdysjIHaJ7a88"
+                  }
+                }
+              ]
+            })
+        );
     }
 }
