@@ -1,8 +1,9 @@
 use identity_iota::document::CoreDocument;
 use serde::{Deserialize, Serialize};
+use shared::error::ProducerError;
 use shared::JwkStorageWrapper;
 
-use crate::{error::ProducerError, SecretManager};
+use crate::SecretManager;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub enum DidMethod {

@@ -3,9 +3,9 @@ use identity_iota::did::DID;
 use identity_iota::document::DIDUrlQuery;
 use identity_iota::verification::jwk::JwkParams;
 use oid4vc_core::{Sign, Subject, Verify};
+use shared::error::ProducerError;
 
 use crate::did_document::DidMethod;
-use crate::error::ProducerError;
 use crate::SecretManager;
 
 impl Sign for SecretManager {

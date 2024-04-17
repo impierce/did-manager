@@ -694,8 +694,8 @@ dependencies = [
  "did_web",
  "identity_iota",
  "iota-sdk",
+ "shared",
  "signature 2.2.0",
- "thiserror",
  "tokio",
 ]
 
@@ -1175,7 +1175,6 @@ dependencies = [
  "shared",
  "ssi-dids",
  "ssi-jwk",
- "thiserror",
  "tokio",
 ]
 
@@ -1196,7 +1195,6 @@ dependencies = [
  "shared",
  "ssi-dids",
  "ssi-jwk",
- "thiserror",
  "tokio",
 ]
 
@@ -1242,7 +1240,6 @@ dependencies = [
  "ssi-dids",
  "ssi-jwk",
  "test-log",
- "thiserror",
  "tokio",
  "url",
  "urlencoding",
@@ -3864,7 +3861,6 @@ dependencies = [
  "serde_json",
  "shared",
  "signature 2.2.0",
- "thiserror",
  "tokio",
  "url",
 ]
@@ -4605,6 +4601,7 @@ dependencies = [
  "iota_stronghold",
  "log",
  "rand 0.8.5",
+ "thiserror",
 ]
 
 [[package]]

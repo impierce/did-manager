@@ -9,3 +9,9 @@ pub enum ConsumerError {
     #[error("Identity error: `{0}`")]
     IdentityResolverError(#[from] identity_iota::resolver::Error),
 }
+
+#[derive(Error, Debug)]
+pub enum ProducerError {
+    #[error("Generic producer error: `{0}`")]
+    Generic(String),
+}

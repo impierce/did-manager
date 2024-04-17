@@ -5,8 +5,7 @@ use identity_iota::did::CoreDID;
 use identity_iota::document::CoreDocument;
 use identity_iota::resolver::Resolver as IdentityResolver;
 use iota_sdk::client::Client;
-
-use crate::error::ConsumerError;
+use shared::error::ConsumerError;
 
 pub struct Resolver {
     pub(crate) resolver: IdentityResolver,

@@ -2,10 +2,9 @@ use identity_iota::core::{FromJson, ToJson};
 use identity_iota::did::{CoreDID, DID};
 use identity_iota::document::CoreDocument;
 use log::info;
+use shared::error::ConsumerError;
 use ssi_dids::did_resolve::ResolutionInputMetadata;
 use ssi_dids::DIDMethod;
-
-use crate::error::ConsumerError;
 
 pub async fn resolve_did_jwk(did: CoreDID) -> Result<CoreDocument, ConsumerError> {
     info!("Resolving DID: {}", did);

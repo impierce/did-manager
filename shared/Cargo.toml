@@ -17,3 +17,4 @@ iota-sdk.workspace = true
 iota_stronghold = { version = "2.0" }
 log.workspace = true
 rand = "0.8"
+thiserror.workspace = true

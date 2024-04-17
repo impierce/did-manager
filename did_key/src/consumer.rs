@@ -4,8 +4,7 @@ use identity_iota::did::{CoreDID, DID};
 use identity_iota::document::CoreDocument;
 use identity_iota::resolver::Resolver;
 use log::info;
-
-use crate::error::ConsumerError;
+use shared::error::ConsumerError;
 
 pub async fn resolve_did_key(did: CoreDID) -> Result<CoreDocument, ConsumerError> {
     info!("Resolving DID: {}", did);

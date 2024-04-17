@@ -3,10 +3,9 @@ use identity_iota::did::{CoreDID, DID};
 use identity_iota::document::CoreDocument;
 use identity_iota::resolver::Resolver;
 use log::info;
+use shared::error::ConsumerError;
 use ssi_dids::did_resolve::ResolutionInputMetadata;
 use ssi_dids::DIDMethod;
-
-use crate::error::ConsumerError;
 
 pub async fn resolve_did_web(did: CoreDID) -> Result<CoreDocument, ConsumerError> {
     info!("Resolving DID: {}", did);
