@@ -10,6 +10,7 @@ use iota_sdk::client::{
 use iota_sdk::types::block::address::Bech32Address;
 use iota_sdk::types::block::output::{AliasId, MinimumStorageDepositBasicOutput};
 use log::{debug, info, warn};
+use shared::error::{ProducerError, WalletError};
 use token_wallet::get_address_balance;
 
 static MAINNET_URL: &str = "https://api.stardust-mainnet.iotaledger.net";
@@ -22,12 +23,12 @@ pub async fn publish_iota_document(
     document: IotaDocument,
     governor_address: Bech32Address,
     secret_manager: &ExternSecretManager,
-) -> anyhow::Result<CoreDocument> {
+) -> Result<CoreDocument, ProducerError> {
     let client = match document.id().network_str() {
         "rms" => Client::builder().with_primary_node(TESTNET_URL, None)?.finish().await?,
         "smr" => Client::builder().with_primary_node(SHIMMER_URL, None)?.finish().await?,
         "iota" => Client::builder().with_primary_node(MAINNET_URL, None)?.finish().await?,
-        _ => anyhow::bail!("Unsupported network"),
+        _ => return Err(ProducerError::Generic("Unsupported network".to_string())),
     };
 
     // Query the network for the given Governor address
@@ -58,11 +59,10 @@ pub async fn publish_iota_document(
                     .first()
                     .unwrap()
                     .to_owned();
-                anyhow::bail!(
+                return Err(ProducerError::WalletError(WalletError::Generic(format!(
                     "Insufficient balance for storage deposit: {}. Please send some funds to `{}`",
-                    balance,
-                    funding_address
-                );
+                    balance, funding_address
+                ))));
             }
 
             // Create new Alias
@@ -127,7 +127,7 @@ pub async fn publish_iota_document(
 }
 
 /// TODO: calculate storage deposit for alias output
-async fn calculate_storage_deposit(client: &Client) -> anyhow::Result<u64> {
+async fn calculate_storage_deposit(client: &Client) -> Result<u64, ProducerError> {
     let rent_structure = client.get_rent_structure().await?;
     let token_supply = client.get_token_supply().await?;
 

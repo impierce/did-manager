@@ -14,4 +14,24 @@ pub enum ConsumerError {
 pub enum ProducerError {
     #[error("Generic producer error: `{0}`")]
     Generic(String),
+    #[error("IOTA SDK - Client error: `{0}`")]
+    ClientError(#[from] iota_sdk::client::Error),
+    #[error("Wallet error: `{0}`")]
+    WalletError(#[from] WalletError),
+    #[error("Identity error: `{0}`")]
+    IdentityIotaError(#[from] identity_iota::iota::Error),
+    #[error("Identity error: `{0}`")]
+    IdentityIotaBlockError(#[from] identity_iota::iota::block::Error),
+    #[error("Identity error: `{0}`")]
+    IdentityCoreError(#[from] identity_iota::core::Error),
+}
+
+#[derive(Error, Debug)]
+pub enum WalletError {
+    #[error("Wallet error: `{0}`")]
+    Generic(String),
+    #[error("IOTA SDK - Wallet error: `{0}`")]
+    WalletError(#[from] iota_sdk::wallet::Error),
+    #[error("IOTA SDK - Client error: `{0}`")]
+    ClientError(#[from] iota_sdk::client::Error),
 }

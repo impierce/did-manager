@@ -9,6 +9,7 @@ use iota_sdk::{
     types::block::address::Bech32Address,
 };
 use log::{info, warn};
+use shared::error::WalletError;
 use std::str::FromStr;
 
 static MAINNET_URL: &str = "https://api.stardust-mainnet.iotaledger.net";
@@ -16,13 +17,15 @@ static SHIMMER_URL: &str = "https://api.shimmer.network";
 static TESTNET_URL: &str = "https://api.testnet.shimmer.network";
 
 /// Returns the first address derived from the underlying Stronghold snapshot.
-pub async fn get_first_address(secret_manager: &SecretManager, network: &str) -> anyhow::Result<Bech32Address> {
+pub async fn get_first_address(secret_manager: &SecretManager, network: &str) -> Result<Bech32Address, WalletError> {
     // Note: generating ed25519 addresses fails when no Mnemonic is present in Stronghold?
-    create_and_store_mnemonic(secret_manager).await?;
+    create_and_store_mnemonic(secret_manager)
+        .await
+        .map_err(|e| WalletError::Generic(e.to_string()))?;
 
     let network = match network {
         "rms" => network,
-        _ => anyhow::bail!("Unsupported network"),
+        _ => return Err(WalletError::Generic("Unsupported network".to_string())),
     };
 
     // TODO: make dynamic
@@ -65,7 +68,7 @@ async fn create_and_store_mnemonic(secret_manager: &SecretManager) -> anyhow::Re
 }
 
 /// Send funds back to originating address that exceed the required storage deposit.
-pub async fn sync_funds(secret_manager: SecretManager) -> anyhow::Result<()> {
+pub async fn sync_funds(secret_manager: SecretManager) -> Result<(), WalletError> {
     let client_options = ClientOptions::new().with_node(TESTNET_URL).unwrap();
     let coin_type = SHIMMER_COIN_TYPE;
 
@@ -99,12 +102,12 @@ pub async fn sync_funds(secret_manager: SecretManager) -> anyhow::Result<()> {
 
 /// Gets the current balance of the given Bech32-encoded address from the respective IOTA network.
 /// https://github.com/iotaledger/identity.rs/blob/main/examples/utils/utils.rs
-pub async fn get_address_balance(address: &Bech32Address) -> anyhow::Result<u64> {
+pub async fn get_address_balance(address: &Bech32Address) -> Result<u64, WalletError> {
     let client = match address.hrp().to_string().as_str() {
         "rms" => Client::builder().with_primary_node(TESTNET_URL, None)?.finish().await?,
         "smr" => Client::builder().with_primary_node(SHIMMER_URL, None)?.finish().await?,
         "iota" => Client::builder().with_primary_node(MAINNET_URL, None)?.finish().await?,
-        _ => anyhow::bail!("Unsupported network"),
+        _ => return Err(WalletError::Generic("Unsupported network".to_string())),
     };
 
     let output_ids = client

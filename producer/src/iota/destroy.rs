@@ -3,19 +3,19 @@ use iota_sdk::{
     client::{secret::SecretManager as ExternSecretManager, Client},
     types::block::address::Address,
 };
+use shared::error::ProducerError;
 
 /// Destroying an IOTA document involves returning the storage deposit to the original funding address.
 pub async fn destroy_iota_document(
     did: IotaDID,
     return_address: Address,
     secret_manager: ExternSecretManager,
-) -> anyhow::Result<()> {
-    let client: Client = Client::builder()
+) -> Result<(), ProducerError> {
+    let client = Client::builder()
         .with_primary_node("https://api.testnet.shimmer.network", None)
         .unwrap()
         .finish()
-        .await
-        .unwrap();
+        .await?;
 
     client.delete_did_output(&secret_manager, return_address, &did).await?;
 

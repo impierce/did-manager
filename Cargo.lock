@@ -5156,6 +5156,7 @@ dependencies = [
  "iota_stronghold",
  "log",
  "rand 0.8.5",
+ "shared",
  "test-log",
  "tokio",
 ]

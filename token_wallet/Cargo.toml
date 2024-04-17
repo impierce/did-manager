@@ -8,6 +8,8 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+shared = { path = "../shared" }
+
 anyhow = "1.0"
 iota-sdk = { version = "1.0", features = ["storage", "stronghold"] }
 log.workspace = true
