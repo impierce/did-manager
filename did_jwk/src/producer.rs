@@ -1,8 +1,14 @@
 use identity_iota::core::Object;
 use identity_iota::verification::VerificationMethod;
 use identity_iota::{core::ToJson, did::CoreDID, document::CoreDocument, storage::KeyId};
+use identity_stronghold::StrongholdStorage;
+use iota_sdk::client::secret::stronghold::StrongholdSecretManager;
+use iota_sdk::client::secret::SecretManager;
+use iota_sdk::client::stronghold::StrongholdAdapter;
+use iota_sdk::client::Password;
 use log::info;
 use serde_json::json;
+use shared::test_utils::random_stronghold_path;
 use shared::JwkStorageWrapper;
 use ssi_dids::{DIDMethod, Source};
 use std::io::Error;
@@ -12,6 +18,17 @@ use std::io::ErrorKind;
 const FRAGMENT: &str = "0";
 
 pub async fn produce_did_jwk(storage: JwkStorageWrapper, key_id: &str) -> Result<CoreDocument, Error> {
+    // let stronghold_secret_manager = StrongholdSecretManager::builder()
+    //     .password(Password::from("secure_password".to_owned()))
+    //     .build(random_stronghold_path())
+    //     .unwrap();
+
+    // identity.rs
+    // let stronghold_storage = StrongholdStorage::new(stronghold_secret_manager);
+
+    // IOTA SDK
+    // let secret_manager: SecretManager = SecretManager::Stronghold(stronghold_secret_manager);
+
     let public_key_jwk = match storage {
         JwkStorageWrapper::Stronghold(stronghold_storage) => {
             stronghold_storage.get_public_key(&KeyId::new(key_id)).await.unwrap()

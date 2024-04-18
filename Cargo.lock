@@ -688,11 +688,11 @@ checksum = "f7144d30dcf0fafbce74250a3963025d8d52177934239851c917d29f1df280c2"
 name = "consumer"
 version = "0.1.0"
 dependencies = [
+ "did_iota",
  "did_jwk",
  "did_key",
  "did_web",
  "identity_iota",
- "iota-sdk",
  "shared",
  "signature 2.2.0",
  "test-log",
@@ -1158,6 +1158,21 @@ dependencies = [
  "reqwest",
  "serde_json",
  "ssi-dids",
+]
+
+[[package]]
+name = "did_iota"
+version = "0.1.0"
+dependencies = [
+ "identity_iota",
+ "identity_stronghold",
+ "iota-sdk",
+ "iota_stronghold",
+ "log",
+ "shared",
+ "test-log",
+ "token_wallet",
+ "tokio",
 ]
 
 [[package]]
@@ -3843,6 +3858,7 @@ dependencies = [
  "async-trait",
  "base64 0.22.0",
  "consumer",
+ "did_iota",
  "did_jwk",
  "did_key",
  "did_web",
@@ -3859,7 +3875,6 @@ dependencies = [
  "shared",
  "signature 2.2.0",
  "test-log",
- "token_wallet",
  "tokio",
  "url",
 ]

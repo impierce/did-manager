@@ -22,3 +22,7 @@ iota-crypto = { version = "0.23" }
 iota_stronghold = { version = "2.0" }
 test-log.workspace = true
 tokio.workspace = true
+
+[features]
+# default = ["wait"]
+wait = [] # waits for ledger operations to complete before returning (blocking)

@@ -62,6 +62,7 @@ mod tests {
     #[test(tokio::test)]
     async fn destroy_did_iota_testnet() {
         const SNAPSHOT_PATH: &str = "tests/res/test.stronghold";
+        // const SNAPSHOT_PATH: &str = "/var/folders/_4/zy7j_50j4n70w6stnwj7pptw0000gn/T/test_strongholds/01QqWhreGl21Lm1HX2CbOiws4CanCIGD.stronghold";
         const PASSWORD: &str = "secure_password";
         let secret_manager: ExternSecretManager = ExternSecretManager::Stronghold(
             StrongholdSecretManager::builder()
@@ -71,7 +72,7 @@ mod tests {
         );
 
         destroy_iota_document(
-            IotaDID::from_str("did:iota:rms:0x4a55dd9720372deb80bebd2e87e9a1e7273a178ba76b14eefa5b072f4f3c1c5f")
+            IotaDID::from_str("did:iota:rms:0x4c4516f2ff8e38a46b9ab9fcf56c4df6f5b040483a2aca8d1014c183325664e0")
                 .unwrap(),
             Address::try_from_bech32("rms1qrdgpq8a4xjetgf79gnx7g5n0rfeykm30rek9fpjef6dnx3md929ksv04a0").unwrap(),
             secret_manager,

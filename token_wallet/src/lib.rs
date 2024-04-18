@@ -1,14 +1,14 @@
 use iota_sdk::client::constants::SHIMMER_COIN_TYPE;
 use iota_sdk::client::node_api::indexer::query_parameters::QueryParameter;
 use iota_sdk::types::block::address::Hrp;
-use iota_sdk::wallet::ClientOptions;
+use iota_sdk::wallet::{Account, ClientOptions};
 use iota_sdk::Wallet;
 use iota_sdk::{
     client::{api::GetAddressesOptions, secret::SecretManager, Client},
     crypto::keys::bip39,
     types::block::address::Bech32Address,
 };
-use log::{info, warn};
+use log::info;
 use shared::error::WalletError;
 use std::str::FromStr;
 
@@ -67,8 +67,60 @@ async fn create_and_store_mnemonic(secret_manager: &SecretManager) -> anyhow::Re
     Ok(())
 }
 
-/// Send funds back to originating address that exceed the required storage deposit.
-pub async fn sync_funds(secret_manager: SecretManager) -> Result<(), WalletError> {
+/// Send the required amount of tokens for an Alias Output from the funding address to the given Governor address.
+pub async fn fund_storage_deposit(
+    // secret_manager: SecretManager,
+    account: &Account,
+    // wallet: Wallet,
+    governor: Bech32Address,
+) -> Result<(), WalletError> {
+    // TODO: only creating a new one, because reference does not work: .with_secret_manager(&secret_manager)
+    // const SNAPSHOT_PATH: &str = "tests/res/test.stronghold";
+    // const PASSWORD: &str = "secure_password";
+    // let secret_manager: SecretManager = SecretManager::Stronghold(
+    //     StrongholdSecretManager::builder()
+    //         .password(Password::from(PASSWORD.to_owned()))
+    //         .build(SNAPSHOT_PATH.to_owned())
+    //         .unwrap(),
+    // );
+
+    // let wallet = Wallet::builder()
+    //     .with_secret_manager(secret_manager)
+    //     .with_client_options(client_options)
+    //     .with_coin_type(coin_type)
+    //     .finish()
+    //     .await
+    //     .unwrap();
+
+    // Get balance for default account
+    let balance = account.sync(None).await?;
+    info!("{balance:#?}");
+
+    let funding_address = account.addresses().await?.first().unwrap().to_owned().into_bech32();
+    // let funding_address = get_first_address(&secret_manager, "rms").await?;
+
+    // TODO: Is this really correct? The funding address could also give up its own Basic Output (not included in "base_coin.available"?).
+    if balance.base_coin().available() < 89300 {
+        return Err(WalletError::InsufficientFunds {
+            required_amount: 89300 - balance.base_coin().available(),
+            funding_address,
+        });
+    }
+
+    info!("Sending 89300 tokens to Governor address: {}", governor.to_string());
+
+    let transaction = account.send(89300, governor, None).await.unwrap();
+
+    let block_id = account
+        .retry_transaction_until_included(&transaction.transaction_id, None, None)
+        .await
+        .unwrap();
+
+    Ok(())
+}
+
+/// Send all available funds from the funding address to a given receiving address.
+pub async fn return_all_funds(secret_manager: SecretManager, receiver: Bech32Address) -> Result<(), WalletError> {
     let client_options = ClientOptions::new().with_node(TESTNET_URL).unwrap();
     let coin_type = SHIMMER_COIN_TYPE;
 
@@ -87,16 +139,31 @@ pub async fn sync_funds(secret_manager: SecretManager) -> Result<(), WalletError
     let balance = account.sync(None).await?;
     info!("{balance:#?}");
 
-    // Option A
-    if balance.base_coin().total() != balance.required_storage_deposit().alias() {
-        warn!("Amount of total tokens exceeds required storage deposit")
-    }
+    // Create and publish transaction
+    let tx = account.send(balance.base_coin().available(), receiver, None).await?;
 
-    // Option B
-    if balance.base_coin().available() > 0 {
-        warn!("TODO: send back to origin address (State Controller? Governor?)")
-    }
+    #[cfg(feature = "wait")]
+    wait_for_inclusion(&tx.transaction_id, &account).await?;
 
+    Ok(())
+}
+
+#[cfg(feature = "wait")]
+async fn wait_for_inclusion(transaction_id: &TransactionId, account: &Account) -> Result<(), WalletError> {
+    info!(
+        "Transaction sent: {}/transaction/{}",
+        std::env::var("EXPLORER_URL").unwrap(),
+        transaction_id
+    );
+    // Wait for transaction to get included
+    let block_id = account
+        .retry_transaction_until_included(transaction_id, None, None)
+        .await?;
+    info!(
+        "Block included: {}/block/{}",
+        std::env::var("EXPLORER_URL").unwrap(),
+        block_id
+    );
     Ok(())
 }
 
@@ -138,8 +205,8 @@ mod tests {
     use iota_sdk::client::constants::SHIMMER_COIN_TYPE;
     use iota_sdk::client::secret::stronghold::StrongholdSecretManager;
     use iota_sdk::client::Password;
-    use iota_sdk::wallet::ClientOptions;
-    use iota_sdk::{types::block::address::Bech32Address, Wallet};
+    use iota_sdk::types::block::address::Bech32Address;
+    use iota_sdk::wallet::{ClientOptions, Wallet};
     use std::str::FromStr;
     use test_log::test;
 
@@ -187,7 +254,7 @@ mod tests {
     }
 
     #[test(tokio::test)]
-    async fn fails_to_get_the_balance_for_an_unsupported_network() {
+    async fn fails_to_get_the_balance_for_unsupported_network() {
         iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
 
         let address =
@@ -196,8 +263,9 @@ mod tests {
         assert!(get_address_balance(&address).await.is_err());
     }
 
+    // #[ignore = "manual test"]
     #[test(tokio::test)]
-    async fn successfully_checks_funds() {
+    async fn successfully_fund_the_governor_address_when_funds_available() {
         iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
 
         const SNAPSHOT_PATH: &str = "tests/res/test.stronghold";
@@ -210,7 +278,23 @@ mod tests {
                 .unwrap(),
         );
 
-        assert!(sync_funds(secret_manager).await.is_ok());
+        let governor =
+            Bech32Address::from_str("rms1qzs0e5qrmljhmgcas9z3xs0v9ejjvfpcwhztfjcdq5slmfr48amwk7vl0xr").unwrap();
+
+        let client_options = ClientOptions::new().with_node(TESTNET_URL).unwrap();
+        let coin_type = SHIMMER_COIN_TYPE;
+
+        let wallet = Wallet::builder()
+            .with_secret_manager(secret_manager)
+            .with_client_options(client_options)
+            .with_coin_type(coin_type)
+            .finish()
+            .await
+            .unwrap();
+
+        let account = wallet.create_account().finish().await.unwrap();
+
+        assert!(fund_storage_deposit(&account, governor).await.is_ok());
     }
 
     #[ignore = "manual test"]
@@ -317,5 +401,26 @@ mod tests {
             .unwrap();
 
         println!("Block included: https://explorer.iota.org/testnet/block/{}", block_id);
+    }
+
+    #[ignore = "manual test"]
+    #[test(tokio::test)]
+    async fn successfully_returns_all_available_funds_from_funding_address() {
+        iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
+
+        const SNAPSHOT_PATH: &str = "tests/res/test.stronghold";
+        const PASSWORD: &str = "secure_password";
+
+        let secret_manager: SecretManager = SecretManager::Stronghold(
+            StrongholdSecretManager::builder()
+                .password(Password::from(PASSWORD.to_owned()))
+                .build(SNAPSHOT_PATH.to_owned())
+                .unwrap(),
+        );
+
+        let receiver =
+            Bech32Address::from_str("rms1qrdgpq8a4xjetgf79gnx7g5n0rfeykm30rek9fpjef6dnx3md929ksv04a0").unwrap();
+
+        assert!(return_all_funds(secret_manager, receiver).await.is_ok());
     }
 }

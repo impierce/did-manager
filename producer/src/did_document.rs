@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use shared::error::ProducerError;
 use shared::JwkStorageWrapper;
 
-use crate::iota::produce::{produce_did_iota, IotaMethod};
+// use crate::iota::produce::{produce_did_iota, IotaMethod};
 use crate::SecretManager;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -43,9 +43,13 @@ impl SecretManager {
                 Some(core_document)
             }
             DidMethod::IotaTestnet => {
-                let core_document = produce_did_iota(storage, &self.key_id, IotaMethod::Testnet)
-                    .await
-                    .unwrap();
+                let core_document = did_iota::producer::produce::produce_did_iota(
+                    storage,
+                    &self.key_id,
+                    did_iota::producer::produce::IotaMethod::Testnet,
+                )
+                .await
+                .unwrap();
                 Some(core_document)
             }
         };

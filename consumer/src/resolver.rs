@@ -1,10 +1,10 @@
+use did_iota::consumer::iota_clients;
 use did_jwk::consumer::resolve_did_jwk;
 use did_key::consumer::resolve_did_key;
 use did_web::consumer::resolve_did_web;
 use identity_iota::did::CoreDID;
 use identity_iota::document::CoreDocument;
 use identity_iota::resolver::Resolver as IdentityResolver;
-use iota_sdk::client::Client;
 use shared::error::ConsumerError;
 
 pub struct Resolver {
@@ -13,7 +13,9 @@ pub struct Resolver {
 
 impl Resolver {
     pub async fn new() -> Self {
-        let resolver = configure_resolver(IdentityResolver::new()).await;
+        let resolver = configure_resolver(IdentityResolver::new())
+            .await
+            .expect("Failed to configure resolver");
         Self { resolver }
     }
 
@@ -24,46 +26,13 @@ impl Resolver {
     }
 }
 
-// TODO: error handling (return Result), use expect() for Client::builder()
-async fn configure_resolver(mut resolver: IdentityResolver) -> IdentityResolver {
+async fn configure_resolver(mut resolver: IdentityResolver) -> Result<IdentityResolver, ConsumerError> {
     resolver.attach_handler("jwk".to_owned(), resolve_did_jwk);
     resolver.attach_handler("key".to_owned(), resolve_did_key);
     resolver.attach_handler("web".to_owned(), resolve_did_web);
+    resolver.attach_multiple_iota_handlers(iota_clients().await?);
 
-    // ------------------ IOTA resolvers ------------------
-    static MAINNET_URL: &str = "https://api.stardust-mainnet.iotaledger.net";
-    static SHIMMER_URL: &str = "https://api.shimmer.network";
-    static TESTNET_URL: &str = "https://api.testnet.shimmer.network";
-    // ----------------------------------------------------
-
-    let iota_client: Client = Client::builder()
-        .with_primary_node(MAINNET_URL, None)
-        .unwrap()
-        .finish()
-        .await
-        .unwrap();
-
-    let smr_client: Client = Client::builder()
-        .with_primary_node(SHIMMER_URL, None)
-        .unwrap()
-        .finish()
-        .await
-        .unwrap();
-
-    let shimmer_testnet_client: Client = Client::builder()
-        .with_primary_node(TESTNET_URL, None)
-        .unwrap()
-        .finish()
-        .await
-        .unwrap();
-
-    resolver.attach_multiple_iota_handlers(vec![
-        ("iota", iota_client),
-        ("smr", smr_client),
-        ("rms", shimmer_testnet_client),
-    ]);
-
-    resolver
+    Ok(resolver)
 }
 
 #[cfg(test)]

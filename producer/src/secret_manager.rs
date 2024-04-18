@@ -88,6 +88,12 @@ impl SecretManager {
             key_id,
         })
     }
+
+    // pub async fn secret_manager(&self) -> Result<StrongholdSecretManager, std::io::Error> {
+    //     &self.stronghold_storage.as_secret_manager()
+    // }
+
+    // TODO: add getter for underlying stronghold_secret_manager?
 }
 
 #[cfg(test)]

@@ -8,12 +8,12 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+did_iota = { path = "../did_iota" }
 did_jwk = { path = "../did_jwk" }
 did_key = { path = "../did_key" }
 did_web = { path = "../did_web" }
 consumer = { path = "../consumer" }
 shared = { path = "../shared" }
-token_wallet = { path = "../token_wallet" }
 
 anyhow = "1.0"
 async-trait = "0.1"

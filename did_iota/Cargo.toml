@@ -1,5 +1,5 @@
 [package]
-name = "consumer"
+name = "did_iota"
 version = "0.1.0"
 edition = "2021"
 homepage.workspace = true
@@ -8,15 +8,15 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-did_iota = { path = "../did_iota" }
-did_jwk = { path = "../did_jwk" }
-did_key = { path = "../did_key" }
-did_web = { path = "../did_web" }
 shared = { path = "../shared" }
+token_wallet = { path = "../token_wallet" }
 
 identity_iota.workspace = true
-signature.workspace = true
+identity_stronghold.workspace = true
+iota-sdk.workspace = true
+log.workspace = true
 tokio.workspace = true
 
 [dev-dependencies]
+iota_stronghold = { version = "2.0" }
 test-log.workspace = true
