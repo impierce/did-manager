@@ -15,8 +15,8 @@ use shared::error::WalletError;
 
 use crate::{TokenWallet, TESTNET_URL};
 
-const SNAPSHOT_PATH: &str = "tests/res/test.stronghold"; // TODO: make parameter of "new()"
-const PASSWORD: &str = "secure_password"; // TODO: make parameter of "new()"
+const SNAPSHOT_PATH: &str = "tests/res/wallet.stronghold"; // TODO: make parameter of "new()"
+const PASSWORD: &str = "secur3_wall3t"; // TODO: make parameter of "new()"
 const ACCOUNT_INDEX: u32 = 0;
 
 pub struct IotaWallet {
@@ -82,6 +82,7 @@ impl TokenWallet for IotaWallet {
 
     async fn get_account_balance(&self) -> Result<u64, WalletError> {
         let account = self.wallet.get_account(ACCOUNT_INDEX).await.unwrap();
+        account.sync(None).await.unwrap();
         let balance = account.balance().await.unwrap();
         Ok(balance.base_coin().available())
     }

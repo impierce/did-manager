@@ -90,6 +90,7 @@ mod tests {
         );
     }
 
+    #[ignore = "unnecessary"]
     #[test(tokio::test)]
     async fn resolves_did_iota_rms() {
         // TODO: are these tests really necessary? (they're essentially just testing the resolver from identity.rs and require internet)

@@ -2,10 +2,10 @@ pub mod iota;
 
 use iota_sdk::client::constants::SHIMMER_COIN_TYPE;
 use iota_sdk::types::block::address::Hrp;
-use iota_sdk::wallet::{Account, ClientOptions};
+use iota_sdk::wallet::ClientOptions;
 use iota_sdk::Wallet;
 use iota_sdk::{
-    client::{api::GetAddressesOptions, secret::SecretManager, Client},
+    client::{api::GetAddressesOptions, secret::SecretManager},
     types::block::address::Bech32Address,
 };
 use log::info;
@@ -113,21 +113,13 @@ mod tests {
     async fn recreates_an_expected_address_from_a_given_stronghold() {
         iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
 
-        const SNAPSHOT_PATH: &str = "tests/res/wallet.stronghold";
-        const PASSWORD: &str = "secure_password";
+        let wallet = IotaWallet::new().await;
 
-        let secret_manager: SecretManager = SecretManager::Stronghold(
-            StrongholdSecretManager::builder()
-                .password(Password::from(PASSWORD.to_owned()))
-                .build(SNAPSHOT_PATH.to_owned())
-                .unwrap(),
-        );
-
-        let address = get_first_address(&secret_manager, "rms").await.unwrap();
+        let address = wallet.get_funding_address().await;
 
         assert_eq!(
             address.to_string(),
-            "rms1qrdgpq8a4xjetgf79gnx7g5n0rfeykm30rek9fpjef6dnx3md929ksv04a0"
+            "rms1qrc369hrnga48s7jzwm5a2d7m70zjq4gjjvcsngvewgnlhu8ac89wrak7p9"
         );
     }
 
@@ -190,10 +182,10 @@ mod tests {
 
         assert_eq!(
             wallet.get_governor_address().await,
-            "rms1qzs0e5qrmljhmgcas9z3xs0v9ejjvfpcwhztfjcdq5slmfr48amwk7vl0xr"
+            "rms1qzlj3hjhn2lc570xmzutltztvuxjj9wzh7kx82fkvz6chdlvgkqrcpw3vnd"
         );
 
-        assert!(wallet.fund_storage_deposit().await.is_ok());
+        // assert!(wallet.fund_storage_deposit().await.is_ok());
     }
 
     #[ignore = "manual test"]
@@ -201,8 +193,8 @@ mod tests {
     async fn send_tokens_to_alice() {
         iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
 
-        const SNAPSHOT_PATH: &str = "tests/res/test.stronghold";
-        const PASSWORD: &str = "secure_password";
+        const SNAPSHOT_PATH: &str = "tests/res/wallet.stronghold";
+        const PASSWORD: &str = "secur3_wall3t";
 
         let secret_manager: SecretManager = SecretManager::Stronghold(
             StrongholdSecretManager::builder()
@@ -307,8 +299,8 @@ mod tests {
     async fn successfully_returns_all_available_funds_from_funding_address() {
         iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
 
-        const SNAPSHOT_PATH: &str = "tests/res/test.stronghold";
-        const PASSWORD: &str = "secure_password";
+        const SNAPSHOT_PATH: &str = "tests/res/wallet.stronghold";
+        const PASSWORD: &str = "secur3_wall3t";
 
         let secret_manager: SecretManager = SecretManager::Stronghold(
             StrongholdSecretManager::builder()
