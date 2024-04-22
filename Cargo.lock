@@ -3315,7 +3315,7 @@ dependencies = [
 [[package]]
 name = "oid4vc-core"
 version = "0.1.0"
-source = "git+https://git@github.com/impierce/openid4vc.git?rev=0c5526c#0c5526c029f3a1dca57121b833d49803b0d3e68d"
+source = "git+https://git@github.com/impierce/openid4vc.git?rev=a932af7#a932af797117bd8f042335bf29695e00905800e8"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3856,6 +3856,7 @@ dependencies = [
  "oid4vc-core",
  "serde",
  "serde_json",
+ "serde_plain",
  "shared",
  "signature 2.2.0",
  "test-log",
@@ -4479,6 +4480,15 @@ checksum = "3e17db7126d17feb94eb3fad46bf1a96b034e8aacbc2e775fe81505f8b0b2813"
 dependencies = [
  "itoa",
  "ryu",
+ "serde",
+]
+
+[[package]]
+name = "serde_plain"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9ce1fc6db65a611022b23a0dec6975d63fb80a302cb3388835ff02c097258d50"
+dependencies = [
  "serde",
 ]
 

@@ -9,9 +9,11 @@ use crate::did_document::DidMethod;
 use crate::SecretManager;
 
 impl Sign for SecretManager {
-    fn key_id(&self) -> Option<String> {
+    fn key_id(&self, subject_syntax_type: &str) -> Option<String> {
+        let method: DidMethod = serde_plain::from_str(subject_syntax_type).ok()?;
+
         block_on(async {
-            self.produce_document(DidMethod::Key)
+            self.produce_document(method)
                 .await
                 .ok()
                 .and_then(|document| document.verification_method().first().cloned())
@@ -19,7 +21,7 @@ impl Sign for SecretManager {
         })
     }
 
-    fn sign(&self, message: &str) -> anyhow::Result<Vec<u8>> {
+    fn sign(&self, message: &str, _subject_syntax_type: &str) -> anyhow::Result<Vec<u8>> {
         Ok(block_on(async { self.sign(message.as_bytes()).await })?)
     }
 
@@ -29,26 +31,15 @@ impl Sign for SecretManager {
 }
 
 impl Subject for SecretManager {
-    /// Returns the id of the DID document for the default method (`did:key`).
-    fn identifier(&self) -> anyhow::Result<String> {
-        Ok(block_on(async {
-            self.produce_document(DidMethod::Key)
-                .await
-                .map(|document| document.id().to_string())
-        })?)
-    }
-}
+    /// Returns the id of the DID document corresponding to the `subject_syntax_type`.
+    fn identifier(&self, subject_syntax_type: &str) -> anyhow::Result<String> {
+        let method: DidMethod = serde_plain::from_str(subject_syntax_type)?;
 
-// TODO: this should be `impl Subject for SecretManager`
-impl SecretManager {
-    /// Returns the id of the DID document for the given method.
-    pub fn identifier_for_method(&self, method: &str) -> Result<String, ProducerError> {
-        let method: DidMethod = serde_json::from_str(&format!("{:?}", method)).unwrap();
-        block_on(async {
+        Ok(block_on(async {
             self.produce_document(method)
                 .await
                 .map(|document| document.id().to_string())
-        })
+        })?)
     }
 }
 
