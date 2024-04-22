@@ -17,6 +17,7 @@ shared = { path = "../shared" }
 
 anyhow = "1.0"
 async-trait = "0.1"
+base64 = "0.22"
 futures = "0.3"
 identity_iota.workspace = true
 identity_stronghold.workspace = true

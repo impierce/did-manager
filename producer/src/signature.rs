@@ -1,15 +1,12 @@
 use identity_iota::storage::JwkStorage;
+use shared::error::ProducerError;
 
 use crate::SecretManager;
 
 impl SecretManager {
-    pub async fn sign(&self, data: &[u8]) -> Result<Vec<u8>, std::io::Error> {
-        let public_key = self.stronghold_storage.get_public_key(&self.key_id).await.unwrap();
-        let signature = self
-            .stronghold_storage
-            .sign(&self.key_id, data, &public_key)
-            .await
-            .unwrap();
+    pub async fn sign(&self, data: &[u8]) -> Result<Vec<u8>, ProducerError> {
+        let public_key = self.stronghold_storage.get_public_key(&self.key_id).await?;
+        let signature = self.stronghold_storage.sign(&self.key_id, data, &public_key).await?;
         Ok(signature)
     }
 }
