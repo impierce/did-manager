@@ -44,7 +44,7 @@ impl SecretManager {
             }
             DidMethod::IotaTestnet => {
                 let core_document = did_iota::producer::produce::produce_did_iota(
-                    storage,
+                    &storage,
                     &self.key_id,
                     did_iota::producer::produce::IotaMethod::Testnet,
                 )

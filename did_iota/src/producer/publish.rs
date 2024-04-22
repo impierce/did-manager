@@ -1,15 +1,14 @@
-// use consumer::resolver::Resolver;
 use identity_iota::core::ToJson;
 use identity_iota::did::DID;
 use identity_iota::document::CoreDocument;
-use identity_iota::iota::{IotaClientExt, IotaDID, IotaDocument, IotaIdentityClientExt};
+use identity_iota::iota::{IotaDID, IotaDocument, IotaIdentityClientExt};
 use iota_sdk::client::{node_api::indexer::query_parameters::QueryParameter, Client};
 use iota_sdk::types::block::address::Bech32Address;
 use iota_sdk::types::block::output::{AliasId, MinimumStorageDepositBasicOutput};
-use iota_sdk::Wallet;
 use log::{debug, info, warn};
 use shared::error::{ProducerError, WalletError};
-use token_wallet::{fund_storage_deposit, get_address_balance};
+use token_wallet::iota::IotaWallet;
+use token_wallet::TokenWallet;
 
 use crate::producer::resolve::resolve;
 
@@ -23,8 +22,9 @@ pub async fn publish_iota_document(
     document: IotaDocument,
     governor_address: Bech32Address,
     // secret_manager: &ExternSecretManager,
-    wallet: Wallet,
+    wallet: IotaWallet,
 ) -> Result<CoreDocument, ProducerError> {
+    // TODO: use `wallet.client()`
     let client = match document.id().network_str() {
         "rms" => Client::builder().with_primary_node(TESTNET_URL, None)?.finish().await?,
         "smr" => Client::builder().with_primary_node(SHIMMER_URL, None)?.finish().await?,
@@ -44,24 +44,24 @@ pub async fn publish_iota_document(
             info!("No AliasOutput found for the given Governor address.");
 
             // Create account with alias: "0" (default)
-            let account = wallet
-                .create_account()
-                .finish()
-                .await
-                .map_err(|e| ProducerError::WalletError(e.into()))?;
+            // let account = wallet
+            //     .create_account()
+            //     .finish()
+            //     .await
+            //     .map_err(|e| ProducerError::WalletError(e.into()))?;
 
-            let funding_address = &account
-                .addresses()
-                .await
-                .unwrap()
-                .first()
-                .unwrap()
-                .clone()
-                .into_bech32();
+            let funding_address = &wallet.get_funding_address().await;
+            // .addresses()
+            // .await
+            // .unwrap()
+            // .first()
+            // .unwrap()
+            // .clone()
+            // .into_bech32();
             // let funding_address: Bech32Address = wallet.generate_ed25519_address(0, 0, None).await.unwrap();
 
             // Check available funds for storage deposit
-            let balance = get_address_balance(&funding_address).await?;
+            let balance = wallet.get_balance(&funding_address.to_string()).await?;
 
             // calculate_storage_deposit(&client).await?;
             // TODO: temporary hardcoded: check if balance is enough for storage deposit
@@ -73,7 +73,8 @@ pub async fn publish_iota_document(
             }
 
             // TODO: send exact amount of funds from funding_address to governor_address
-            fund_storage_deposit(&account, governor_address).await?;
+            // fund_storage_deposit(&account, governor_address).await?;
+            wallet.fund_storage_deposit().await?;
 
             // Create new Alias
             let alias_output = client
@@ -91,9 +92,9 @@ pub async fn publish_iota_document(
             // TODO: handle different types of errors:
             // - no funding at all: "publish failed: no input with matching ed25519 address provided"
             // - too little funding: "publish failed: insufficient amount: found 42601, required 89300"
-            let document: IotaDocument = client
-                .publish_did_output(&wallet.get_secret_manager().blocking_read(), alias_output)
-                .await?;
+            // let document: IotaDocument = client
+            //     .publish_did_output(&wallet.get_secret_manager().blocking_read(), alias_output)
+            //     .await?;
 
             info!("Successfully published AliasOutput.");
             document.core_document().to_owned()
@@ -161,6 +162,7 @@ mod tests {
             Password,
         },
         wallet::ClientOptions,
+        Wallet,
     };
     use test_log::test;
 
@@ -184,22 +186,24 @@ mod tests {
         let governor_address =
             Bech32Address::try_from_str("rms1qzs0e5qrmljhmgcas9z3xs0v9ejjvfpcwhztfjcdq5slmfr48amwk7vl0xr").unwrap();
 
-        let secret_manager: ExternSecretManager = ExternSecretManager::Stronghold(
-            StrongholdSecretManager::builder()
-                .password(Password::from(PASSWORD.to_owned()))
-                .build(SNAPSHOT_PATH.to_owned())
-                .unwrap(),
-        );
+        // let secret_manager: ExternSecretManager = ExternSecretManager::Stronghold(
+        //     StrongholdSecretManager::builder()
+        //         .password(Password::from(PASSWORD.to_owned()))
+        //         .build(SNAPSHOT_PATH.to_owned())
+        //         .unwrap(),
+        // );
 
-        let client_options = ClientOptions::new().with_node(TESTNET_URL).unwrap();
-        let coin_type = SHIMMER_COIN_TYPE;
-        let wallet = Wallet::builder()
-            .with_secret_manager(secret_manager)
-            .with_client_options(client_options)
-            .with_coin_type(coin_type)
-            .finish()
-            .await
-            .unwrap();
+        // let client_options = ClientOptions::new().with_node(TESTNET_URL).unwrap();
+        // let coin_type = SHIMMER_COIN_TYPE;
+        // let wallet = Wallet::builder()
+        //     .with_secret_manager(secret_manager)
+        //     .with_client_options(client_options)
+        //     .with_coin_type(coin_type)
+        //     .finish()
+        //     .await
+        //     .unwrap();
+
+        let wallet = IotaWallet::new().await;
 
         publish_iota_document(iota_document, governor_address, wallet)
             .await

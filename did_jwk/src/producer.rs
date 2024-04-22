@@ -2,13 +2,8 @@ use identity_iota::core::Object;
 use identity_iota::verification::VerificationMethod;
 use identity_iota::{core::ToJson, did::CoreDID, document::CoreDocument, storage::KeyId};
 use identity_stronghold::StrongholdStorage;
-use iota_sdk::client::secret::stronghold::StrongholdSecretManager;
-use iota_sdk::client::secret::SecretManager;
-use iota_sdk::client::stronghold::StrongholdAdapter;
-use iota_sdk::client::Password;
 use log::info;
 use serde_json::json;
-use shared::test_utils::random_stronghold_path;
 use shared::JwkStorageWrapper;
 use ssi_dids::{DIDMethod, Source};
 use std::io::Error;
@@ -76,14 +71,14 @@ mod tests {
     use super::*;
 
     use serde_json::json;
-    use shared::test_utils::new_stronghold_storage;
+    use shared::test_utils::new_stronghold;
     use test_log::test;
 
     #[test(tokio::test)]
     async fn produces_did_jwk() {
-        let (stronghold_storage, key_id) = new_stronghold_storage().await;
+        let (stronghold_storage, key_id) = new_stronghold().await;
 
-        let storage = JwkStorageWrapper::Stronghold(stronghold_storage);
+        let storage = JwkStorageWrapper::Stronghold(StrongholdStorage::new(stronghold_storage));
         let document = produce_did_jwk(storage, key_id.as_str()).await.unwrap();
 
         assert_eq!(

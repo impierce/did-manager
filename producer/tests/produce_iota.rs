@@ -2,31 +2,24 @@ use std::error::Error;
 
 use anyhow::Context;
 use did_iota::producer::produce::{produce_did_iota, IotaMethod};
+use identity_stronghold::StrongholdStorage;
 use iota_sdk::{
-    client::{
-        generate_mnemonic, node_api::indexer::query_parameters::QueryParameter,
-        secret::stronghold::StrongholdSecretManager, Client, Password,
-    },
+    client::{node_api::indexer::query_parameters::QueryParameter, Client},
     types::block::address::Bech32Address,
 };
 use log::info;
-use shared::{
-    error::WalletError,
-    test_utils::{new_stronghold_storage, random_stronghold_path},
-    JwkStorageWrapper,
-};
+use shared::{error::WalletError, test_utils::new_stronghold, JwkStorageWrapper};
 use test_log::test;
 
+#[ignore = "manual test"]
 #[test(tokio::test)]
 pub async fn produce_and_publish_and_destroy_a_new_iota_testnet_did() {
-    let (storage, key_id) = new_stronghold_storage().await;
+    let (stronghold_secret_manager, key_id) = new_stronghold().await;
 
-    let result = produce_did_iota(
-        JwkStorageWrapper::Stronghold(storage.clone()),
-        &key_id,
-        IotaMethod::Testnet,
-    )
-    .await;
+    let stronghold_storage = StrongholdStorage::new(stronghold_secret_manager);
+    let storage = JwkStorageWrapper::Stronghold(stronghold_storage);
+
+    let result = produce_did_iota(&storage, &key_id, IotaMethod::Testnet).await;
     assert!(result.is_err());
 
     // Extract required amount for storage deposit and funding address from error
@@ -59,7 +52,7 @@ pub async fn produce_and_publish_and_destroy_a_new_iota_testnet_did() {
         .unwrap();
 
     // Try to produce the DID again
-    let result = produce_did_iota(JwkStorageWrapper::Stronghold(storage), &key_id, IotaMethod::Testnet).await;
+    let result = produce_did_iota(&storage, &key_id, IotaMethod::Testnet).await;
     let x = result.inspect_err(|e| info!("{}", e)).unwrap();
     // assert!(result.is_ok());
 }

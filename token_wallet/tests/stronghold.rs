@@ -12,8 +12,8 @@ use identity_stronghold::StrongholdStorage as ExternStrongholdStorage;
 use iota_sdk::client::{secret::stronghold::StrongholdSecretManager, Password};
 use test_log::test;
 
-const SNAPSHOT_PATH: &str = "tests/res/alice.stronghold";
-const PASSWORD: &str = "secure_password";
+const SNAPSHOT_PATH: &str = "tests/res/wallet.stronghold";
+const PASSWORD: &str = "secur3_wall3t";
 
 #[ignore = "manual test"]
 #[test(tokio::test)]

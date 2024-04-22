@@ -5,6 +5,7 @@ use identity_iota::{
     storage::KeyId,
     verification::VerificationMethod,
 };
+use identity_stronghold::StrongholdStorage;
 use log::{debug, info};
 use serde_json::json;
 use shared::JwkStorageWrapper;
@@ -82,14 +83,14 @@ mod tests {
     use crate::consumer::resolve_did_web;
 
     use identity_iota::core::ToJson;
-    use shared::test_utils::new_stronghold_storage;
+    use shared::test_utils::new_stronghold;
     use test_log::test;
     use wiremock::matchers::{method, path};
     use wiremock::{Mock, MockServer, ResponseTemplate};
 
     #[test(tokio::test)]
     async fn produces_did_web() {
-        let (stronghold_storage, key_id) = new_stronghold_storage().await;
+        let (stronghold_storage, key_id) = new_stronghold().await;
 
         // Start mock server and assert
         let mock_server = MockServer::start().await;
@@ -97,7 +98,7 @@ mod tests {
         let mock_server_port: u16 = mock_server.address().port();
 
         let document = produce_did_web(
-            JwkStorageWrapper::Stronghold(stronghold_storage),
+            JwkStorageWrapper::Stronghold(StrongholdStorage::new(stronghold_storage)),
             &key_id,
             url::Host::parse("localhost").unwrap(),
             Some(mock_server_port),
