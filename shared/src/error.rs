@@ -12,6 +12,8 @@ pub enum ConsumerError {
 
 #[derive(Error, Debug)]
 pub enum ProducerError {
+    #[error("Identity error: `{0}`")]
+    KeyStorageError(#[from] identity_iota::core::SingleStructError<identity_iota::storage::KeyStorageErrorKind>),
     #[error("Generic producer error: `{0}`")]
     Generic(String),
 }
