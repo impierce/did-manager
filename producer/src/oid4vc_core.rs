@@ -11,7 +11,7 @@ use crate::SecretManager;
 
 impl Sign for SecretManager {
     fn key_id(&self, subject_syntax_type: &str) -> Option<String> {
-        let method: DidMethod = serde_plain::from_str(subject_syntax_type).ok()?;
+        let method: DidMethod = serde_json::from_str(&format!("{subject_syntax_type:?}")).ok()?;
 
         block_on(async {
             self.produce_document(method)
@@ -34,7 +34,7 @@ impl Sign for SecretManager {
 impl Subject for SecretManager {
     /// Returns the id of the DID document corresponding to the `subject_syntax_type`.
     fn identifier(&self, subject_syntax_type: &str) -> anyhow::Result<String> {
-        let method: DidMethod = serde_plain::from_str(subject_syntax_type)?;
+        let method: DidMethod = serde_json::from_str(&format!("{subject_syntax_type:?}"))?;
 
         Ok(block_on(async {
             self.produce_document(method)
