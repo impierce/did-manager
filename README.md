@@ -15,3 +15,29 @@ Implementation of [identity.rs](https://github.com/iotaledger/identity.rs) inter
 | [did:iota](https://wiki.iota.org/identity.rs/references/specifications/iota-did-method-spec/)     | :ballot_box_with_check: |                         |
 | [did:iota:smr](https://wiki.iota.org/identity.rs/references/specifications/iota-did-method-spec/) | :ballot_box_with_check: |                         |
 | [did:iota:rms](https://wiki.iota.org/identity.rs/references/specifications/iota-did-method-spec/) | :ballot_box_with_check: |                         |
+
+## Usage
+
+> [!NOTE]  
+> This workspace is structured in a way that keeps the individual DID method implementations as separate crates to allow easier replacement and extensibility.
+
+### Consuming DIDs
+
+```rust
+use did_manager::Resolver;
+use identity_iota::document::CoreDocument;
+
+let resolver = Resolver::new().await;
+let did = "did:key:z6Mkk7yqnGF3YwTrLpqrW6PGsKci7dNqh1CjnvMbzrMerSeL";
+let document: CoreDocument = resolver.resolve(did).await.unwrap();
+```
+
+### Producing DIDs
+
+```rust
+use did_manager::{DidMethod, SecretManager};
+use identity_iota::document::CoreDocument;
+
+let secret_manager = SecretManager::generate("/path/to/file", "p4ssw0rd").await.unwrap();
+let document: CoreDocument = secret_manager.produce_document(DidMethod::Jwk).await.unwrap();
+```

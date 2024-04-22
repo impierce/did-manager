@@ -1,16 +1,12 @@
-use anyhow::Result;
 use identity_iota::storage::JwkStorage;
+use shared::error::ProducerError;
 
 use crate::SecretManager;
 
 impl SecretManager {
-    pub async fn sign(&self, data: &[u8]) -> Result<Vec<u8>> {
-        let public_key = self.stronghold_storage.get_public_key(&self.key_id).await.unwrap();
-        let signature = self
-            .stronghold_storage
-            .sign(&self.key_id, data, &public_key)
-            .await
-            .unwrap();
+    pub async fn sign(&self, data: &[u8]) -> Result<Vec<u8>, ProducerError> {
+        let public_key = self.stronghold_storage.get_public_key(&self.key_id).await?;
+        let signature = self.stronghold_storage.sign(&self.key_id, data, &public_key).await?;
         Ok(signature)
     }
 }
@@ -19,11 +15,13 @@ impl SecretManager {
 mod tests {
     use super::*;
 
+    use test_log::test;
+
     const SNAPSHOT_PATH: &str = "tests/res/test.stronghold";
     const PASSWORD: &str = "secure_password";
     const KEY_ID: &str = "9O66nzWqYYy1LmmiOudOlh2SMIaUWoTS";
 
-    #[tokio::test]
+    #[test(tokio::test)]
     async fn produces_the_expected_signature() {
         let secret_manager = SecretManager::load(SNAPSHOT_PATH.to_owned(), PASSWORD.to_owned(), KEY_ID.to_owned())
             .await

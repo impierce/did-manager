@@ -1,3 +1,4 @@
+pub mod error;
 pub mod test_utils;
 
 use identity_stronghold::StrongholdStorage;

@@ -28,4 +28,5 @@ iota-sdk = { version = "1.0", features = ["stronghold"] }
 log = "0.4"
 signature = "2.2"
 test-log = "0.2"
+thiserror = "1.0"
 tokio = { version = "1", features = ["full"] }

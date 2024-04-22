@@ -1,18 +1,18 @@
-use std::io::{Error, ErrorKind};
-
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
 use futures::executor::block_on;
 use identity_iota::did::DID;
 use identity_iota::document::DIDUrlQuery;
+use identity_iota::verification::jwk::JwkParams;
 use oid4vc_core::{Sign, Subject, Verify};
+use shared::error::ProducerError;
 
-use crate::did_document::Method;
+use crate::did_document::DidMethod;
 use crate::SecretManager;
 
 impl Sign for SecretManager {
     fn key_id(&self) -> Option<String> {
         block_on(async {
-            self.produce_document(Method::Key)
+            self.produce_document(DidMethod::Key)
                 .await
                 .ok()
                 .and_then(|document| document.verification_method().first().cloned())
@@ -21,7 +21,7 @@ impl Sign for SecretManager {
     }
 
     fn sign(&self, message: &str) -> anyhow::Result<Vec<u8>> {
-        block_on(async { self.sign(message.as_bytes()).await })
+        Ok(block_on(async { self.sign(message.as_bytes()).await })?)
     }
 
     fn external_signer(&self) -> Option<std::sync::Arc<dyn oid4vc_core::authentication::sign::ExternalSign>> {
@@ -32,25 +32,23 @@ impl Sign for SecretManager {
 impl Subject for SecretManager {
     /// Returns the id of the DID document for the default method (`did:key`).
     fn identifier(&self) -> anyhow::Result<String> {
-        block_on(async {
-            self.produce_document(Method::Key)
+        Ok(block_on(async {
+            self.produce_document(DidMethod::Key)
                 .await
                 .map(|document| document.id().to_string())
-                .map_err(|e| anyhow::anyhow!(e))
-        })
+        })?)
     }
 }
 
 // TODO: this should be `impl Subject for SecretManager`
 impl SecretManager {
     /// Returns the id of the DID document for the given method.
-    pub fn identifier_for_method(&self, method: &str) -> anyhow::Result<String> {
-        let method: Method = serde_json::from_str(&format!("{:?}", method)).unwrap();
+    pub fn identifier_for_method(&self, method: &str) -> Result<String, ProducerError> {
+        let method: DidMethod = serde_json::from_str(&format!("{:?}", method)).unwrap();
         block_on(async {
             self.produce_document(method)
                 .await
                 .map(|document| document.id().to_string())
-                .map_err(|e| anyhow::anyhow!(e))
         })
     }
 }
@@ -70,27 +68,27 @@ impl Verify for SecretManager {
                 DIDUrlQuery::from(&did_url),
                 Some(identity_iota::verification::MethodScope::VerificationMethod),
             )
-            .ok_or(Error::new(
-                ErrorKind::NotFound,
-                format!(
-                    "No verification method found for fragment=[{}]",
-                    did_url.fragment().unwrap()
-                ),
-            ))?;
+            .ok_or(ProducerError::Generic(format!(
+                "No verification method found for fragment=[{}]",
+                did_url.fragment().unwrap()
+            )))?;
 
-        let public_key_jwk = verification_method
+        // Try decode from `MethodData` directly, else use public JWK params.
+        verification_method
             .data()
-            .public_key_jwk()
-            .ok_or(Error::new(ErrorKind::NotFound, "No JWK found"))?;
-
-        let x = match public_key_jwk.params() {
-            identity_iota::verification::jwk::JwkParams::Okp(okp) => okp.x.as_str(),
-            identity_iota::verification::jwk::JwkParams::Ec(ec) => ec.x.as_str(),
-            identity_iota::verification::jwk::JwkParams::Rsa(_) => todo!(),
-            identity_iota::verification::jwk::JwkParams::Oct(_) => todo!(),
-        };
-
-        Ok(URL_SAFE_NO_PAD.decode(x.as_bytes()).unwrap())
+            .try_decode()
+            .or_else(|_| {
+                verification_method
+                    .data()
+                    .public_key_jwk()
+                    .and_then(|public_key_jwk| match public_key_jwk.params() {
+                        JwkParams::Okp(okp_params) => Some(okp_params.x.as_bytes().to_vec()),
+                        JwkParams::Ec(ec_params) => Some(ec_params.x.as_bytes().to_vec()),
+                        _ => None,
+                    })
+                    .ok_or(anyhow::anyhow!("Failed to decode public key for DID URL: {}", did_url))
+            })
+            .and_then(|encoded_public_key| URL_SAFE_NO_PAD.decode(encoded_public_key).map_err(Into::into))
     }
 }
 
@@ -98,14 +96,14 @@ impl Verify for SecretManager {
 mod tests {
     use super::*;
 
-    use base64::engine::general_purpose::STANDARD;
     use identity_iota::did::{CoreDID, DIDUrl, RelativeDIDUrl};
+    use test_log::test;
 
     const SNAPSHOT_PATH: &str = "tests/res/test.stronghold";
     const PASSWORD: &str = "secure_password";
     const KEY_ID: &str = "9O66nzWqYYy1LmmiOudOlh2SMIaUWoTS";
 
-    #[tokio::test]
+    #[test(tokio::test)]
     async fn successfully_finds_an_existing_public_key_in_did_key_by_fragment() {
         let res = SecretManager::load(SNAPSHOT_PATH.to_owned(), PASSWORD.to_owned(), KEY_ID.to_owned())
             .await
@@ -116,12 +114,12 @@ mod tests {
         let did_url = DIDUrl::new(CoreDID::parse(core_did).unwrap(), Some(url));
         let pub_key = res.public_key(&did_url.to_string()).await.unwrap();
         assert_eq!(
-            STANDARD.encode(&pub_key),
-            "P2BkYS6z4UHmsxn6FX1oHsyx7eiUSFEMJ1D/RC8M0+w="
+            URL_SAFE_NO_PAD.encode(&pub_key),
+            "P2BkYS6z4UHmsxn6FX1oHsyx7eiUSFEMJ1D_RC8M0-w"
         );
     }
 
-    #[tokio::test]
+    #[test(tokio::test)]
     async fn successfully_finds_an_existing_public_key_in_did_jwk_by_fragment() {
         let res = SecretManager::load(SNAPSHOT_PATH.to_owned(), PASSWORD.to_owned(), KEY_ID.to_owned())
             .await
@@ -132,12 +130,12 @@ mod tests {
         let did_url = DIDUrl::new(CoreDID::parse(core_did).unwrap(), Some(url));
         let pub_key = res.public_key(&did_url.to_string()).await.unwrap();
         assert_eq!(
-            STANDARD.encode(&pub_key),
-            "acbIQiuMs3i8/uszEjJ2tpTtRM4EU3yz91PH6CdH2V0="
+            URL_SAFE_NO_PAD.encode(&pub_key),
+            "acbIQiuMs3i8_uszEjJ2tpTtRM4EU3yz91PH6CdH2V0"
         );
     }
 
-    #[tokio::test]
+    #[test(tokio::test)]
     async fn throws_error_when_no_public_key_found_in_document_for_fragment() {
         let res = SecretManager::load(SNAPSHOT_PATH.to_owned(), PASSWORD.to_owned(), KEY_ID.to_owned())
             .await
