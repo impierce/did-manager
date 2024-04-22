@@ -1,3 +1,4 @@
+use base64::{engine::general_purpose::URL_SAFE_NO_PAD, DecodeError, Engine as _};
 use futures::executor::block_on;
 use identity_iota::did::DID;
 use identity_iota::document::DIDUrlQuery;
@@ -76,22 +77,18 @@ impl Verify for SecretManager {
         verification_method
             .data()
             .try_decode()
-            .ok()
-            .or_else(|| {
+            .or_else(|_| {
                 verification_method
                     .data()
                     .public_key_jwk()
                     .and_then(|public_key_jwk| match public_key_jwk.params() {
-                        JwkParams::Okp(okp_params) => {
-                            return Some(okp_params.x.as_bytes().to_vec());
-                        }
-                        JwkParams::Ec(ec_params) => {
-                            return Some(ec_params.x.as_bytes().to_vec());
-                        }
-                        _ => todo!(),
+                        JwkParams::Okp(okp_params) => Some(okp_params.x.as_bytes().to_vec()),
+                        JwkParams::Ec(ec_params) => Some(ec_params.x.as_bytes().to_vec()),
+                        _ => None,
                     })
+                    .ok_or(anyhow::anyhow!("Failed to decode public key for DID URL: {}", did_url))
             })
-            .ok_or(anyhow::anyhow!("Failed to decode public key for DID URL: {}", did_url))
+            .and_then(|encoded_public_key| URL_SAFE_NO_PAD.decode(encoded_public_key).map_err(Into::into))
     }
 }
 
@@ -99,7 +96,6 @@ impl Verify for SecretManager {
 mod tests {
     use super::*;
 
-    use base64::{engine::general_purpose::STANDARD, Engine as _};
     use identity_iota::did::{CoreDID, DIDUrl, RelativeDIDUrl};
     use test_log::test;
 
@@ -118,8 +114,8 @@ mod tests {
         let did_url = DIDUrl::new(CoreDID::parse(core_did).unwrap(), Some(url));
         let pub_key = res.public_key(&did_url.to_string()).await.unwrap();
         assert_eq!(
-            STANDARD.encode(&pub_key),
-            "UDJCa1lTNno0VUhtc3huNkZYMW9Ic3l4N2VpVVNGRU1KMURfUkM4TTAtdw=="
+            URL_SAFE_NO_PAD.encode(&pub_key),
+            "P2BkYS6z4UHmsxn6FX1oHsyx7eiUSFEMJ1D_RC8M0-w"
         );
     }
 
@@ -134,8 +130,8 @@ mod tests {
         let did_url = DIDUrl::new(CoreDID::parse(core_did).unwrap(), Some(url));
         let pub_key = res.public_key(&did_url.to_string()).await.unwrap();
         assert_eq!(
-            STANDARD.encode(&pub_key),
-            "YWNiSVFpdU1zM2k4X3VzekVqSjJ0cFR0Uk00RVUzeXo5MVBINkNkSDJWMA=="
+            URL_SAFE_NO_PAD.encode(&pub_key),
+            "acbIQiuMs3i8_uszEjJ2tpTtRM4EU3yz91PH6CdH2V0"
         );
     }
 
