@@ -23,7 +23,7 @@ identity_stronghold.workspace = true
 iota-sdk.workspace = true
 iota_stronghold = { version = "2.0" }
 log = "0.4"
-oid4vc-core = { git = "https://git@github.com/impierce/openid4vc.git", rev = "0c5526c" }
+oid4vc-core = { git = "https://git@github.com/impierce/openid4vc.git", rev = "a932af7" }
 serde = "1.0"
 serde_json = "1.0"
 signature.workspace = true
