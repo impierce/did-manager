@@ -89,7 +89,7 @@ mod tests {
 
     #[test(tokio::test)]
     async fn produces_did_web() {
-        let (stronghold_storage, key_id) = new_stronghold().await;
+        let (stronghold_storage, key_id) = new_stronghold_storage().await;
 
         // Start mock server and assert
         let mock_server = MockServer::start().await;
@@ -97,7 +97,7 @@ mod tests {
         let mock_server_port: u16 = mock_server.address().port();
 
         let document = produce_did_web(
-            JwkStorageWrapper::Stronghold(StrongholdStorage::new(stronghold_storage)),
+            JwkStorageWrapper::Stronghold(stronghold_storage),
             &key_id,
             url::Host::parse("localhost").unwrap(),
             Some(mock_server_port),

@@ -1,7 +1,6 @@
 use identity_iota::core::Object;
 use identity_iota::verification::VerificationMethod;
 use identity_iota::{core::ToJson, did::CoreDID, document::CoreDocument, storage::KeyId};
-use identity_stronghold::StrongholdStorage;
 use log::info;
 use serde_json::json;
 use shared::JwkStorageWrapper;
@@ -65,7 +64,7 @@ mod tests {
 
     #[test(tokio::test)]
     async fn produces_did_jwk() {
-        let (stronghold_storage, key_id) = new_stronghold().await;
+        let (stronghold_storage, key_id) = new_stronghold_storage().await;
 
         let storage = JwkStorageWrapper::Stronghold(stronghold_storage);
         let document = produce_did_jwk(storage, key_id.as_str()).await.unwrap();

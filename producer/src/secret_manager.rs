@@ -13,7 +13,6 @@ use std::io::{Error, ErrorKind};
 #[derive(Clone)]
 pub struct SecretManager {
     pub(crate) stronghold_storage: StrongholdStorage,
-    // pub(crate) stronghold_secret_manager: StrongholdSecretManager, // TODO: migrate everything from `stronghold_storage` to `stronghold_secret_manager`
     pub(crate) key_id: KeyId,
 }
 
@@ -45,7 +44,6 @@ impl SecretManager {
 
         Ok(SecretManager {
             stronghold_storage,
-            // stronghold_secret_manager,
             key_id: jwk_gen_output.key_id,
         })
     }
@@ -87,16 +85,9 @@ impl SecretManager {
 
         Ok(SecretManager {
             stronghold_storage,
-            // stronghold_secret_manager,
             key_id,
         })
     }
-
-    // pub async fn secret_manager(&self) -> Result<StrongholdSecretManager, std::io::Error> {
-    //     &self.stronghold_storage.as_secret_manager()
-    // }
-
-    // TODO: add getter for underlying stronghold_secret_manager?
 }
 
 #[cfg(test)]

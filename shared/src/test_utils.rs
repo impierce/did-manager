@@ -6,7 +6,7 @@ use identity_iota::verification::{
 };
 use identity_stronghold::StrongholdStorage;
 use iota_sdk::client::secret::stronghold::StrongholdSecretManager;
-use iota_sdk::client::{generate_mnemonic, Password};
+use iota_sdk::client::Password;
 use log::debug;
 use rand::distributions::DistString;
 
@@ -32,33 +32,19 @@ pub fn random_stronghold_path() -> std::path::PathBuf {
     file.to_owned()
 }
 
-/// Creates a new temporary Stronghold and inserts a Mnemonic and a JWK
-pub async fn new_stronghold() -> (StrongholdSecretManager, KeyId) {
+pub async fn new_stronghold_storage() -> (StrongholdStorage, KeyId) {
     iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
 
-    let path = random_stronghold_path();
-
-    let stronghold_secret_manager = StrongholdSecretManager::builder()
+    let stronghold = StrongholdSecretManager::builder()
         .password(Password::from("secure_password".to_owned()))
-        .build(path.clone())
+        .build(random_stronghold_path())
         .unwrap();
 
-    stronghold_secret_manager
-        .store_mnemonic(generate_mnemonic().unwrap())
-        .await
-        .ok();
-
-    let stronghold_storage = StrongholdStorage::new(stronghold_secret_manager);
+    let stronghold_storage = StrongholdStorage::new(stronghold);
 
     let jwk = test_jwk();
 
     let key_id = stronghold_storage.insert(jwk.clone()).await.unwrap();
 
-    // Load the Stronghold again since `StrongholdStroage` doesn't allow releasing the `StrongholdSecretManager`
-    let stronghold_secret_manager = StrongholdSecretManager::builder()
-        .password(Password::from("secure_password".to_owned()))
-        .build(path)
-        .unwrap();
-
-    (stronghold_secret_manager, key_id)
+    (stronghold_storage, key_id)
 }
