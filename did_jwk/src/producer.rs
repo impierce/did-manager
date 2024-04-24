@@ -58,7 +58,6 @@ pub async fn produce_did_jwk(storage: JwkStorageWrapper, key_id: &str) -> Result
 mod tests {
     use super::*;
 
-    use serde_json::json;
     use shared::test_utils::new_stronghold_storage;
     use test_log::test;
 

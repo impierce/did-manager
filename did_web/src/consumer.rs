@@ -42,6 +42,7 @@ async fn resolve_did(did: &str) -> Result<CoreDocument, ConsumerError> {
 mod tests {
     use super::*;
 
+    use serde_json::json;
     use test_log::test;
     use wiremock::matchers::{method, path};
     use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -52,7 +53,7 @@ mod tests {
 
         Mock::given(method("GET"))
             .and(path("/.well-known/did.json"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
               "@context": "https://www.w3.org/ns/did/v1",
               "id": format!("did:web:localhost%3A{}", mock_server.address().port()),
               "verificationMethod": [
