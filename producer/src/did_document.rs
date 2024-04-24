@@ -19,7 +19,12 @@ pub enum DidMethod {
 }
 
 impl SecretManager {
-    pub async fn produce_document(&self, did_method: DidMethod) -> Result<CoreDocument, ProducerError> {
+    pub async fn produce_document(
+        &self,
+        did_method: DidMethod,
+        managed_did: Option<String>, // TODO(selv): externally managed DID (see did_iota/README.md)
+        managed_fragment: Option<String>, // TODO(selv): externally managed fragment (see did_iota/README.md)
+    ) -> Result<CoreDocument, ProducerError> {
         let storage = JwkStorageWrapper::Stronghold(self.stronghold_storage.clone());
 
         let host: url::Host = url::Host::parse("localhost").unwrap(); // TODO
@@ -47,8 +52,10 @@ impl SecretManager {
                     &storage,
                     &self.key_id,
                     did_iota::produce::IotaMethod::Testnet,
-                    IotaDID::parse("")?,
-                    "".to_string(),
+                    IotaDID::parse(managed_did.expect("externally managed `DID` not specified"))?,
+                    managed_fragment
+                        .expect("externally managed `fragment` not specified")
+                        .to_string(),
                 )
                 .await
                 .unwrap();
@@ -88,7 +95,7 @@ mod tests {
         .unwrap();
 
         // TODO: Some(url::Host::parse("localhost").unwrap()), Some(8080)
-        let document = secret_manager.produce_document(DidMethod::Web).await;
+        let document = secret_manager.produce_document(DidMethod::Web, None, None).await;
 
         info!("Document: {}", document.as_ref().unwrap().to_json_pretty().unwrap());
         assert!(document.is_ok())
@@ -101,7 +108,7 @@ mod tests {
             .unwrap();
 
         // TODO: Some(url::Host::parse("localhost").unwrap()), Some(8080)
-        let document = secret_manager.produce_document(DidMethod::Web).await;
+        let document = secret_manager.produce_document(DidMethod::Web, None, None).await;
 
         assert_eq!(
             document

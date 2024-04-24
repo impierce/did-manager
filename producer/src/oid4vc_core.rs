@@ -12,7 +12,7 @@ use crate::SecretManager;
 impl Sign for SecretManager {
     fn key_id(&self) -> Option<String> {
         block_on(async {
-            self.produce_document(DidMethod::Key)
+            self.produce_document(DidMethod::Key, None, None)
                 .await
                 .ok()
                 .and_then(|document| document.verification_method().first().cloned())
@@ -33,7 +33,7 @@ impl Subject for SecretManager {
     /// Returns the id of the DID document for the default method (`did:key`).
     fn identifier(&self) -> anyhow::Result<String> {
         Ok(block_on(async {
-            self.produce_document(DidMethod::Key)
+            self.produce_document(DidMethod::Key, None, None)
                 .await
                 .map(|document| document.id().to_string())
         })?)
@@ -46,7 +46,7 @@ impl SecretManager {
     pub fn identifier_for_method(&self, method: &str) -> Result<String, ProducerError> {
         let method: DidMethod = serde_json::from_str(&format!("{:?}", method)).unwrap();
         block_on(async {
-            self.produce_document(method)
+            self.produce_document(method, None, None)
                 .await
                 .map(|document| document.id().to_string())
         })

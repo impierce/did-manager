@@ -1,9 +1,8 @@
 use identity_iota::{
     core::ToJson,
     document::CoreDocument,
-    iota::{IotaDID, IotaDocument, NetworkName},
+    iota::{IotaDID, NetworkName},
     storage::KeyId,
-    verification::{MethodScope, VerificationMethod},
 };
 use log::info;
 use shared::{error::ProducerError, JwkStorageWrapper};
@@ -16,17 +15,13 @@ pub enum IotaMethod {
     Mainnet,
 }
 
-static MAINNET_URL: &str = "https://api.stardust-mainnet.iotaledger.net";
-static SHIMMER_URL: &str = "https://api.shimmer.network";
-static TESTNET_URL: &str = "https://api.testnet.shimmer.network";
-
 /// Note: Producing a DID document on an IOTA network involves publishing it to the network.
 pub async fn produce_did_iota(
     storage: &JwkStorageWrapper,
     key_id: &KeyId,
     iota_method: IotaMethod,
-    did: IotaDID,     // TODO(selv): temporarily passed in until did-manager fully manages the DID itself
-    fragment: String, // TODO(selv): temporary passed in until did-manager fully manages the DID itself
+    managed_did: IotaDID,     // TODO(selv): see README.md
+    managed_fragment: String, // TODO(selv): see README.md
 ) -> Result<CoreDocument, ProducerError> {
     let stronghold_storage = match storage {
         JwkStorageWrapper::Stronghold(stronghold_storage) => stronghold_storage,
@@ -36,7 +31,7 @@ pub async fn produce_did_iota(
     // Sanity check: Does the key exist in storage?
     let public_key_jwk = stronghold_storage.get_public_key(key_id).await.unwrap();
 
-    let network = match iota_method {
+    let _ = match iota_method {
         IotaMethod::Testnet => {
             info!(
                 "Producing did:iota:rms (Testnet) for key_id=[{:?}] ...",
@@ -58,13 +53,16 @@ pub async fn produce_did_iota(
     };
 
     // Sanity check: Can the document be resolved from the ledger?
-    let published_document = resolve(did).await.unwrap();
+    let published_document = resolve(managed_did).await.unwrap();
 
     // Sanity check: Is the method in the document?
-    let method = published_document.resolve_method(&fragment, None).unwrap();
+    let verification_method = published_document.resolve_method(&managed_fragment, None).unwrap();
 
     // Sanity check: Do the public keys match?
-    assert_eq!(public_key_jwk, method.data().public_key_jwk().unwrap().clone());
+    assert_eq!(
+        public_key_jwk,
+        verification_method.data().public_key_jwk().unwrap().clone()
+    );
 
     info!("DID Document: {}", published_document.to_json_pretty().unwrap());
 

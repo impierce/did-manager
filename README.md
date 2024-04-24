@@ -18,7 +18,7 @@ Implementation of [identity.rs](https://github.com/iotaledger/identity.rs) inter
 
 ## Usage
 
-> [!NOTE]  
+> [!NOTE]
 > This workspace is structured in a way that keeps the individual DID method implementations as separate crates to allow easier replacement and extensibility.
 
 ### Consuming DIDs
