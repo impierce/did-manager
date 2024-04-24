@@ -9,7 +9,6 @@ rust-version.workspace = true
 
 [dependencies]
 shared = { path = "../shared" }
-token_wallet = { path = "../token_wallet" }
 
 identity_iota.workspace = true
 identity_stronghold.workspace = true

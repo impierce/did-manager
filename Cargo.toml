@@ -17,7 +17,6 @@ members = [
     "did_web",
     "producer",
     "shared",
-    "token_wallet",
 ]
 
 [dependencies]

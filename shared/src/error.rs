@@ -24,6 +24,8 @@ pub enum ProducerError {
     #[error("Wallet error: `{0}`")]
     WalletError(#[from] WalletError),
     #[error("Identity error: `{0}`")]
+    IdentityIotaDidError(#[from] identity_iota::did::Error),
+    #[error("Identity error: `{0}`")]
     IdentityIotaError(#[from] identity_iota::iota::Error),
     #[error("Identity error: `{0}`")]
     IdentityIotaBlockError(#[from] identity_iota::iota::block::Error),

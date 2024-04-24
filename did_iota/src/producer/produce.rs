@@ -1,7 +1,3 @@
-use std::sync::Arc;
-use token_wallet::{iota::IotaWallet, TokenWallet};
-use tokio::sync::RwLock;
-
 use identity_iota::{
     core::ToJson,
     document::CoreDocument,
@@ -9,22 +5,10 @@ use identity_iota::{
     storage::KeyId,
     verification::{MethodScope, VerificationMethod},
 };
-use identity_stronghold::StrongholdStorage;
-use iota_sdk::{
-    client::{
-        api::GetAddressesOptions,
-        constants::{SHIMMER_COIN_TYPE, SHIMMER_TESTNET_BECH32_HRP},
-        secret::{stronghold::StrongholdSecretManager, SecretManager},
-        Password,
-    },
-    types::block::address::Bech32Address,
-    wallet::ClientOptions,
-    Wallet,
-};
 use log::info;
-use shared::{error::ProducerError, test_utils::random_stronghold_path, JwkStorageWrapper};
+use shared::{error::ProducerError, JwkStorageWrapper};
 
-use crate::producer::publish::publish_iota_document;
+use crate::producer::resolve::resolve;
 
 pub enum IotaMethod {
     Testnet,
@@ -41,13 +25,16 @@ pub async fn produce_did_iota(
     storage: &JwkStorageWrapper,
     key_id: &KeyId,
     iota_method: IotaMethod,
+    did: IotaDID,     // TODO(selv): temporarily passed in until did-manager fully manages the DID itself
+    fragment: String, // TODO(selv): temporary passed in until did-manager fully manages the DID itself
 ) -> Result<CoreDocument, ProducerError> {
-    // TODO: check if key exists for given key_id?
-
     let stronghold_storage = match storage {
         JwkStorageWrapper::Stronghold(stronghold_storage) => stronghold_storage,
         JwkStorageWrapper::PKCS11 => todo!(),
     };
+
+    // Sanity check: Does the key exist in storage?
+    let public_key_jwk = stronghold_storage.get_public_key(key_id).await.unwrap();
 
     let network = match iota_method {
         IotaMethod::Testnet => {
@@ -70,53 +57,14 @@ pub async fn produce_did_iota(
         }
     };
 
-    let mut iota_document = IotaDocument::new(&network);
+    // Sanity check: Can the document be resolved from the ledger?
+    let published_document = resolve(did).await.unwrap();
 
-    // Placeholder until document is published to network
-    let controller = IotaDID::placeholder(&network);
+    // Sanity check: Is the method in the document?
+    let method = published_document.resolve_method(&fragment, None).unwrap();
 
-    // let secret_manager = SecretManager::Stronghold(stronghold_secret_manager);
-
-    // let stronghold_storage = StrongholdStorage::new(stronghold_secret_manager);
-
-    // Create new Stronghold instance
-    // let secret_manager = SecretManager::Stronghold(
-    //     StrongholdSecretManager::builder()
-    //         .password(Password::from("password"))
-    //         .build(random_stronghold_path())?,
-    // );
-
-    // let x = secret_manager.clone();
-
-    let wallet = IotaWallet::new().await;
-
-    // let client_options = ClientOptions::new().with_node(TESTNET_URL).unwrap();
-    // let coin_type = SHIMMER_COIN_TYPE; // TODO: hardcoded for now
-    // let wallet = Wallet::builder()
-    //     .with_secret_manager_arc(Some(Arc::new(RwLock::new(secret_manager))))
-    //     .with_client_options(client_options)
-    //     .with_coin_type(coin_type)
-    //     .finish()
-    //     .await
-    //     .unwrap();
-
-    // let ssm: StrongholdSecretManager = match wallet.get_secret_manager().as_ref() {
-    //     SecretManager::Stronghold(ssm) => ssm.clone(),
-    //     _ => panic!("Expected StrongholdSecretManager"),
-    // };
-
-    let public_key_jwk = stronghold_storage.get_public_key(key_id).await.unwrap();
-
-    let verification_method =
-        VerificationMethod::new_from_jwk(controller, public_key_jwk.clone(), Some("key-0")).unwrap();
-
-    iota_document
-        .insert_method(verification_method, MethodScope::VerificationMethod)
-        .ok();
-
-    let governor_address = wallet.get_governor_address().await;
-
-    let published_document = publish_iota_document(iota_document, governor_address, wallet).await?;
+    // Sanity check: Do the public keys match?
+    assert_eq!(public_key_jwk, method.data().public_key_jwk().unwrap().clone());
 
     info!("DID Document: {}", published_document.to_json_pretty().unwrap());
 
@@ -127,31 +75,34 @@ pub async fn produce_did_iota(
 mod tests {
     use super::*;
 
+    use identity_stronghold::StrongholdStorage;
     use iota_sdk::client::{secret::stronghold::StrongholdSecretManager, Password};
     use test_log::test;
 
     const SNAPSHOT_PATH: &str = "tests/res/test.stronghold";
     const PASSWORD: &str = "secure_password";
     const KEY_ID: &str = "9O66nzWqYYy1LmmiOudOlh2SMIaUWoTS";
+    const IOTA_DID: &str = "";
+    const FRAGMENT: &str = "";
 
     #[test(tokio::test)]
     async fn produce_did_iota_testnet() {
-        // let secret_manager = SecretManager::load(SNAPSHOT_PATH.to_owned(), PASSWORD.to_owned(), KEY_ID.to_owned())
-        //     .await
-        //     .unwrap();
-        // let storage = JwkStorageWrapper::Stronghold(secret_manager.stronghold_storage);
-
         let stronghold_adapter = StrongholdSecretManager::builder()
             .password(Password::from(PASSWORD.to_owned()))
             .build(SNAPSHOT_PATH.to_owned())
             .unwrap();
 
         let storage = JwkStorageWrapper::Stronghold(StrongholdStorage::new(stronghold_adapter));
-        // let storage = JwkStorageWrapper::Stronghold(stronghold_adapter);
 
-        let document = produce_did_iota(&storage, &KeyId::new(KEY_ID), IotaMethod::Testnet)
-            .await
-            .unwrap();
+        let document = produce_did_iota(
+            &storage,
+            &KeyId::new(KEY_ID),
+            IotaMethod::Testnet,
+            IotaDID::parse(IOTA_DID).unwrap(),
+            FRAGMENT.to_string(),
+        )
+        .await
+        .unwrap();
 
         assert_eq!(
             document.id(),
@@ -184,9 +135,15 @@ mod tests {
 
         let storage = JwkStorageWrapper::Stronghold(StrongholdStorage::new(stronghold_adapter));
 
-        let document = produce_did_iota(&storage, &KeyId::new(KEY_ID), IotaMethod::Shimmer)
-            .await
-            .unwrap();
+        let document = produce_did_iota(
+            &storage,
+            &KeyId::new(KEY_ID),
+            IotaMethod::Shimmer,
+            IotaDID::parse(IOTA_DID).unwrap(),
+            FRAGMENT.to_string(),
+        )
+        .await
+        .unwrap();
 
         assert_eq!(document.id(), "did:iota:smr:0x0000");
     }
@@ -201,9 +158,15 @@ mod tests {
 
         let storage = JwkStorageWrapper::Stronghold(StrongholdStorage::new(stronghold_adapter));
 
-        let document = produce_did_iota(&storage, &KeyId::new(KEY_ID), IotaMethod::Mainnet)
-            .await
-            .unwrap();
+        let document = produce_did_iota(
+            &storage,
+            &KeyId::new(KEY_ID),
+            IotaMethod::Mainnet,
+            IotaDID::parse(IOTA_DID).unwrap(),
+            FRAGMENT.to_string(),
+        )
+        .await
+        .unwrap();
 
         assert_eq!(document.id(), "did:iota:0x0000");
     }
