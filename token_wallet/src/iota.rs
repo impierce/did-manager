@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use crypto::keys::bip39;
 use iota_sdk::{
     client::{
@@ -12,6 +10,7 @@ use iota_sdk::{
 };
 use log::info;
 use shared::error::WalletError;
+use std::str::FromStr;
 
 use crate::{TokenWallet, TESTNET_URL};
 
@@ -170,6 +169,11 @@ impl IotaWallet {
         //     .unwrap();
 
         Ok(())
+    }
+
+    /// Returns a reference to the encapsulated `iota_sdk::Wallet`.
+    pub async fn inner(&self) -> &Wallet {
+        &self.wallet
     }
 }
 

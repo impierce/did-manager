@@ -1,7 +1,7 @@
 use identity_iota::core::ToJson;
 use identity_iota::did::DID;
 use identity_iota::document::CoreDocument;
-use identity_iota::iota::{IotaDID, IotaDocument, IotaIdentityClientExt};
+use identity_iota::iota::{IotaClientExt, IotaDID, IotaDocument, IotaIdentityClientExt};
 use iota_sdk::client::{node_api::indexer::query_parameters::QueryParameter, Client};
 use iota_sdk::types::block::address::Bech32Address;
 use iota_sdk::types::block::output::{AliasId, MinimumStorageDepositBasicOutput};
@@ -92,9 +92,10 @@ pub async fn publish_iota_document(
             // TODO: handle different types of errors:
             // - no funding at all: "publish failed: no input with matching ed25519 address provided"
             // - too little funding: "publish failed: insufficient amount: found 42601, required 89300"
-            // let document: IotaDocument = client
-            //     .publish_did_output(&wallet.get_secret_manager().blocking_read(), alias_output)
-            //     .await?;
+
+            let secret_manager = &wallet.inner().await.get_secret_manager().as_ref().into_inner();
+
+            let document: IotaDocument = client.publish_did_output(secret_manager, alias_output).await?;
 
             info!("Successfully published AliasOutput.");
             document.core_document().to_owned()
