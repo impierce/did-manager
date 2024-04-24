@@ -75,13 +75,14 @@ mod tests {
 
     use identity_stronghold::StrongholdStorage;
     use iota_sdk::client::{secret::stronghold::StrongholdSecretManager, Password};
+    use serde_json::json;
     use test_log::test;
 
-    const SNAPSHOT_PATH: &str = "tests/res/test.stronghold";
-    const PASSWORD: &str = "secure_password";
-    const KEY_ID: &str = "9O66nzWqYYy1LmmiOudOlh2SMIaUWoTS";
-    const IOTA_DID: &str = "";
-    const FRAGMENT: &str = "";
+    const SNAPSHOT_PATH: &str = "tests/res/selv.stronghold";
+    const PASSWORD: &str = "VNvRtH4tKyWwvJDpL6Vuc2aoLiKAecGQ";
+    const KEY_ID: &str = "UVDxWhG2rB39FkaR7I27mHeUNrGtUgcr";
+    const IOTA_DID: &str = "did:iota:rms:0x42ad588322e58b3c07aa39e4948d021ee17ecb5747915e9e1f35f028d7ecaf90";
+    const FRAGMENT: &str = "bQKQRzaop7CgEvqVq8UlgLGsdF-R-hnLFkKFZqW2VN0";
 
     #[test(tokio::test)]
     async fn produce_did_iota_testnet() {
@@ -104,22 +105,29 @@ mod tests {
 
         assert_eq!(
             document.id(),
-            "did:iota:rms:0x29418b0a0120d10e20d0dacc78896c200ecd1cc1e3b153be482f150859a96739"
+            "did:iota:rms:0x42ad588322e58b3c07aa39e4948d021ee17ecb5747915e9e1f35f028d7ecaf90"
         );
 
         // Expect public key of first verification method
         assert_eq!(
-            document
-                .verification_method()
-                .first()
-                .unwrap()
-                .data()
-                .public_key_jwk()
-                .unwrap()
-                .try_okp_params()
-                .unwrap()
-                .x,
-            "P2BkYS6z4UHmsxn6FX1oHsyx7eiUSFEMJ1D_RC8M0-w".to_string()
+            document.to_json_value().unwrap(),
+            json!({
+                "id": "did:iota:rms:0x42ad588322e58b3c07aa39e4948d021ee17ecb5747915e9e1f35f028d7ecaf90",
+                "verificationMethod": [
+                  {
+                    "id": "did:iota:rms:0x42ad588322e58b3c07aa39e4948d021ee17ecb5747915e9e1f35f028d7ecaf90#bQKQRzaop7CgEvqVq8UlgLGsdF-R-hnLFkKFZqW2VN0",
+                    "controller": "did:iota:rms:0x42ad588322e58b3c07aa39e4948d021ee17ecb5747915e9e1f35f028d7ecaf90",
+                    "type": "JsonWebKey",
+                    "publicKeyJwk": {
+                      "kty": "OKP",
+                      "alg": "EdDSA",
+                      "kid": "bQKQRzaop7CgEvqVq8UlgLGsdF-R-hnLFkKFZqW2VN0",
+                      "crv": "Ed25519",
+                      "x": "GlnK9ePs802XxAglROQzoGurm9Qpv0IFPEbdMCILN_U"
+                    }
+                  }
+                ]
+            })
         );
     }
 

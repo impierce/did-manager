@@ -1169,6 +1169,7 @@ dependencies = [
  "iota-sdk",
  "iota_stronghold",
  "log",
+ "serde_json",
  "shared",
  "test-log",
  "tokio",
