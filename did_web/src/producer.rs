@@ -5,7 +5,6 @@ use identity_iota::{
     storage::KeyId,
     verification::VerificationMethod,
 };
-use identity_stronghold::StrongholdStorage;
 use log::{debug, info};
 use serde_json::json;
 use shared::JwkStorageWrapper;
@@ -83,7 +82,7 @@ mod tests {
     use crate::consumer::resolve_did_web;
 
     use identity_iota::core::ToJson;
-    use shared::test_utils::new_stronghold;
+    use shared::test_utils::new_stronghold_storage;
     use test_log::test;
     use wiremock::matchers::{method, path};
     use wiremock::{Mock, MockServer, ResponseTemplate};

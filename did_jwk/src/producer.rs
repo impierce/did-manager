@@ -13,17 +13,6 @@ use std::io::ErrorKind;
 const FRAGMENT: &str = "0";
 
 pub async fn produce_did_jwk(storage: JwkStorageWrapper, key_id: &str) -> Result<CoreDocument, Error> {
-    // let stronghold_secret_manager = StrongholdSecretManager::builder()
-    //     .password(Password::from("secure_password".to_owned()))
-    //     .build(random_stronghold_path())
-    //     .unwrap();
-
-    // identity.rs
-    // let stronghold_storage = StrongholdStorage::new(stronghold_secret_manager);
-
-    // IOTA SDK
-    // let secret_manager: SecretManager = SecretManager::Stronghold(stronghold_secret_manager);
-
     let public_key_jwk = match storage {
         JwkStorageWrapper::Stronghold(stronghold_storage) => {
             stronghold_storage.get_public_key(&KeyId::new(key_id)).await.unwrap()
@@ -71,14 +60,14 @@ mod tests {
     use super::*;
 
     use serde_json::json;
-    use shared::test_utils::new_stronghold;
+    use shared::test_utils::new_stronghold_storage;
     use test_log::test;
 
     #[test(tokio::test)]
     async fn produces_did_jwk() {
         let (stronghold_storage, key_id) = new_stronghold().await;
 
-        let storage = JwkStorageWrapper::Stronghold(StrongholdStorage::new(stronghold_storage));
+        let storage = JwkStorageWrapper::Stronghold(stronghold_storage);
         let document = produce_did_jwk(storage, key_id.as_str()).await.unwrap();
 
         assert_eq!(
