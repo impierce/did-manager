@@ -106,6 +106,7 @@ impl SecretManager {
 mod tests {
     use super::*;
 
+    use oid4vc_core::Subject;
     use shared::test_utils::random_stronghold_path;
     use test_log::test;
 
@@ -200,7 +201,13 @@ mod tests {
         )
         .await
         .unwrap();
-        let id = secret_manager.identifier_for_method("did:key").unwrap();
+        let id = secret_manager.identifier("did:key").unwrap();
         assert_eq!(id, "did:key:z6MkiieyoLMSVsJAZv7Jje5wWSkDEymUgkyF8kbcrjZpX3qd");
+
+        let id = secret_manager.identifier("did:jwk").unwrap();
+        assert_eq!(id, "did:jwk:eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJhSHEtMFBJZjZfbGpMaHl4NFc4Nkd2aXFiLTY3MU9BSTY3RTZ2WHBaYzdRIiwia3R5IjoiT0tQIiwieCI6IlAyQmtZUzZ6NFVIbXN4bjZGWDFvSHN5eDdlaVVTRkVNSjFEX1JDOE0wLXcifQ");
+
+        let id = secret_manager.identifier("did:web").unwrap();
+        assert_eq!(id, "did:web:localhost");
     }
 }

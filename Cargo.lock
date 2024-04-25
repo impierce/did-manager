@@ -3330,7 +3330,7 @@ dependencies = [
 [[package]]
 name = "oid4vc-core"
 version = "0.1.0"
-source = "git+https://git@github.com/impierce/openid4vc.git?rev=0c5526c#0c5526c029f3a1dca57121b833d49803b0d3e68d"
+source = "git+https://git@github.com/impierce/openid4vc.git?rev=a932af7#a932af797117bd8f042335bf29695e00905800e8"
 dependencies = [
  "anyhow",
  "async-trait",
