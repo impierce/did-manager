@@ -14,6 +14,8 @@ use std::io::{Error, ErrorKind};
 pub struct SecretManager {
     pub(crate) stronghold_storage: StrongholdStorage,
     pub(crate) key_id: KeyId,
+    pub(crate) did: Option<String>, // TODO(selv): externally managed DID (see did_iota/README.md)
+    pub(crate) fragment: Option<String>, // TODO(selv): externally managed fragment (see did_iota/README.md)
 }
 
 impl SecretManager {
@@ -45,11 +47,19 @@ impl SecretManager {
         Ok(SecretManager {
             stronghold_storage,
             key_id: jwk_gen_output.key_id,
+            did: None,
+            fragment: None,
         })
     }
 
     /// Loads an existing Stronghold and verifies the specified key exists
-    pub async fn load(snapshot_path: String, password: String, key_id: String) -> Result<Self, std::io::Error> {
+    pub async fn load(
+        snapshot_path: String,
+        password: String,
+        key_id: String,
+        did: Option<String>,      // TODO(selv): externally managed DID (see did_iota/README.md)
+        fragment: Option<String>, // TODO(selv): externally managed fragment (see did_iota/README.md)
+    ) -> Result<Self, std::io::Error> {
         if !(std::path::Path::new(&snapshot_path).try_exists()?) {
             return Err(Error::new(ErrorKind::Other, "Stronghold does not exist"));
         };
@@ -86,6 +96,8 @@ impl SecretManager {
         Ok(SecretManager {
             stronghold_storage,
             key_id,
+            did,
+            fragment,
         })
     }
 }
@@ -103,13 +115,27 @@ mod tests {
 
     #[test(tokio::test)]
     async fn successfully_loads_an_existing_stronghold() {
-        let res = SecretManager::load(SNAPSHOT_PATH.to_owned(), PASSWORD.to_owned(), KEY_ID.to_owned()).await;
+        let res = SecretManager::load(
+            SNAPSHOT_PATH.to_owned(),
+            PASSWORD.to_owned(),
+            KEY_ID.to_owned(),
+            None,
+            None,
+        )
+        .await;
         assert!(res.is_ok());
     }
 
     #[test(tokio::test)]
     async fn fails_to_load_an_existing_stronghold_when_password_is_incorrect() {
-        let res = SecretManager::load(SNAPSHOT_PATH.to_owned(), "wrong_password".to_owned(), KEY_ID.to_owned()).await;
+        let res = SecretManager::load(
+            SNAPSHOT_PATH.to_owned(),
+            "wrong_password".to_owned(),
+            KEY_ID.to_owned(),
+            None,
+            None,
+        )
+        .await;
         assert!(res.is_err());
     }
 
@@ -119,6 +145,8 @@ mod tests {
             SNAPSHOT_PATH.to_owned(),
             PASSWORD.to_owned(),
             "non_existing_key_id".to_owned(),
+            None,
+            None,
         )
         .await;
         assert!(res.is_err());
@@ -126,7 +154,14 @@ mod tests {
 
     #[test(tokio::test)]
     async fn fails_to_load_when_stronghold_file_does_not_exist() {
-        let res = SecretManager::load("non/existing/path".to_string(), PASSWORD.to_owned(), KEY_ID.to_owned()).await;
+        let res = SecretManager::load(
+            "non/existing/path".to_string(),
+            PASSWORD.to_owned(),
+            KEY_ID.to_owned(),
+            None,
+            None,
+        )
+        .await;
         assert!(res.is_err());
     }
 
@@ -156,9 +191,15 @@ mod tests {
 
     #[test(tokio::test)]
     async fn can_deserialize_method() {
-        let secret_manager = SecretManager::load(SNAPSHOT_PATH.to_owned(), PASSWORD.to_owned(), KEY_ID.to_owned())
-            .await
-            .unwrap();
+        let secret_manager = SecretManager::load(
+            SNAPSHOT_PATH.to_owned(),
+            PASSWORD.to_owned(),
+            KEY_ID.to_owned(),
+            None,
+            None,
+        )
+        .await
+        .unwrap();
         let id = secret_manager.identifier_for_method("did:key").unwrap();
         assert_eq!(id, "did:key:z6MkiieyoLMSVsJAZv7Jje5wWSkDEymUgkyF8kbcrjZpX3qd");
     }

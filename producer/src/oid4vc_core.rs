@@ -12,7 +12,7 @@ use crate::SecretManager;
 impl Sign for SecretManager {
     fn key_id(&self) -> Option<String> {
         block_on(async {
-            self.produce_document(DidMethod::Key, None, None)
+            self.produce_document(DidMethod::Key)
                 .await
                 .ok()
                 .and_then(|document| document.verification_method().first().cloned())
@@ -33,7 +33,7 @@ impl Subject for SecretManager {
     /// Returns the id of the DID document for the default method (`did:key`).
     fn identifier(&self) -> anyhow::Result<String> {
         Ok(block_on(async {
-            self.produce_document(DidMethod::Key, None, None)
+            self.produce_document(DidMethod::Key)
                 .await
                 .map(|document| document.id().to_string())
         })?)
@@ -46,7 +46,7 @@ impl SecretManager {
     pub fn identifier_for_method(&self, method: &str) -> Result<String, ProducerError> {
         let method: DidMethod = serde_json::from_str(&format!("{:?}", method)).unwrap();
         block_on(async {
-            self.produce_document(method, None, None)
+            self.produce_document(method)
                 .await
                 .map(|document| document.id().to_string())
         })
@@ -105,9 +105,15 @@ mod tests {
 
     #[test(tokio::test)]
     async fn successfully_finds_an_existing_public_key_in_did_key_by_fragment() {
-        let res = SecretManager::load(SNAPSHOT_PATH.to_owned(), PASSWORD.to_owned(), KEY_ID.to_owned())
-            .await
-            .unwrap();
+        let res = SecretManager::load(
+            SNAPSHOT_PATH.to_owned(),
+            PASSWORD.to_owned(),
+            KEY_ID.to_owned(),
+            None,
+            None,
+        )
+        .await
+        .unwrap();
         let core_did = CoreDID::parse("did:key:z6MkiieyoLMSVsJAZv7Jje5wWSkDEymUgkyF8kbcrjZpX3qd").unwrap();
         let mut url = RelativeDIDUrl::new();
         url.set_fragment(Some(core_did.method_id())).unwrap();
@@ -121,9 +127,15 @@ mod tests {
 
     #[test(tokio::test)]
     async fn successfully_finds_an_existing_public_key_in_did_jwk_by_fragment() {
-        let res = SecretManager::load(SNAPSHOT_PATH.to_owned(), PASSWORD.to_owned(), KEY_ID.to_owned())
-            .await
-            .unwrap();
+        let res = SecretManager::load(
+            SNAPSHOT_PATH.to_owned(),
+            PASSWORD.to_owned(),
+            KEY_ID.to_owned(),
+            None,
+            None,
+        )
+        .await
+        .unwrap();
         let core_did = CoreDID::parse("did:jwk:eyJjcnYiOiJQLTI1NiIsImt0eSI6IkVDIiwieCI6ImFjYklRaXVNczNpOF91c3pFakoydHBUdFJNNEVVM3l6OTFQSDZDZEgyVjAiLCJ5IjoiX0tjeUxqOXZXTXB0bm1LdG00NkdxRHo4d2Y3NEk1TEtncmwyR3pIM25TRSJ9").unwrap();
         let mut url = RelativeDIDUrl::new();
         url.set_fragment(Some("#0")).unwrap();
@@ -137,9 +149,15 @@ mod tests {
 
     #[test(tokio::test)]
     async fn throws_error_when_no_public_key_found_in_document_for_fragment() {
-        let res = SecretManager::load(SNAPSHOT_PATH.to_owned(), PASSWORD.to_owned(), KEY_ID.to_owned())
-            .await
-            .unwrap();
+        let res = SecretManager::load(
+            SNAPSHOT_PATH.to_owned(),
+            PASSWORD.to_owned(),
+            KEY_ID.to_owned(),
+            None,
+            None,
+        )
+        .await
+        .unwrap();
         let core_did = CoreDID::parse("did:jwk:eyJjcnYiOiJQLTI1NiIsImt0eSI6IkVDIiwieCI6ImFjYklRaXVNczNpOF91c3pFakoydHBUdFJNNEVVM3l6OTFQSDZDZEgyVjAiLCJ5IjoiX0tjeUxqOXZXTXB0bm1LdG00NkdxRHo4d2Y3NEk1TEtncmwyR3pIM25TRSJ9").unwrap();
         let mut url = RelativeDIDUrl::new();
         url.set_fragment(Some("#foobar")).unwrap();

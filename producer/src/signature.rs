@@ -23,9 +23,15 @@ mod tests {
 
     #[test(tokio::test)]
     async fn produces_the_expected_signature() {
-        let secret_manager = SecretManager::load(SNAPSHOT_PATH.to_owned(), PASSWORD.to_owned(), KEY_ID.to_owned())
-            .await
-            .unwrap();
+        let secret_manager = SecretManager::load(
+            SNAPSHOT_PATH.to_owned(),
+            PASSWORD.to_owned(),
+            KEY_ID.to_owned(),
+            None,
+            None,
+        )
+        .await
+        .unwrap();
 
         let signature = secret_manager.sign("foobar".as_bytes()).await;
 
