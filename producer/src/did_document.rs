@@ -15,7 +15,11 @@ pub enum DidMethod {
     #[serde(rename = "did:web")]
     Web,
     #[serde(rename = "did:iota:rms")]
-    IotaTestnet,
+    ShimmerTestnet,
+    #[serde(rename = "did:iota:smr")]
+    Shimmer,
+    #[serde(rename = "did:iota")]
+    IotaMainnet,
 }
 
 impl SecretManager {
@@ -42,11 +46,41 @@ impl SecretManager {
                     .unwrap();
                 Some(core_document)
             }
-            DidMethod::IotaTestnet => {
+            DidMethod::ShimmerTestnet => {
                 let core_document = did_iota::produce::produce_did_iota(
                     &storage,
                     &self.key_id,
                     did_iota::produce::IotaMethod::Testnet,
+                    IotaDID::parse(self.did.clone().expect("externally managed `DID` not specified"))?,
+                    self.fragment
+                        .clone()
+                        .expect("externally managed `fragment` not specified")
+                        .to_string(),
+                )
+                .await
+                .unwrap();
+                Some(core_document)
+            }
+            DidMethod::Shimmer => {
+                let core_document = did_iota::produce::produce_did_iota(
+                    &storage,
+                    &self.key_id,
+                    did_iota::produce::IotaMethod::Shimmer,
+                    IotaDID::parse(self.did.clone().expect("externally managed `DID` not specified"))?,
+                    self.fragment
+                        .clone()
+                        .expect("externally managed `fragment` not specified")
+                        .to_string(),
+                )
+                .await
+                .unwrap();
+                Some(core_document)
+            }
+            DidMethod::IotaMainnet => {
+                let core_document = did_iota::produce::produce_did_iota(
+                    &storage,
+                    &self.key_id,
+                    did_iota::produce::IotaMethod::Mainnet,
                     IotaDID::parse(self.did.clone().expect("externally managed `DID` not specified"))?,
                     self.fragment
                         .clone()

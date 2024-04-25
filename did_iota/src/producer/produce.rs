@@ -29,7 +29,7 @@ pub async fn produce_did_iota(
     };
 
     // Sanity check: Does the key exist in storage?
-    let public_key_jwk = stronghold_storage.get_public_key(key_id).await.unwrap();
+    let public_key_jwk = stronghold_storage.get_public_key(key_id).await?;
 
     let _ = match iota_method {
         IotaMethod::Testnet => {
@@ -37,23 +37,23 @@ pub async fn produce_did_iota(
                 "Producing did:iota:rms (Testnet) for key_id=[{:?}] ...",
                 key_id.as_str()
             );
-            NetworkName::try_from("rms").unwrap()
+            NetworkName::try_from("rms").expect("Invalid network")
         }
         IotaMethod::Shimmer => {
             info!(
                 "Producing did:iota:smr (Shimmer) for key_id=[{:?}] ...",
                 key_id.as_str()
             );
-            NetworkName::try_from("smr").unwrap()
+            NetworkName::try_from("smr").expect("Invalid network")
         }
         IotaMethod::Mainnet => {
             info!("Producing did:iota (Mainnet) for key_id=[{:?}] ...", key_id.as_str());
-            NetworkName::try_from("iota").unwrap()
+            NetworkName::try_from("iota").expect("Invalid network")
         }
     };
 
     // Sanity check: Can the document be resolved from the ledger?
-    let published_document = resolve(managed_did).await.unwrap();
+    let published_document = resolve(managed_did).await?;
 
     // Sanity check: Is the method in the document?
     let verification_method = published_document.resolve_method(&managed_fragment, None).unwrap();
@@ -81,8 +81,6 @@ mod tests {
     const SNAPSHOT_PATH: &str = "tests/res/selv.stronghold";
     const PASSWORD: &str = "VNvRtH4tKyWwvJDpL6Vuc2aoLiKAecGQ";
     const KEY_ID: &str = "UVDxWhG2rB39FkaR7I27mHeUNrGtUgcr";
-    const IOTA_DID: &str = "did:iota:rms:0x42ad588322e58b3c07aa39e4948d021ee17ecb5747915e9e1f35f028d7ecaf90";
-    const FRAGMENT: &str = "bQKQRzaop7CgEvqVq8UlgLGsdF-R-hnLFkKFZqW2VN0";
 
     #[test(tokio::test)]
     async fn produce_did_iota_testnet() {
@@ -92,6 +90,9 @@ mod tests {
             .unwrap();
 
         let storage = JwkStorageWrapper::Stronghold(StrongholdStorage::new(stronghold_adapter));
+
+        const IOTA_DID: &str = "did:iota:rms:0x42ad588322e58b3c07aa39e4948d021ee17ecb5747915e9e1f35f028d7ecaf90";
+        const FRAGMENT: &str = "bQKQRzaop7CgEvqVq8UlgLGsdF-R-hnLFkKFZqW2VN0";
 
         let document = produce_did_iota(
             &storage,
@@ -141,6 +142,9 @@ mod tests {
 
         let storage = JwkStorageWrapper::Stronghold(StrongholdStorage::new(stronghold_adapter));
 
+        const IOTA_DID: &str = "did:iota:smr:0x_";
+        const FRAGMENT: &str = "_";
+
         let document = produce_did_iota(
             &storage,
             &KeyId::new(KEY_ID),
@@ -151,7 +155,7 @@ mod tests {
         .await
         .unwrap();
 
-        assert_eq!(document.id(), "did:iota:smr:0x0000");
+        assert_eq!(document.id(), "did:iota:smr:0x_");
     }
 
     #[ignore]
@@ -164,6 +168,9 @@ mod tests {
 
         let storage = JwkStorageWrapper::Stronghold(StrongholdStorage::new(stronghold_adapter));
 
+        const IOTA_DID: &str = "did:iota:0x_";
+        const FRAGMENT: &str = "_";
+
         let document = produce_did_iota(
             &storage,
             &KeyId::new(KEY_ID),
@@ -174,6 +181,6 @@ mod tests {
         .await
         .unwrap();
 
-        assert_eq!(document.id(), "did:iota:0x0000");
+        assert_eq!(document.id(), "did:iota:0x_");
     }
 }
