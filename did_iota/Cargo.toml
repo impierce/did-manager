@@ -1,5 +1,5 @@
 [package]
-name = "did_key"
+name = "did_iota"
 version = "0.1.0"
 edition = "2021"
 homepage.workspace = true
@@ -9,17 +9,14 @@ rust-version.workspace = true
 
 [dependencies]
 shared = { path = "../shared" }
-did-key-extern = { version = "0.2.1", package = "did-key" } # https://github.com/decentralized-identity/did-key.rs
-did-method-key = "0.2.2"                                    # https://github.com/spruceid/ssi/tree/main/did-key     <== outdated?
+
 identity_iota.workspace = true
 identity_stronghold.workspace = true
 iota-sdk.workspace = true
-jsonwebkey = "0.3.5"
 log.workspace = true
-serde_json.workspace = true
-ssi-dids = "0.1.1"
-ssi-jwk = "0.1.2"
 tokio.workspace = true
 
 [dev-dependencies]
+iota_stronghold = { version = "2.0" }
+serde_json.workspace = true
 test-log.workspace = true

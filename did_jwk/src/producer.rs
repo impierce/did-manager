@@ -46,6 +46,8 @@ pub async fn produce_did_jwk(storage: JwkStorageWrapper, key_id: &str) -> Result
             .build()
             .unwrap();
 
+        info!("DID Document: {}", document.to_json_pretty().unwrap());
+
         return Ok(document);
     };
 
@@ -56,7 +58,6 @@ pub async fn produce_did_jwk(storage: JwkStorageWrapper, key_id: &str) -> Result
 mod tests {
     use super::*;
 
-    use serde_json::json;
     use shared::test_utils::new_stronghold_storage;
     use test_log::test;
 

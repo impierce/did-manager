@@ -8,6 +8,7 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+did_iota = { path = "../did_iota" }
 did_jwk = { path = "../did_jwk" }
 did_key = { path = "../did_key" }
 did_web = { path = "../did_web" }
@@ -25,7 +26,7 @@ iota_stronghold = { version = "2.0" }
 log = "0.4"
 oid4vc-core = { git = "https://git@github.com/impierce/openid4vc.git", rev = "a932af7" }
 serde = "1.0"
-serde_json = "1.0"
+serde_json.workspace = true
 signature.workspace = true
 url = "2.5"
 

@@ -64,8 +64,6 @@ pub async fn produce_did_key(storage: JwkStorageWrapper, key_id: &KeyId) -> Resu
 mod tests {
     use super::*;
 
-    use identity_iota::core::ToJson;
-    use serde_json::json;
     use shared::test_utils::new_stronghold_storage;
     use test_log::test;
 

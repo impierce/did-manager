@@ -1,4 +1,5 @@
 use identity_iota::document::CoreDocument;
+use identity_iota::iota::IotaDID;
 use serde::{Deserialize, Serialize};
 use shared::error::ProducerError;
 use shared::JwkStorageWrapper;
@@ -13,6 +14,12 @@ pub enum DidMethod {
     Key,
     #[serde(rename = "did:web")]
     Web,
+    #[serde(rename = "did:iota:rms")]
+    ShimmerTestnet,
+    #[serde(rename = "did:iota:smr")]
+    Shimmer,
+    #[serde(rename = "did:iota")]
+    IotaMainnet,
 }
 
 impl SecretManager {
@@ -37,6 +44,51 @@ impl SecretManager {
                 let core_document = did_web::producer::produce_did_web(storage, &self.key_id, host, port)
                     .await
                     .unwrap();
+                Some(core_document)
+            }
+            DidMethod::ShimmerTestnet => {
+                let core_document = did_iota::produce::produce_did_iota(
+                    &storage,
+                    &self.key_id,
+                    did_iota::produce::IotaMethod::Testnet,
+                    IotaDID::parse(self.did.clone().expect("externally managed `DID` not specified"))?,
+                    self.fragment
+                        .clone()
+                        .expect("externally managed `fragment` not specified")
+                        .to_string(),
+                )
+                .await
+                .unwrap();
+                Some(core_document)
+            }
+            DidMethod::Shimmer => {
+                let core_document = did_iota::produce::produce_did_iota(
+                    &storage,
+                    &self.key_id,
+                    did_iota::produce::IotaMethod::Shimmer,
+                    IotaDID::parse(self.did.clone().expect("externally managed `DID` not specified"))?,
+                    self.fragment
+                        .clone()
+                        .expect("externally managed `fragment` not specified")
+                        .to_string(),
+                )
+                .await
+                .unwrap();
+                Some(core_document)
+            }
+            DidMethod::IotaMainnet => {
+                let core_document = did_iota::produce::produce_did_iota(
+                    &storage,
+                    &self.key_id,
+                    did_iota::produce::IotaMethod::Mainnet,
+                    IotaDID::parse(self.did.clone().expect("externally managed `DID` not specified"))?,
+                    self.fragment
+                        .clone()
+                        .expect("externally managed `fragment` not specified")
+                        .to_string(),
+                )
+                .await
+                .unwrap();
                 Some(core_document)
             }
         };
@@ -81,9 +133,15 @@ mod tests {
 
     #[test(tokio::test)]
     async fn recreate_expected_document_from_existing_stronghold() {
-        let secret_manager = SecretManager::load(SNAPSHOT_PATH.to_owned(), PASSWORD.to_owned(), KEY_ID.to_owned())
-            .await
-            .unwrap();
+        let secret_manager = SecretManager::load(
+            SNAPSHOT_PATH.to_owned(),
+            PASSWORD.to_owned(),
+            KEY_ID.to_owned(),
+            None,
+            None,
+        )
+        .await
+        .unwrap();
 
         // TODO: Some(url::Host::parse("localhost").unwrap()), Some(8080)
         let document = secret_manager.produce_document(DidMethod::Web).await;

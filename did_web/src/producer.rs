@@ -23,7 +23,7 @@ pub async fn produce_did_web(
         JwkStorageWrapper::PKCS11 => todo!(),
     };
 
-    info!("Producing did:web for key_id=[{:?}] ...", key_id.as_str(),);
+    info!("Producing did:web for key_id=[{:?}] ...", key_id.as_str());
 
     // Construct the URL from host and (optional) port
     // TODO: is there a better default than having to parse to create a new Url?
