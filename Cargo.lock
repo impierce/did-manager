@@ -3734,15 +3734,11 @@ dependencies = [
 name = "producer"
 version = "0.1.0"
 dependencies = [
- "anyhow",
- "async-trait",
  "base64 0.22.0",
- "consumer",
  "did_iota",
  "did_jwk",
  "did_key",
  "did_web",
- "futures",
  "hex",
  "identity_iota",
  "identity_stronghold",
@@ -3750,9 +3746,7 @@ dependencies = [
  "iota_stronghold",
  "log",
  "serde",
- "serde_json",
  "shared",
- "signature 2.2.0",
  "test-log",
  "tokio",
  "url",
