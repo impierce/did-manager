@@ -14,7 +14,7 @@ pub fn test_jwk() -> Jwk {
     let mut params = JwkParamsOkp::new();
     params.x = "6Bxov1lhHYmAUG1cbl35yG2c6mpZl9WdysjIHaJ7a88".to_string();
     params.d = Some("iWUyZs5SWPiivpwTcWeG9C_Y5ZzWE3iB_s8STnE07RY".to_string());
-    params.crv = EdCurve::Ed25519.name().to_owned();
+    EdCurve::Ed25519.name().clone_into(&mut params.crv);
     let mut jwk = Jwk::from_params(params);
     jwk.set_alg(JwsAlgorithm::EdDSA.name());
 
