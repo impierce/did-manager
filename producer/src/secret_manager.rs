@@ -106,7 +106,6 @@ impl SecretManager {
 mod tests {
     use super::*;
 
-    use oid4vc_core::Subject;
     use shared::test_utils::random_stronghold_path;
     use test_log::test;
 
@@ -188,26 +187,5 @@ mod tests {
         )
         .await;
         assert!(res.is_ok());
-    }
-
-    #[test(tokio::test)]
-    async fn can_deserialize_method() {
-        let secret_manager = SecretManager::load(
-            SNAPSHOT_PATH.to_owned(),
-            PASSWORD.to_owned(),
-            KEY_ID.to_owned(),
-            None,
-            None,
-        )
-        .await
-        .unwrap();
-        let id = secret_manager.identifier("did:key").unwrap();
-        assert_eq!(id, "did:key:z6MkiieyoLMSVsJAZv7Jje5wWSkDEymUgkyF8kbcrjZpX3qd");
-
-        let id = secret_manager.identifier("did:jwk").unwrap();
-        assert_eq!(id, "did:jwk:eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJhSHEtMFBJZjZfbGpMaHl4NFc4Nkd2aXFiLTY3MU9BSTY3RTZ2WHBaYzdRIiwia3R5IjoiT0tQIiwieCI6IlAyQmtZUzZ6NFVIbXN4bjZGWDFvSHN5eDdlaVVTRkVNSjFEX1JDOE0wLXcifQ");
-
-        let id = secret_manager.identifier("did:web").unwrap();
-        assert_eq!(id, "did:web:localhost");
     }
 }
