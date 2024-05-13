@@ -3,22 +3,30 @@ use identity_iota::iota::IotaDID;
 use serde::{Deserialize, Serialize};
 use shared::error::ProducerError;
 use shared::JwkStorageWrapper;
+use std::string::ToString;
+use strum::Display;
 
 use crate::SecretManager;
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Display)]
 pub enum DidMethod {
     #[serde(rename = "did:jwk")]
+    #[strum(serialize = "did:jwk")]
     Jwk,
     #[serde(rename = "did:key")]
+    #[strum(serialize = "did:key")]
     Key,
     #[serde(rename = "did:web")]
+    #[strum(serialize = "did:web")]
     Web,
     #[serde(rename = "did:iota:rms")]
+    #[strum(serialize = "did:iota:rms")]
     ShimmerTestnet,
     #[serde(rename = "did:iota:smr")]
+    #[strum(serialize = "did:iota:smr")]
     Shimmer,
     #[serde(rename = "did:iota")]
+    #[strum(serialize = "did:iota")]
     IotaMainnet,
 }
 
