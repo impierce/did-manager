@@ -20,6 +20,7 @@ iota-sdk.workspace = true
 iota_stronghold = { version = "2.0" }
 log = "0.4"
 serde = "1.0"
+strum.workspace = true
 url = "2.5"
 
 [dev-dependencies]
