@@ -15,6 +15,7 @@ did_web = { path = "../did_web" }
 shared = { path = "../shared" }
 
 identity_iota.workspace = true
+iota-sdk.workspace = true
 signature.workspace = true
 tokio.workspace = true
 

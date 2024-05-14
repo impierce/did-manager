@@ -5,6 +5,8 @@ use did_web::consumer::resolve_did_web;
 use identity_iota::did::CoreDID;
 use identity_iota::document::CoreDocument;
 use identity_iota::resolver::Resolver as IdentityResolver;
+use iota_sdk::client::node_manager::node::NodeAuth;
+use iota_sdk::client::Client;
 use shared::error::ConsumerError;
 
 pub struct Resolver {
@@ -23,6 +25,17 @@ impl Resolver {
         let did = CoreDID::parse(did)?;
         let document: CoreDocument = self.resolver.resolve(&did).await?;
         Ok(document)
+    }
+
+    /// Set a user-defined node by providing a URL (and optional authentication). Existing nodes will be overwritten.
+    ///
+    /// This can also be used to define a custom IOTA-based method (such as `iota:snd` for sandbox environments).
+    ///
+    /// **Disclaimer: Only works with IOTA DIDs.**
+    pub async fn set_node_url(&mut self, url: &str, auth: Option<NodeAuth>) -> Result<(), ConsumerError> {
+        let client = Client::builder().with_primary_node(url, auth)?.finish().await?;
+        self.resolver.attach_iota_handler(client);
+        Ok(())
     }
 }
 
@@ -102,5 +115,43 @@ mod tests {
             document.id(),
             "did:iota:rms:0x29418b0a0120d10e20d0dacc78896c200ecd1cc1e3b153be482f150859a96739"
         );
+    }
+
+    #[ignore = "TODO"]
+    #[test(tokio::test)]
+    async fn overwrites_existing_node_url() {
+        const DID: &str = "did:iota:smr:0x0000000000000000000000000000000000000000000000000000000000000000";
+
+        let mut resolver = Resolver::new().await;
+
+        // Assert the default Node URL
+        let default_node_url_error = resolver.resolve(DID).await.unwrap_err();
+        println!("{:?}", default_node_url_error);
+        assert!(default_node_url_error
+            .to_string()
+            .contains("https://api.shimmer.network"));
+
+        // Overwrite the Node URL and resolve again
+        resolver
+            .set_node_url("https://shimmer-node.tanglebay.com", None)
+            .await
+            .unwrap();
+        let updated_node_url_error = resolver.resolve(DID).await.unwrap_err();
+        assert!(updated_node_url_error
+            .to_string()
+            .contains("https://shimmer-node.tanglebay.com"));
+    }
+
+    #[ignore = "TODO"]
+    #[test(tokio::test)]
+    async fn set_custom_node_url() {
+        const DID: &str = "did:iota:snd:0x0000000000000000000000000000000000000000000000000000000000000000";
+
+        let mut resolver = Resolver::new().await;
+
+        // Overwrite the Node URL and resolve again
+        resolver.set_node_url("http://localhost", None).await.unwrap();
+        let node_url_error = resolver.resolve(DID).await.unwrap_err();
+        assert!(node_url_error.to_string().contains("http://localhost"));
     }
 }
