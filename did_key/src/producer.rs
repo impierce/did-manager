@@ -69,7 +69,7 @@ mod tests {
 
     #[test(tokio::test)]
     async fn produces_did_key() {
-        let (stronghold_storage, key_id) = new_stronghold_storage().await;
+        let (stronghold_storage, key_id, _) = new_stronghold_storage().await;
 
         let storage = JwkStorageWrapper::Stronghold(stronghold_storage);
         let document = produce_did_key(storage, &key_id).await.unwrap();
