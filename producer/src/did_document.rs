@@ -22,6 +22,12 @@ pub enum DidMethod {
     IotaMainnet,
 }
 
+impl std::fmt::Display for DidMethod {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", serde_json::json!(self).as_str().ok_or(std::fmt::Error)?)
+    }
+}
+
 impl SecretManager {
     pub async fn produce_document(&self, did_method: DidMethod) -> Result<CoreDocument, ProducerError> {
         let storage = JwkStorageWrapper::Stronghold(self.stronghold_storage.clone());

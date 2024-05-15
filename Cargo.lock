@@ -3651,6 +3651,7 @@ dependencies = [
  "iota_stronghold",
  "log",
  "serde",
+ "serde_json",
  "shared",
  "test-log",
  "tokio",
