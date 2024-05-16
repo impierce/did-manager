@@ -3,8 +3,8 @@ use identity_iota::{
     verification::jws::JwsAlgorithm,
 };
 use identity_stronghold::StrongholdStorage;
-use iota_sdk::client::secret::stronghold::StrongholdSecretManager;
 use iota_sdk::client::Password;
+use iota_sdk::{client::secret::stronghold::StrongholdSecretManager, crypto::keys::bip44::ed25519};
 use iota_stronghold::SnapshotPath;
 use log::{debug, info};
 use std::io::{Error, ErrorKind};
@@ -79,31 +79,51 @@ impl SecretManager {
 
         let stronghold_storage = StrongholdStorage::new(stronghold_secret_manager);
 
-        let ed25519_key_id = ed25519_key_id
-            .map(|id| KeyId::new(id))
-            .map(|key_id| async {
-                if stronghold_storage.exists(&key_id).await.unwrap_or(false) {
-                    info!("Successfully verified key exists with {:?}", key_id);
-                    Some(key_id)
-                } else {
-                    None
-                }
-            })
-            .unwrap()
-            .await;
+        if let Some(key_id) = ed25519_key_id.map(KeyId::new) {
+            if stronghold_storage
+                .exists(&key_id)
+                .await
+                .expect("Stronghold storage error")
+            {
+                info!("Successfully verified Ed25519 key exists with {:?}", key_id);
+            }
+        };
 
-        let es256_key_id = es256_key_id
-            .map(|id| KeyId::new(id))
-            .map(|key_id| async {
-                if stronghold_storage.exists(&key_id).await.unwrap_or(false) {
-                    info!("Successfully verified key exists with {:?}", key_id);
-                    Some(key_id)
-                } else {
-                    None
-                }
-            })
-            .unwrap()
-            .await;
+        let es256_key_id = if let Some(key_id) = es256_key_id.map(KeyId::new) {
+            if stronghold_storage
+                .exists(&key_id)
+                .await
+                .expect("Stronghold storage error")
+            {
+                info!("Successfully verified ES256 key exists with {:?}", key_id);
+            }
+        };
+
+        // let ed25519_key_id = ed25519_key_id
+        //     .map(|id| KeyId::new(id))
+        //     .map(|key_id| async {
+        //         if stronghold_storage.exists(&key_id).await.unwrap_or(false) {
+        //             info!("Successfully verified key exists with {:?}", key_id);
+        //             Some(key_id)
+        //         } else {
+        //             None
+        //         }
+        //     })
+        //     .unwrap()
+        //     .await;
+
+        // let es256_key_id = es256_key_id
+        //     .map(|id| KeyId::new(id))
+        //     .map(|key_id| async {
+        //         if stronghold_storage.exists(&key_id).await.unwrap_or(false) {
+        //             info!("Successfully verified key exists with {:?}", key_id);
+        //             Some(key_id)
+        //         } else {
+        //             None
+        //         }
+        //     })
+        //     .unwrap()
+        //     .await;
 
         // if stronghold_storage.exists(&key_id).await.unwrap() {
         //     info!("Successfully verified key exists with {:?}", key_id);
@@ -116,8 +136,8 @@ impl SecretManager {
 
         Ok(SecretManager {
             stronghold_storage,
-            ed25519_key_id,
-            es256_key_id,
+            ed25519_key_id: None,
+            es256_key_id: None,
             did,
             fragment,
         })
