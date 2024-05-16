@@ -58,12 +58,14 @@ pub async fn produce_did_jwk(storage: JwkStorageWrapper, key_id: &str) -> Result
 mod tests {
     use super::*;
 
+    use identity_stronghold::StrongholdStorage;
+    use iota_sdk::client::{secret::stronghold::StrongholdSecretManager, Password};
     use shared::test_utils::new_stronghold_storage;
     use test_log::test;
 
     #[test(tokio::test)]
-    async fn produces_did_jwk() {
-        let (stronghold_storage, key_id) = new_stronghold_storage().await;
+    async fn produces_did_jwk_eddsa() {
+        let (stronghold_storage, key_id, _) = new_stronghold_storage().await;
 
         let storage = JwkStorageWrapper::Stronghold(stronghold_storage);
         let document = produce_did_jwk(storage, key_id.as_str()).await.unwrap();
@@ -87,6 +89,47 @@ mod tests {
                     "kid": "SFICW73HCwJoBTCiACF1E3Wmrh5LE0xj_G1JVSeXS-M",
                     "crv": "Ed25519",
                     "x": "6Bxov1lhHYmAUG1cbl35yG2c6mpZl9WdysjIHaJ7a88"
+                  }
+                }
+              ]
+            })
+        );
+    }
+
+    #[test(tokio::test)]
+    async fn produces_did_jwk_es256() {
+        // let (stronghold_storage, _, key_id) = new_stronghold_storage().await;
+
+        let stronghold = StrongholdSecretManager::builder()
+            .password(Password::from("sup3rSecr3t".to_owned()))
+            .build("../res/multi-key-stronghold.bin")
+            .unwrap();
+        let stronghold_storage = StrongholdStorage::new(stronghold);
+        let key_id = "key-1";
+
+        let storage = JwkStorageWrapper::Stronghold(stronghold_storage);
+        let document = produce_did_jwk(storage, key_id).await.unwrap();
+
+        assert_eq!(
+            document.to_json_value().unwrap(),
+            json!({
+              "@context": [
+                "https://www.w3.org/ns/did/v1",
+                "https://w3id.org/security/suites/jws-2020/v1"
+              ],
+              "id": "did:jwk:eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJTRklDVzczSEN3Sm9CVENpQUNGMUUzV21yaDVMRTB4al9HMUpWU2VYUy1NIiwia3R5IjoiT0tQIiwieCI6IjZCeG92MWxoSFltQVVHMWNibDM1eUcyYzZtcFpsOVdkeXNqSUhhSjdhODgifQ",
+              "verificationMethod": [
+                {
+                  "id": "did:jwk:eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJTRklDVzczSEN3Sm9CVENpQUNGMUUzV21yaDVMRTB4al9HMUpWU2VYUy1NIiwia3R5IjoiT0tQIiwieCI6IjZCeG92MWxoSFltQVVHMWNibDM1eUcyYzZtcFpsOVdkeXNqSUhhSjdhODgifQ#0",
+                  "type": "JsonWebKey",
+                  "controller": "did:jwk:eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJTRklDVzczSEN3Sm9CVENpQUNGMUUzV21yaDVMRTB4al9HMUpWU2VYUy1NIiwia3R5IjoiT0tQIiwieCI6IjZCeG92MWxoSFltQVVHMWNibDM1eUcyYzZtcFpsOVdkeXNqSUhhSjdhODgifQ",
+                  "publicKeyJwk": {
+                    "kty": "OKP",
+                    "alg": "ECDSA",
+                    "kid": "_",
+                    "crv": "P-256",
+                    "x": "_",
+                    "y": "_"
                   }
                 }
               ]

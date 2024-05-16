@@ -5,8 +5,14 @@ use crate::SecretManager;
 
 impl SecretManager {
     pub async fn sign(&self, data: &[u8]) -> Result<Vec<u8>, ProducerError> {
-        let public_key = self.stronghold_storage.get_public_key(&self.key_id).await?;
-        let signature = self.stronghold_storage.sign(&self.key_id, data, &public_key).await?;
+        let public_key = self
+            .stronghold_storage
+            .get_public_key(&self.ed25519_key_id.as_ref().unwrap())
+            .await?;
+        let signature = self
+            .stronghold_storage
+            .sign(&self.ed25519_key_id.as_ref().unwrap(), data, &public_key)
+            .await?;
         Ok(signature)
     }
 }
@@ -26,7 +32,8 @@ mod tests {
         let secret_manager = SecretManager::load(
             SNAPSHOT_PATH.to_owned(),
             PASSWORD.to_owned(),
-            KEY_ID.to_owned(),
+            Some(KEY_ID.to_owned()),
+            None,
             None,
             None,
         )

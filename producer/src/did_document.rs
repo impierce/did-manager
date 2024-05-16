@@ -37,25 +37,29 @@ impl SecretManager {
 
         let core_document: Option<CoreDocument> = match did_method {
             DidMethod::Jwk => {
-                let core_document = did_jwk::producer::produce_did_jwk(storage, self.key_id.as_str())
-                    .await
-                    .unwrap();
+                let core_document =
+                    did_jwk::producer::produce_did_jwk(storage, self.ed25519_key_id.as_ref().unwrap().as_str())
+                        .await
+                        .unwrap();
                 Some(core_document)
             }
             DidMethod::Key => {
-                let core_document = did_key::producer::produce_did_key(storage, &self.key_id).await.unwrap();
+                let core_document = did_key::producer::produce_did_key(storage, &self.ed25519_key_id.as_ref().unwrap())
+                    .await
+                    .unwrap();
                 Some(core_document)
             }
             DidMethod::Web => {
-                let core_document = did_web::producer::produce_did_web(storage, &self.key_id, host, port)
-                    .await
-                    .unwrap();
+                let core_document =
+                    did_web::producer::produce_did_web(storage, &self.ed25519_key_id.as_ref().unwrap(), host, port)
+                        .await
+                        .unwrap();
                 Some(core_document)
             }
             DidMethod::ShimmerTestnet => {
                 let core_document = did_iota::produce::produce_did_iota(
                     &storage,
-                    &self.key_id,
+                    &self.ed25519_key_id.as_ref().unwrap(),
                     did_iota::produce::IotaMethod::Testnet,
                     IotaDID::parse(self.did.clone().expect("externally managed `DID` not specified"))?,
                     self.fragment
@@ -70,7 +74,7 @@ impl SecretManager {
             DidMethod::Shimmer => {
                 let core_document = did_iota::produce::produce_did_iota(
                     &storage,
-                    &self.key_id,
+                    &self.ed25519_key_id.as_ref().unwrap(),
                     did_iota::produce::IotaMethod::Shimmer,
                     IotaDID::parse(self.did.clone().expect("externally managed `DID` not specified"))?,
                     self.fragment
@@ -85,7 +89,7 @@ impl SecretManager {
             DidMethod::IotaMainnet => {
                 let core_document = did_iota::produce::produce_did_iota(
                     &storage,
-                    &self.key_id,
+                    &self.ed25519_key_id.as_ref().unwrap(),
                     did_iota::produce::IotaMethod::Mainnet,
                     IotaDID::parse(self.did.clone().expect("externally managed `DID` not specified"))?,
                     self.fragment
@@ -142,7 +146,8 @@ mod tests {
         let secret_manager = SecretManager::load(
             SNAPSHOT_PATH.to_owned(),
             PASSWORD.to_owned(),
-            KEY_ID.to_owned(),
+            Some(KEY_ID.to_owned()),
+            None,
             None,
             None,
         )

@@ -13,7 +13,8 @@ use std::io::{Error, ErrorKind};
 #[derive(Clone)]
 pub struct SecretManager {
     pub(crate) stronghold_storage: StrongholdStorage,
-    pub(crate) key_id: KeyId,
+    pub(crate) ed25519_key_id: Option<KeyId>,
+    pub(crate) es256_key_id: Option<KeyId>,
     pub(crate) did: Option<String>, // TODO(selv): externally managed DID (see did_iota/README.md)
     pub(crate) fragment: Option<String>, // TODO(selv): externally managed fragment (see did_iota/README.md)
 }
@@ -46,17 +47,19 @@ impl SecretManager {
 
         Ok(SecretManager {
             stronghold_storage,
-            key_id: jwk_gen_output.key_id,
+            ed25519_key_id: Some(jwk_gen_output.key_id),
+            es256_key_id: None,
             did: None,
             fragment: None,
         })
     }
 
-    /// Loads an existing Stronghold and verifies the specified key exists
+    /// Loads an existing Stronghold and verifies at least one of the specified keys exists
     pub async fn load(
         snapshot_path: String,
         password: String,
-        key_id: String,
+        ed25519_key_id: Option<String>,
+        es256_key_id: Option<String>,
         did: Option<String>,      // TODO(selv): externally managed DID (see did_iota/README.md)
         fragment: Option<String>, // TODO(selv): externally managed fragment (see did_iota/README.md)
     ) -> Result<Self, std::io::Error> {
@@ -66,7 +69,6 @@ impl SecretManager {
 
         let snapshot_path = SnapshotPath::from_path(snapshot_path);
         let password = Password::from(password);
-        let key_id = KeyId::new(key_id);
 
         info!("Loading existing Stronghold from {:?} ...", snapshot_path.as_path());
 
@@ -77,25 +79,45 @@ impl SecretManager {
 
         let stronghold_storage = StrongholdStorage::new(stronghold_secret_manager);
 
-        // TODO: make vault_path configurable? (current issue: StrongholdStorage from `identity_stronghold` uses a static VAULT_PATH)
-        let location = iota_stronghold::Location::generic(
-            "iota_identity_vault".as_bytes().to_vec(),
-            key_id.to_string().as_bytes().to_vec(),
-        );
-        debug!("Location: {:?}", location);
+        let ed25519_key_id = ed25519_key_id
+            .map(|id| KeyId::new(id))
+            .map(|key_id| async {
+                if stronghold_storage.exists(&key_id).await.unwrap_or(false) {
+                    info!("Successfully verified key exists with {:?}", key_id);
+                    Some(key_id)
+                } else {
+                    None
+                }
+            })
+            .unwrap()
+            .await;
 
-        if stronghold_storage.exists(&key_id).await.unwrap() {
-            info!("Successfully verified key exists with {:?}", key_id);
-        } else {
-            return Err(Error::new(
-                ErrorKind::Other,
-                format!("Specified key does not exist in stronghold with {:?}", key_id),
-            ));
-        }
+        let es256_key_id = es256_key_id
+            .map(|id| KeyId::new(id))
+            .map(|key_id| async {
+                if stronghold_storage.exists(&key_id).await.unwrap_or(false) {
+                    info!("Successfully verified key exists with {:?}", key_id);
+                    Some(key_id)
+                } else {
+                    None
+                }
+            })
+            .unwrap()
+            .await;
+
+        // if stronghold_storage.exists(&key_id).await.unwrap() {
+        //     info!("Successfully verified key exists with {:?}", key_id);
+        // } else {
+        //     return Err(Error::new(
+        //         ErrorKind::Other,
+        //         format!("Specified key does not exist in stronghold with {:?}", key_id),
+        //     ));
+        // }
 
         Ok(SecretManager {
             stronghold_storage,
-            key_id,
+            ed25519_key_id,
+            es256_key_id,
             did,
             fragment,
         })
@@ -118,7 +140,8 @@ mod tests {
         let res = SecretManager::load(
             SNAPSHOT_PATH.to_owned(),
             PASSWORD.to_owned(),
-            KEY_ID.to_owned(),
+            Some(KEY_ID.to_owned()),
+            None,
             None,
             None,
         )
@@ -131,7 +154,8 @@ mod tests {
         let res = SecretManager::load(
             SNAPSHOT_PATH.to_owned(),
             "wrong_password".to_owned(),
-            KEY_ID.to_owned(),
+            Some(KEY_ID.to_owned()),
+            None,
             None,
             None,
         )
@@ -144,7 +168,8 @@ mod tests {
         let res = SecretManager::load(
             SNAPSHOT_PATH.to_owned(),
             PASSWORD.to_owned(),
-            "non_existing_key_id".to_owned(),
+            Some("non_existing_key_id".to_owned()),
+            None,
             None,
             None,
         )
@@ -157,7 +182,8 @@ mod tests {
         let res = SecretManager::load(
             "non/existing/path".to_string(),
             PASSWORD.to_owned(),
-            KEY_ID.to_owned(),
+            Some(KEY_ID.to_owned()),
+            None,
             None,
             None,
         )
