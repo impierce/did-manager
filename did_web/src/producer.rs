@@ -89,7 +89,7 @@ mod tests {
 
     #[test(tokio::test)]
     async fn produces_did_web() {
-        let (stronghold_storage, key_id) = new_stronghold_storage().await;
+        let (stronghold_storage, key_id, _) = new_stronghold_storage().await;
 
         // Start mock server and assert
         let mock_server = MockServer::start().await;
