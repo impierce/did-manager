@@ -10,37 +10,15 @@ keywords = ["iota", "storage", "identity", "kms", "stronghold"]
 
 [dependencies]
 async-trait = { version = "0.1.64", default-features = false }
+elliptic-curve = { version = "0.13", features = ["jwk"] }
 identity_storage = { git = "https://github.com/iotaledger/identity.rs", default_features = false }
 identity_verification = { git = "https://github.com/iotaledger/identity.rs", default_features = false }
-iota-crypto = { version = "0.23", default-features = false, features = ["ed25519"] }
-# iota-sdk = { workspace = true, default-features = false }
-iota-sdk = { git = "https://github.com/iotaledger/iota-sdk", features = ["client", "stronghold"], branch = "2.0" }
-
 iota_stronghold.workspace = true
-rand = { workspace = true, default-features = false, features = ["std", "std_rng"] }
-tokio.workspace = true
-zeroize = { version = "1.6.0", default_features = false }
-
-# stronghold-utils = { git = "https://github.com/iotaledger/stronghold.rs", branch = "2.0" }
-stronghold_engine = { git = "https://github.com/iotaledger/stronghold.rs", branch = "2.0" }
-stronghold_ext = { git = "https://github.com/tensor-programming/stronghold_ext", features = ["crypto"] }
 libsodium-sys-stable.workspace = true
-
-ssi-jwk = "0.1.2"
-serde_json.workspace = true
-identity_iota.workspace = true
-did-jwk-extern = { version = "0.1.1", package = "did-jwk" }
-
-base64 = "0.22"
-serde = { version = "1.0", features = ["derive"]}
-hex = "0.4"
-jsonwebtoken = "8.2.0"
-anyhow = "1.0"
 p256 = { version = "0.13", features = ["jwk"] }
-elliptic-curve = { version = "0.13", features = ["jwk"] }
-
-[dev-dependencies]
-identity_did = { git = "https://github.com/iotaledger/identity.rs", default_features = false }
+serde_json.workspace = true
+stronghold_ext = { git = "https://github.com/tensor-programming/stronghold_ext", features = ["crypto"] }
+tokio.workspace = true
 
 [features]
 default = []
