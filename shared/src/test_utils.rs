@@ -5,11 +5,15 @@ use identity_iota::verification::{
     jwk::{EdCurve, Jwk, JwkParamsOkp},
     jws::JwsAlgorithm,
 };
+use identity_storage::JwkStorage as _;
 use identity_stronghold::StrongholdStorage;
+use identity_stronghold_ext::StrongholdExtStorage;
 use iota_sdk::client::secret::stronghold::StrongholdSecretManager;
 use iota_sdk::client::Password;
+use iota_stronghold::Stronghold;
 use log::debug;
 use rand::distributions::DistString;
+use serde_json::json;
 
 pub fn test_jwk() -> Jwk {
     let mut params = JwkParamsOkp::new();
@@ -65,6 +69,26 @@ pub async fn new_stronghold_storage() -> (StrongholdStorage, KeyId, KeyId) {
     let jwk = test_jwk();
 
     let key_id = stronghold_storage.insert(jwk.clone()).await.unwrap();
+
+    // TODO: Error: { kind: UnsupportedKeyType, source: None, message: Some("Jwk `kty` EC not supported") }
+    // let key_id_es256 = stronghold_storage.insert(test_jwk_es256()).await.unwrap();
+
+    (stronghold_storage, key_id.clone(), key_id)
+}
+
+pub async fn new_stronghold_ext_storage() -> (StrongholdExtStorage, identity_storage::KeyId, identity_storage::KeyId) {
+    iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
+
+    let stronghold = Stronghold::default();
+
+    let stronghold_storage = StrongholdExtStorage::new(stronghold);
+
+    let jwk = json!(test_jwk_es256());
+
+    let key_id = stronghold_storage
+        .insert(serde_json::from_value(jwk).unwrap())
+        .await
+        .unwrap();
 
     // TODO: Error: { kind: UnsupportedKeyType, source: None, message: Some("Jwk `kty` EC not supported") }
     // let key_id_es256 = stronghold_storage.insert(test_jwk_es256()).await.unwrap();

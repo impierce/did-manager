@@ -13,15 +13,19 @@ did_jwk = { path = "../did_jwk" }
 did_key = { path = "../did_key" }
 did_web = { path = "../did_web" }
 shared = { path = "../shared" }
+identity_stronghold_ext = { path = "../identity_stronghold_ext", features = ["send-sync-storage"] }
 
 identity_iota.workspace = true
 identity_stronghold.workspace = true
 iota-sdk.workspace = true
-iota_stronghold = { version = "2.0" }
+iota_stronghold.workspace = true
 log = "0.4"
 serde = "1.0"
 serde_json.workspace = true
 url = "2.5"
+
+identity_storage = { git = "https://github.com/iotaledger/identity.rs", default_features = false }
+
 
 [dev-dependencies]
 base64 = "0.22"

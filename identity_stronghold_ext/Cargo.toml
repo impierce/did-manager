@@ -1,0 +1,51 @@
+[package]
+name = "identity_stronghold_ext"
+version = "0.1.0"
+edition = "2021"
+description = "Secure JWK storage with Stronghold Ext for IOTA Identity"
+homepage = "https://www.impierce.com/"
+license = "Apache-2.0"
+repository = "https://github.com/impierce/did-manager"
+keywords = ["iota", "storage", "identity", "kms", "stronghold"]
+
+[dependencies]
+async-trait = { version = "0.1.64", default-features = false }
+identity_storage = { git = "https://github.com/iotaledger/identity.rs", default_features = false }
+identity_verification = { git = "https://github.com/iotaledger/identity.rs", default_features = false }
+iota-crypto = { version = "0.23", default-features = false, features = ["ed25519"] }
+# iota-sdk = { workspace = true, default-features = false }
+iota-sdk = { git = "https://github.com/iotaledger/iota-sdk", features = ["client", "stronghold"], branch = "2.0" }
+
+iota_stronghold.workspace = true
+rand = { workspace = true, default-features = false, features = ["std", "std_rng"] }
+tokio.workspace = true
+zeroize = { version = "1.6.0", default_features = false }
+
+# stronghold-utils = { git = "https://github.com/iotaledger/stronghold.rs", branch = "2.0" }
+stronghold_engine = { git = "https://github.com/iotaledger/stronghold.rs", branch = "2.0" }
+stronghold_ext = { git = "https://github.com/tensor-programming/stronghold_ext", features = ["crypto"] }
+libsodium-sys-stable.workspace = true
+
+ssi-jwk = "0.1.2"
+serde_json.workspace = true
+identity_iota.workspace = true
+did-jwk-extern = { version = "0.1.1", package = "did-jwk" }
+ssi-dids = "0.1.1"
+
+base64 = "0.22"
+serde = { version = "1.0", features = ["derive"]}
+hex = "0.4"
+jsonwebtoken = "8.2.0"
+anyhow = "1.0"
+k256 = { version = "0.13", features = ["jwk"] }
+p256 = { version = "0.13", features = ["jwk"] }
+elliptic-curve = { version = "0.13", features = ["jwk"] }
+josekit = { version = "0.8" }
+
+[dev-dependencies]
+identity_did = { git = "https://github.com/iotaledger/identity.rs", default_features = false }
+
+[features]
+default = []
+# Enables `Send` + `Sync` bounds for the trait implementations on `StrongholdStorage`.
+send-sync-storage = ["identity_storage/send-sync-storage"]

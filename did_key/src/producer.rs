@@ -20,16 +20,20 @@ pub async fn produce_did_key(storage: JwkStorageWrapper, key_id: &KeyId) -> Resu
     // }
 
     let public_key_jwk = match storage {
-        JwkStorageWrapper::Stronghold(stronghold_storage) => stronghold_storage.get_public_key(key_id).await.unwrap(),
+        JwkStorageWrapper::Stronghold(ref stronghold_storage) => {
+            json!(stronghold_storage.get_public_key(key_id).await.unwrap())
+        }
+        JwkStorageWrapper::StrongholdExt(ref stronghold_ext_storage) => json!(stronghold_ext_storage
+            .get_public_key(&serde_json::from_value(json!(key_id)).unwrap())
+            .await
+            .unwrap()),
         JwkStorageWrapper::PKCS11 => todo!(),
     };
 
     info!("Producing did:key for key_id=[{:?}] ...", key_id.as_str(),);
 
     let did_str = did_method_key::DIDKey
-        .generate(&Source::Key(
-            &serde_json::from_str(&public_key_jwk.to_json().unwrap()).unwrap(),
-        ))
+        .generate(&Source::Key(&serde_json::from_value(public_key_jwk).unwrap()))
         .unwrap();
     let did = CoreDID::parse(did_str).unwrap();
     info!("DID: {}", did);

@@ -19,7 +19,15 @@ pub async fn produce_did_web(
     // TODO: check if key exists for given key_id?
 
     let public_key_jwk = match storage {
-        JwkStorageWrapper::Stronghold(stronghold_storage) => stronghold_storage.get_public_key(key_id).await.unwrap(),
+        JwkStorageWrapper::Stronghold(ref stronghold_storage) => {
+            json!(stronghold_storage.get_public_key(key_id).await.unwrap())
+        }
+        JwkStorageWrapper::StrongholdExt(ref stronghold_ext_storage) => {
+            json!(stronghold_ext_storage
+                .get_public_key(&serde_json::from_value(json!(key_id)).unwrap())
+                .await
+                .unwrap())
+        }
         JwkStorageWrapper::PKCS11 => todo!(),
     };
 
@@ -47,8 +55,12 @@ pub async fn produce_did_web(
 
     let controller = CoreDID::parse(&did_str).unwrap();
 
-    let verification_method =
-        VerificationMethod::new_from_jwk(controller.clone(), public_key_jwk.clone(), Some("key-0")).unwrap();
+    let verification_method = VerificationMethod::new_from_jwk(
+        controller.clone(),
+        serde_json::from_value(public_key_jwk).unwrap(),
+        Some("key-0"),
+    )
+    .unwrap();
 
     let mut properties = Object::new();
     properties.insert(

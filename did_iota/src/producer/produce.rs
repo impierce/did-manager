@@ -26,6 +26,7 @@ pub async fn produce_did_iota(
     let stronghold_storage = match storage {
         JwkStorageWrapper::Stronghold(stronghold_storage) => stronghold_storage,
         JwkStorageWrapper::PKCS11 => todo!(),
+        JwkStorageWrapper::StrongholdExt(_) => todo!(),
     };
 
     // Sanity check: Does the key exist in storage?

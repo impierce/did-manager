@@ -1,6 +1,7 @@
 use identity_iota::core::Object;
 use identity_iota::verification::VerificationMethod;
-use identity_iota::{core::ToJson, did::CoreDID, document::CoreDocument, storage::KeyId};
+use identity_iota::{core::ToJson, did::CoreDID, document::CoreDocument};
+use identity_storage::KeyId;
 use log::info;
 use serde_json::json;
 use shared::JwkStorageWrapper;
@@ -13,9 +14,16 @@ const FRAGMENT: &str = "0";
 
 pub async fn produce_did_jwk(storage: JwkStorageWrapper, key_id: &str) -> Result<CoreDocument, Error> {
     let public_key_jwk = match storage {
-        JwkStorageWrapper::Stronghold(stronghold_storage) => {
-            stronghold_storage.get_public_key(&KeyId::new(key_id)).await.unwrap()
+        JwkStorageWrapper::Stronghold(ref stronghold_storage) => {
+            json!(stronghold_storage
+                .get_public_key(&identity_iota::storage::KeyId::new(key_id))
+                .await
+                .unwrap())
         }
+        JwkStorageWrapper::StrongholdExt(ref stronghold_ext_storage) => json!(stronghold_ext_storage
+            .get_public_key(&KeyId::new(key_id))
+            .await
+            .unwrap()),
         JwkStorageWrapper::PKCS11 => todo!(),
     };
 
@@ -28,16 +36,29 @@ pub async fn produce_did_jwk(storage: JwkStorageWrapper, key_id: &str) -> Result
 
         let controller = CoreDID::parse(did_str).unwrap();
 
-        let verification_method =
-            VerificationMethod::new_from_jwk(controller.clone(), public_key_jwk.clone(), Some(FRAGMENT)).unwrap();
+        let verification_method = VerificationMethod::new_from_jwk(
+            controller.clone(),
+            serde_json::from_value(public_key_jwk).unwrap(),
+            Some(FRAGMENT),
+        )
+        .unwrap();
 
         let mut properties = Object::new();
         properties.insert(
             "@context".to_string(),
-            json!([
-                "https://www.w3.org/ns/did/v1",
-                "https://w3id.org/security/suites/ed25519-2020/v1" // TODO: make dynamic
-            ]),
+            if matches!(storage, JwkStorageWrapper::Stronghold(_)) {
+                json!([
+                    "https://www.w3.org/ns/did/v1",
+                    "https://w3id.org/security/suites/ed25519-2020/v1"
+                ])
+            } else if matches!(storage, JwkStorageWrapper::StrongholdExt(_)) {
+                json!([
+                    "https://www.w3.org/ns/did/v1",
+                    "https://w3id.org/security/suites/jws-2020/v1"
+                ])
+            } else {
+                unimplemented!("PKCS11")
+            },
         );
 
         let document = CoreDocument::builder(properties)
@@ -60,7 +81,7 @@ mod tests {
 
     use identity_stronghold::StrongholdStorage;
     use iota_sdk::client::{secret::stronghold::StrongholdSecretManager, Password};
-    use shared::test_utils::new_stronghold_storage;
+    use shared::test_utils::{new_stronghold_ext_storage, new_stronghold_storage};
     use test_log::test;
 
     #[test(tokio::test)]
@@ -98,17 +119,10 @@ mod tests {
 
     #[test(tokio::test)]
     async fn produces_did_jwk_es256() {
-        // let (stronghold_storage, _, key_id) = new_stronghold_storage().await;
+        let (stronghold_ext_storage, _, key_id) = new_stronghold_ext_storage().await;
 
-        let stronghold = StrongholdSecretManager::builder()
-            .password(Password::from("sup3rSecr3t".to_owned()))
-            .build("../res/multi-key-stronghold.bin")
-            .unwrap();
-        let stronghold_storage = StrongholdStorage::new(stronghold);
-        let key_id = "key-1";
-
-        let storage = JwkStorageWrapper::Stronghold(stronghold_storage);
-        let document = produce_did_jwk(storage, key_id).await.unwrap();
+        let storage = JwkStorageWrapper::StrongholdExt(stronghold_ext_storage);
+        let document = produce_did_jwk(storage, key_id.as_str()).await.unwrap();
 
         assert_eq!(
             document.to_json_value().unwrap(),

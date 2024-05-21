@@ -3,18 +3,23 @@ use identity_iota::{
     verification::jws::JwsAlgorithm,
 };
 use identity_stronghold::StrongholdStorage;
+use identity_stronghold_ext::StrongholdExtStorage;
 use iota_sdk::client::Password;
 use iota_sdk::{client::secret::stronghold::StrongholdSecretManager, crypto::keys::bip44::ed25519};
-use iota_stronghold::SnapshotPath;
+use iota_stronghold::{KeyProvider, SnapshotPath, Stronghold};
 use log::{debug, info};
+use serde_json::json;
 use std::io::{Error, ErrorKind};
 
+use identity_storage::JwkStorage as _;
+
 /// Generates or loads a Stronghold and uses the specified `KeyId` for all cryptographic operations
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct SecretManager {
     pub(crate) stronghold_storage: StrongholdStorage,
+    pub(crate) stronghold_ext_storage: StrongholdExtStorage,
     pub(crate) ed25519_key_id: Option<KeyId>,
-    pub(crate) es256_key_id: Option<KeyId>,
+    pub(crate) es256_key_id: Option<identity_storage::KeyId>,
     pub(crate) did: Option<String>, // TODO(selv): externally managed DID (see did_iota/README.md)
     pub(crate) fragment: Option<String>, // TODO(selv): externally managed fragment (see did_iota/README.md)
 }
@@ -45,8 +50,13 @@ impl SecretManager {
 
         info!("Generated new Ed25519 key with {:?}", &jwk_gen_output.key_id);
 
+        let stronghold = Stronghold::default();
+
+        let stronghold_ext_storage = StrongholdExtStorage::new(stronghold);
+
         Ok(SecretManager {
             stronghold_storage,
+            stronghold_ext_storage,
             ed25519_key_id: Some(jwk_gen_output.key_id),
             es256_key_id: None,
             did: None,
@@ -73,44 +83,64 @@ impl SecretManager {
         info!("Loading existing Stronghold from {:?} ...", snapshot_path.as_path());
 
         let stronghold_secret_manager = StrongholdSecretManager::builder()
-            .password(password)
+            .password(password.clone())
             .build(snapshot_path.as_path())
             .map_err(|e| Error::new(ErrorKind::Other, e))?;
 
         let stronghold_storage = StrongholdStorage::new(stronghold_secret_manager);
 
-        if let Some(key_id) = ed25519_key_id.map(KeyId::new) {
-            if stronghold_storage
+        let ed25519_key_id = if let Some(key_id) = ed25519_key_id.map(KeyId::new) {
+            stronghold_storage
                 .exists(&key_id)
                 .await
                 .expect("Stronghold storage error")
-            {
-                info!("Successfully verified Ed25519 key exists with {:?}", key_id);
-            }
+                .then_some({
+                    info!("Successfully verified key exists with {:?}", key_id);
+                    key_id
+                })
+        } else {
+            None
         };
 
-        let es256_key_id = if let Some(key_id) = es256_key_id.map(KeyId::new) {
-            if stronghold_storage
+        info!("HIIIIIIIIIIIIIIIIIIII: {ed25519_key_id:?}");
+
+        let stronghold = Stronghold::default();
+        stronghold
+            .load_snapshot(
+                &KeyProvider::with_passphrase_hashed_blake2b(password.as_bytes().to_vec()).unwrap(),
+                &SnapshotPath::from_path(snapshot_path.as_path()),
+            )
+            .unwrap();
+
+        let stronghold_ext_storage = StrongholdExtStorage::new(stronghold);
+
+        let es256_key_id = if let Some(key_id) = es256_key_id.map(identity_storage::KeyId::new) {
+            info!("In here we have the key_id: {:?}", key_id);
+            stronghold_ext_storage
                 .exists(&key_id)
                 .await
+                .inspect(|exists| info!("Key exists: {:?}", exists))
                 .expect("Stronghold storage error")
-            {
-                info!("Successfully verified ES256 key exists with {:?}", key_id);
-            }
+                .then_some({
+                    info!("Successfully verified key exists with {:?}", key_id);
+                    key_id
+                })
+        } else {
+            None
         };
 
-        // let ed25519_key_id = ed25519_key_id
-        //     .map(|id| KeyId::new(id))
-        //     .map(|key_id| async {
-        //         if stronghold_storage.exists(&key_id).await.unwrap_or(false) {
-        //             info!("Successfully verified key exists with {:?}", key_id);
-        //             Some(key_id)
-        //         } else {
-        //             None
-        //         }
-        //     })
-        //     .unwrap()
-        //     .await;
+        info!("HIIIIIIIIIIIIIIIIIIII: {es256_key_id:?}");
+
+        // .map(|key_id| async {
+        //     if stronghold_storage.exists(&key_id).await.unwrap_or(false) {
+        //         info!("Successfully verified key exists with {:?}", key_id);
+        //         Some(key_id)
+        //     } else {
+        //         None
+        //     }
+        // })
+        // .unwrap()
+        // .await;
 
         // let es256_key_id = es256_key_id
         //     .map(|id| KeyId::new(id))
@@ -136,8 +166,9 @@ impl SecretManager {
 
         Ok(SecretManager {
             stronghold_storage,
-            ed25519_key_id: None,
-            es256_key_id: None,
+            stronghold_ext_storage,
+            ed25519_key_id,
+            es256_key_id,
             did,
             fragment,
         })

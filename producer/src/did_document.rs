@@ -1,5 +1,6 @@
 use identity_iota::document::CoreDocument;
 use identity_iota::iota::IotaDID;
+use identity_iota::verification::jws::JwsAlgorithm;
 use serde::{Deserialize, Serialize};
 use shared::error::ProducerError;
 use shared::JwkStorageWrapper;
@@ -29,18 +30,29 @@ impl std::fmt::Display for DidMethod {
 }
 
 impl SecretManager {
-    pub async fn produce_document(&self, did_method: DidMethod) -> Result<CoreDocument, ProducerError> {
-        let storage = JwkStorageWrapper::Stronghold(self.stronghold_storage.clone());
+    pub async fn produce_document(
+        &self,
+        did_method: DidMethod,
+        jws_algorithm: JwsAlgorithm,
+    ) -> Result<CoreDocument, ProducerError> {
+        let (storage, key_id) = match jws_algorithm {
+            JwsAlgorithm::ES256 => (
+                JwkStorageWrapper::StrongholdExt(self.stronghold_ext_storage.clone()),
+                self.es256_key_id.as_ref().unwrap().as_str(),
+            ),
+            JwsAlgorithm::EdDSA => (
+                JwkStorageWrapper::Stronghold(self.stronghold_storage.clone()),
+                self.ed25519_key_id.as_ref().unwrap().as_str(),
+            ),
+            _ => return Err(ProducerError::Generic("Unsupported JWS algorithm".to_string())),
+        };
 
         let host: url::Host = url::Host::parse("localhost").unwrap(); // TODO
         let port: Option<u16> = None; // TODO: default?
 
         let core_document: Option<CoreDocument> = match did_method {
             DidMethod::Jwk => {
-                let core_document =
-                    did_jwk::producer::produce_did_jwk(storage, self.ed25519_key_id.as_ref().unwrap().as_str())
-                        .await
-                        .unwrap();
+                let core_document = did_jwk::producer::produce_did_jwk(storage, key_id).await.unwrap();
                 Some(core_document)
             }
             DidMethod::Key => {
@@ -135,7 +147,9 @@ mod tests {
         .unwrap();
 
         // TODO: Some(url::Host::parse("localhost").unwrap()), Some(8080)
-        let document = secret_manager.produce_document(DidMethod::Web).await;
+        let document = secret_manager
+            .produce_document(DidMethod::Web, JwsAlgorithm::EdDSA)
+            .await;
 
         info!("Document: {}", document.as_ref().unwrap().to_json_pretty().unwrap());
         assert!(document.is_ok())
@@ -155,7 +169,9 @@ mod tests {
         .unwrap();
 
         // TODO: Some(url::Host::parse("localhost").unwrap()), Some(8080)
-        let document = secret_manager.produce_document(DidMethod::Web).await;
+        let document = secret_manager
+            .produce_document(DidMethod::Web, JwsAlgorithm::EdDSA)
+            .await;
 
         assert_eq!(
             document
