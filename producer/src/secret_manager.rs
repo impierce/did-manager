@@ -102,8 +102,6 @@ impl SecretManager {
             None
         };
 
-        info!("HIIIIIIIIIIIIIIIIIIII: {ed25519_key_id:?}");
-
         let stronghold = Stronghold::default();
         stronghold
             .load_snapshot(
@@ -128,8 +126,6 @@ impl SecretManager {
         } else {
             None
         };
-
-        info!("HIIIIIIIIIIIIIIIIIIII: {es256_key_id:?}");
 
         // .map(|key_id| async {
         //     if stronghold_storage.exists(&key_id).await.unwrap_or(false) {

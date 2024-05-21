@@ -5,7 +5,7 @@
 
 use async_trait::async_trait;
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
-// use elliptic_curve::point::AffineCoordinates;
+use elliptic_curve::point::AffineCoordinates;
 use elliptic_curve::sec1::FromEncodedPoint;
 use elliptic_curve::Curve;
 use identity_storage::key_storage::JwkStorage;
@@ -16,7 +16,6 @@ use identity_storage::KeyStorageErrorKind;
 use identity_storage::KeyStorageResult;
 use identity_storage::KeyType;
 use identity_verification::jwk::EcCurve;
-use identity_verification::jwk::EdCurve;
 use identity_verification::jwk::Jwk;
 use identity_verification::jwk::JwkParamsEc;
 use identity_verification::jwk::JwkParamsOkp;
@@ -43,10 +42,8 @@ use jsonwebtoken::DecodingKey;
 use jsonwebtoken::Header;
 use rand::distributions::DistString;
 use serde::Serialize;
-use std::fmt::Display;
 use std::str::FromStr;
 use std::sync::Arc;
-use std::thread::sleep;
 use stronghold_ext::execute_procedure_ext;
 use stronghold_ext::procs::es256::Es256Procs;
 use stronghold_ext::{
@@ -58,7 +55,6 @@ use identity_iota::core::Object;
 use identity_iota::verification::VerificationMethod;
 use identity_iota::{core::ToJson, did::CoreDID, document::CoreDocument};
 use serde_json::json;
-use ssi_dids::{DIDMethod, Source};
 use std::io::Error;
 use std::io::ErrorKind;
 
@@ -78,17 +74,6 @@ where
     T: ?Sized + Serialize,
 {
     Ok(URL_SAFE_NO_PAD.encode(serde_json::to_vec(value)?.as_slice()))
-}
-
-#[test]
-fn temp() {
-    let test_string = "74ccd8a62fba0e667c50929a53f78c21b8ff0c3c737b0b40b1750b2302b0bde8";
-
-    let hex = hex::decode(&test_string).unwrap();
-    let base64_url = URL_SAFE_NO_PAD.decode(&test_string).unwrap();
-
-    println!("hex: {:#?}", hex);
-    println!("base64_url: {:#?}", base64_url);
 }
 
 #[tokio::test]
