@@ -86,6 +86,7 @@ pub async fn new_stronghold_ext_storage() -> (StrongholdExtStorage, identity_sto
     let jwk = json!(test_jwk_es256());
 
     let key_id = stronghold_storage
+        // TODO: implement `insert`
         .insert(serde_json::from_value(jwk).unwrap())
         .await
         .unwrap();

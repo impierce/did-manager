@@ -11,7 +11,7 @@ keywords = ["iota", "storage", "identity", "kms", "stronghold"]
 [dependencies]
 async-trait = { version = "0.1.64", default-features = false }
 elliptic-curve = { version = "0.13", features = ["jwk"] }
-identity_storage = { git = "https://github.com/iotaledger/identity.rs", default_features = false }
+identity_storage.workspace = true
 identity_verification = { git = "https://github.com/iotaledger/identity.rs", default_features = false }
 iota_stronghold.workspace = true
 libsodium-sys-stable.workspace = true

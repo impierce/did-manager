@@ -20,7 +20,6 @@ ssi-dids = "0.1.1"
 ssi-jwk = "0.1.2"
 tokio.workspace = true
 
-identity_storage = { git = "https://github.com/iotaledger/identity.rs", default_features = false }
-
+identity_storage.workspace = true
 [dev-dependencies]
 test-log.workspace = true

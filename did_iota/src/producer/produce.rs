@@ -2,7 +2,6 @@ use identity_iota::{
     core::ToJson,
     document::CoreDocument,
     iota::{IotaDID, NetworkName},
-    storage::KeyId,
 };
 use log::info;
 use shared::{error::ProducerError, JwkStorageWrapper};
@@ -18,37 +17,25 @@ pub enum IotaMethod {
 /// Note: Producing a DID document on an IOTA network involves publishing it to the network.
 pub async fn produce_did_iota(
     storage: &JwkStorageWrapper,
-    key_id: &KeyId,
+    key_id: &str,
     iota_method: IotaMethod,
     managed_did: IotaDID,     // TODO(selv): see README.md
     managed_fragment: String, // TODO(selv): see README.md
 ) -> Result<CoreDocument, ProducerError> {
-    let stronghold_storage = match storage {
-        JwkStorageWrapper::Stronghold(stronghold_storage) => stronghold_storage,
-        JwkStorageWrapper::PKCS11 => todo!(),
-        JwkStorageWrapper::StrongholdExt(_) => todo!(),
-    };
-
-    // Sanity check: Does the key exist in storage?
-    let public_key_jwk = stronghold_storage.get_public_key(key_id).await?;
+    // FIX THIS: fix error
+    let public_key_jwk = storage.get_public_key_jwk(key_id).await.unwrap();
 
     let _ = match iota_method {
         IotaMethod::Testnet => {
-            info!(
-                "Producing did:iota:rms (Testnet) for key_id=[{:?}] ...",
-                key_id.as_str()
-            );
+            info!("Producing did:iota:rms (Testnet) for key_id=[{:?}] ...", key_id);
             NetworkName::try_from("rms").expect("Invalid network")
         }
         IotaMethod::Shimmer => {
-            info!(
-                "Producing did:iota:smr (Shimmer) for key_id=[{:?}] ...",
-                key_id.as_str()
-            );
+            info!("Producing did:iota:smr (Shimmer) for key_id=[{:?}] ...", key_id);
             NetworkName::try_from("smr").expect("Invalid network")
         }
         IotaMethod::Mainnet => {
-            info!("Producing did:iota (Mainnet) for key_id=[{:?}] ...", key_id.as_str());
+            info!("Producing did:iota (Mainnet) for key_id=[{:?}] ...", key_id);
             NetworkName::try_from("iota").expect("Invalid network")
         }
     };
@@ -62,7 +49,12 @@ pub async fn produce_did_iota(
     // Sanity check: Do the public keys match?
     assert_eq!(
         public_key_jwk,
-        verification_method.data().public_key_jwk().unwrap().clone()
+        verification_method
+            .data()
+            .public_key_jwk()
+            .unwrap()
+            .to_json_value()
+            .unwrap()
     );
 
     info!("DID Document: {}", published_document.to_json_pretty().unwrap());
@@ -97,7 +89,7 @@ mod tests {
 
         let document = produce_did_iota(
             &storage,
-            &KeyId::new(KEY_ID),
+            KEY_ID,
             IotaMethod::Testnet,
             IotaDID::parse(IOTA_DID).unwrap(),
             FRAGMENT.to_string(),
@@ -148,7 +140,7 @@ mod tests {
 
         let document = produce_did_iota(
             &storage,
-            &KeyId::new(KEY_ID),
+            KEY_ID,
             IotaMethod::Shimmer,
             IotaDID::parse(IOTA_DID).unwrap(),
             FRAGMENT.to_string(),
@@ -174,7 +166,7 @@ mod tests {
 
         let document = produce_did_iota(
             &storage,
-            &KeyId::new(KEY_ID),
+            KEY_ID,
             IotaMethod::Mainnet,
             IotaDID::parse(IOTA_DID).unwrap(),
             FRAGMENT.to_string(),

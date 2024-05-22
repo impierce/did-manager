@@ -2,7 +2,6 @@ use identity_iota::{
     core::{Object, ToJson},
     did::CoreDID,
     document::CoreDocument,
-    storage::KeyId,
     verification::VerificationMethod,
 };
 use log::{debug, info};
@@ -12,26 +11,16 @@ use std::io::Error;
 
 pub async fn produce_did_web(
     storage: JwkStorageWrapper,
-    key_id: &KeyId,
+    key_id: &str,
     host: url::Host,
     port: Option<u16>,
 ) -> Result<CoreDocument, Error> {
     // TODO: check if key exists for given key_id?
 
-    let public_key_jwk = match storage {
-        JwkStorageWrapper::Stronghold(ref stronghold_storage) => {
-            json!(stronghold_storage.get_public_key(key_id).await.unwrap())
-        }
-        JwkStorageWrapper::StrongholdExt(ref stronghold_ext_storage) => {
-            json!(stronghold_ext_storage
-                .get_public_key(&serde_json::from_value(json!(key_id)).unwrap())
-                .await
-                .unwrap())
-        }
-        JwkStorageWrapper::PKCS11 => todo!(),
-    };
+    // FIX THIS: fix error
+    let public_key_jwk = storage.get_public_key_jwk(key_id).await.unwrap();
 
-    info!("Producing did:web for key_id=[{:?}] ...", key_id.as_str());
+    info!("Producing did:web for key_id=[{:?}] ...", key_id);
 
     // Construct the URL from host and (optional) port
     // TODO: is there a better default than having to parse to create a new Url?
@@ -62,14 +51,7 @@ pub async fn produce_did_web(
     )
     .unwrap();
 
-    let mut properties = Object::new();
-    properties.insert(
-        "@context".to_string(),
-        json!([
-            "https://www.w3.org/ns/did/v1",
-            "https://w3id.org/security/suites/ed25519-2020/v1" // TODO: make dynamic
-        ]),
-    );
+    let properties = storage.get_properties();
 
     let document = CoreDocument::builder(properties)
         .id(controller)
@@ -110,7 +92,7 @@ mod tests {
 
         let document = produce_did_web(
             JwkStorageWrapper::Stronghold(stronghold_storage),
-            &key_id,
+            key_id.as_str(),
             url::Host::parse("localhost").unwrap(),
             Some(mock_server_port),
         )

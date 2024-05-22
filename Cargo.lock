@@ -1189,6 +1189,7 @@ dependencies = [
  "did-key",
  "did-method-key",
  "identity_iota",
+ "identity_storage 1.2.0 (git+https://github.com/iotaledger/identity.rs)",
  "identity_stronghold",
  "iota-sdk",
  "jsonwebkey",
@@ -1234,6 +1235,7 @@ version = "0.1.0"
 dependencies = [
  "did-web",
  "identity_iota",
+ "identity_storage 1.2.0 (git+https://github.com/iotaledger/identity.rs)",
  "identity_stronghold",
  "iota-sdk",
  "log",
