@@ -8,7 +8,6 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-identity_stronghold_ext = { path = "../identity_stronghold_ext", features = ["send-sync-storage"] }
 shared = { path = "../shared" }
 did-jwk-extern = { version = "0.1.1", package = "did-jwk" }
 identity_iota.workspace = true

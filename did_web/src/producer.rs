@@ -1,24 +1,16 @@
-use identity_iota::{
-    core::{Object, ToJson},
-    did::CoreDID,
-    document::CoreDocument,
-    verification::VerificationMethod,
-};
+use identity_iota::{core::ToJson, did::CoreDID, document::CoreDocument, verification::VerificationMethod};
 use log::{debug, info};
-use serde_json::json;
-use shared::JwkStorageWrapper;
-use std::io::Error;
+use shared::{error::ProducerError, JwkStorageWrapper};
 
 pub async fn produce_did_web(
     storage: JwkStorageWrapper,
     key_id: &str,
     host: url::Host,
     port: Option<u16>,
-) -> Result<CoreDocument, Error> {
+) -> Result<CoreDocument, ProducerError> {
     // TODO: check if key exists for given key_id?
 
-    // FIX THIS: fix error
-    let public_key_jwk = storage.get_public_key_jwk(key_id).await.unwrap();
+    let public_key_jwk = storage.get_public_key_jwk(key_id).await?;
 
     info!("Producing did:web for key_id=[{:?}] ...", key_id);
 
@@ -76,6 +68,7 @@ mod tests {
     use crate::consumer::resolve_did_web;
 
     use identity_iota::core::ToJson;
+    use serde_json::json;
     use shared::test_utils::new_stronghold_storage;
     use test_log::test;
     use wiremock::matchers::{method, path};

@@ -11,15 +11,13 @@ rust-version.workspace = true
 test = []
 
 [dependencies]
-identity_stronghold_ext = { path = "../identity_stronghold_ext", features = ["send-sync-storage"] }
-
 identity_iota.workspace = true
+identity_storage.workspace = true
 identity_stronghold.workspace = true
+identity_stronghold_ext = { path = "../identity_stronghold_ext", features = ["send-sync-storage"] }
 iota-sdk.workspace = true
 iota_stronghold.workspace = true
 log.workspace = true
 rand = "0.8"
-thiserror.workspace = true
-
 serde_json.workspace = true
-identity_storage.workspace = true
+thiserror.workspace = true

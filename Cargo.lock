@@ -1171,7 +1171,6 @@ dependencies = [
  "identity_iota",
  "identity_storage 1.2.0 (git+https://github.com/iotaledger/identity.rs)",
  "identity_stronghold",
- "identity_stronghold_ext",
  "iota-sdk",
  "log",
  "serde_json",

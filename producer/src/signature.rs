@@ -8,27 +8,35 @@ impl SecretManager {
     pub async fn sign(&self, data: &[u8], jws_algorithm: JwsAlgorithm) -> Result<Vec<u8>, ProducerError> {
         match jws_algorithm {
             JwsAlgorithm::ES256 => {
+                let key_id = self
+                    .es256_key_id
+                    .as_ref()
+                    .ok_or(ProducerError::MissingKeyIdError("es256".to_string()))?;
                 let public_key = self
                     .stronghold_ext_storage
-                    .get_public_key(&self.es256_key_id.as_ref().unwrap())
+                    .get_public_key(key_id)
                     .await
                     .expect("failed to get public key");
                 let signature = self
                     .stronghold_ext_storage
-                    .sign(&self.es256_key_id.as_ref().unwrap(), data, &public_key)
+                    .sign(key_id, data, &public_key)
                     .await
                     .expect("failed to sign data");
                 Ok(signature)
             }
             JwsAlgorithm::EdDSA => {
+                let key_id = self
+                    .ed25519_key_id
+                    .as_ref()
+                    .ok_or(ProducerError::MissingKeyIdError("ed25519".to_string()))?;
                 let public_key = self
                     .stronghold_storage
-                    .get_public_key(&self.ed25519_key_id.as_ref().unwrap())
+                    .get_public_key(key_id)
                     .await
                     .expect("failed to get public key");
                 let signature = self
                     .stronghold_storage
-                    .sign(&self.ed25519_key_id.as_ref().unwrap(), data, &public_key)
+                    .sign(key_id, data, &public_key)
                     .await
                     .expect("failed to sign data");
                 Ok(signature)

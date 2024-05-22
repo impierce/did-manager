@@ -3,18 +3,15 @@ use identity_iota::verification::jwk::Jwk;
 use identity_iota::verification::VerificationMethod;
 use identity_iota::{core::ToJson, did::CoreDID, document::CoreDocument};
 use log::info;
-use serde_json::json;
+use shared::error::ProducerError;
 use shared::JwkStorageWrapper;
 use ssi_dids::{DIDMethod, Source};
-use std::io::Error;
-use std::io::ErrorKind;
 
 // See specification: "Since did:jwk only contains a single key, the DID URL fragment identifier is always a fixed #0 value."
 const FRAGMENT: &str = "0";
 
-pub async fn produce_did_jwk(storage: JwkStorageWrapper, key_id: &str) -> Result<CoreDocument, Error> {
-    // FIX THIS: fix error
-    let public_key_jwk = storage.get_public_key_jwk(key_id).await.unwrap();
+pub async fn produce_did_jwk(storage: JwkStorageWrapper, key_id: &str) -> Result<CoreDocument, ProducerError> {
+    let public_key_jwk = storage.get_public_key_jwk(key_id).await?;
 
     info!("Producing did:jwk for key_id=[{:?}] ...", key_id);
 
@@ -44,13 +41,13 @@ pub async fn produce_did_jwk(storage: JwkStorageWrapper, key_id: &str) -> Result
 
         return Ok(document);
     };
-
-    Err(Error::new(ErrorKind::Other, "Done without result"))
+    Err(ProducerError::Generic("Done without result".to_string()))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
     use shared::test_utils::new_stronghold_storage;
     use test_log::test;
 

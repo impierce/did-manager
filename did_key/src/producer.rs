@@ -1,16 +1,15 @@
 use identity_iota::{
-    core::{FromJson, Object},
+    core::FromJson,
     did::{CoreDID, DID},
     document::CoreDocument,
     verification::VerificationMethod,
 };
 use log::info;
 use serde_json::json;
-use shared::JwkStorageWrapper;
+use shared::{error::ProducerError, JwkStorageWrapper};
 use ssi_dids::{DIDMethod, Source};
-use std::io::Error;
 
-pub async fn produce_did_key(storage: JwkStorageWrapper, key_id: &str) -> Result<CoreDocument, Error> {
+pub async fn produce_did_key(storage: JwkStorageWrapper, key_id: &str) -> Result<CoreDocument, ProducerError> {
     // TODO: Check if key exists in key_id_storage, if not return error
     // let exists = storage.key_storage().exists(key_id).await.unwrap();
 
@@ -18,8 +17,7 @@ pub async fn produce_did_key(storage: JwkStorageWrapper, key_id: &str) -> Result
     //     return Err(Error::other(format!("Key with id=[{}] does not exist", key_id)));
     // }
 
-    // FIX THIS: fix error
-    let public_key_jwk = storage.get_public_key_jwk(key_id).await.unwrap();
+    let public_key_jwk = storage.get_public_key_jwk(key_id).await?;
 
     info!("Producing did:key for key_id=[{:?}] ...", key_id);
 
@@ -60,26 +58,26 @@ mod tests {
     async fn produces_did_key() {
         let (stronghold_storage, key_id, _) = new_stronghold_storage().await;
 
-        // let storage = JwkStorageWrapper::Stronghold(stronghold_storage);
-        // let document = produce_did_key(storage, key_id.as_str()).await.unwrap();
+        let storage = JwkStorageWrapper::Stronghold(stronghold_storage);
+        let document = produce_did_key(storage, key_id.as_str()).await.unwrap();
 
-        // assert_eq!(
-        //     document.to_json_value().unwrap(),
-        //     json!({
-        //       "@context": [
-        //         "https://www.w3.org/ns/did/v1",
-        //         "https://w3id.org/security/suites/ed25519-2020/v1"
-        //       ],
-        //       "id": "did:key:z6Mkv5KkqNHuR6bPVT8fud3m9JaHBSEjEmiLp7HuGAwtbkk6",
-        //       "verificationMethod": [
-        //         {
-        //           "id": "did:key:z6Mkv5KkqNHuR6bPVT8fud3m9JaHBSEjEmiLp7HuGAwtbkk6#z6Mkv5KkqNHuR6bPVT8fud3m9JaHBSEjEmiLp7HuGAwtbkk6",
-        //           "type": "Ed25519VerificationKey2020",
-        //           "controller": "did:key:z6Mkv5KkqNHuR6bPVT8fud3m9JaHBSEjEmiLp7HuGAwtbkk6",
-        //           "publicKeyMultibase": "z6Mkv5KkqNHuR6bPVT8fud3m9JaHBSEjEmiLp7HuGAwtbkk6"
-        //         }
-        //       ]
-        //     })
-        // );
+        assert_eq!(
+            document.to_json_value().unwrap(),
+            json!({
+              "@context": [
+                "https://www.w3.org/ns/did/v1",
+                "https://w3id.org/security/suites/ed25519-2020/v1"
+              ],
+              "id": "did:key:z6Mkv5KkqNHuR6bPVT8fud3m9JaHBSEjEmiLp7HuGAwtbkk6",
+              "verificationMethod": [
+                {
+                  "id": "did:key:z6Mkv5KkqNHuR6bPVT8fud3m9JaHBSEjEmiLp7HuGAwtbkk6#z6Mkv5KkqNHuR6bPVT8fud3m9JaHBSEjEmiLp7HuGAwtbkk6",
+                  "type": "Ed25519VerificationKey2020",
+                  "controller": "did:key:z6Mkv5KkqNHuR6bPVT8fud3m9JaHBSEjEmiLp7HuGAwtbkk6",
+                  "publicKeyMultibase": "z6Mkv5KkqNHuR6bPVT8fud3m9JaHBSEjEmiLp7HuGAwtbkk6"
+                }
+              ]
+            })
+        );
     }
 }

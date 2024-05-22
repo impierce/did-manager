@@ -127,39 +127,6 @@ impl SecretManager {
             None
         };
 
-        // .map(|key_id| async {
-        //     if stronghold_storage.exists(&key_id).await.unwrap_or(false) {
-        //         info!("Successfully verified key exists with {:?}", key_id);
-        //         Some(key_id)
-        //     } else {
-        //         None
-        //     }
-        // })
-        // .unwrap()
-        // .await;
-
-        // let es256_key_id = es256_key_id
-        //     .map(|id| KeyId::new(id))
-        //     .map(|key_id| async {
-        //         if stronghold_storage.exists(&key_id).await.unwrap_or(false) {
-        //             info!("Successfully verified key exists with {:?}", key_id);
-        //             Some(key_id)
-        //         } else {
-        //             None
-        //         }
-        //     })
-        //     .unwrap()
-        //     .await;
-
-        // if stronghold_storage.exists(&key_id).await.unwrap() {
-        //     info!("Successfully verified key exists with {:?}", key_id);
-        // } else {
-        //     return Err(Error::new(
-        //         ErrorKind::Other,
-        //         format!("Specified key does not exist in stronghold with {:?}", key_id),
-        //     ));
-        // }
-
         Ok(SecretManager {
             stronghold_storage,
             stronghold_ext_storage,

@@ -1,11 +1,11 @@
 pub mod error;
 pub mod test_utils;
 
-use std::collections::BTreeMap;
-
+use error::ProducerError;
 use identity_stronghold::StrongholdStorage;
 use identity_stronghold_ext::StrongholdExtStorage;
 use serde_json::json;
+use std::collections::BTreeMap;
 
 pub enum JwkStorageWrapper {
     Stronghold(StrongholdStorage),
@@ -17,7 +17,7 @@ impl JwkStorageWrapper {
     // FIX THIS: errors and comment
     // Use `public_key_jwk` as a `serde_json::Value` here because `StrongholdStorage` and `StrongholdExtStorage` utilize
     // conflicting `KeyId` types.
-    pub async fn get_public_key_jwk(&self, key_id: &str) -> Result<serde_json::Value, ()> {
+    pub async fn get_public_key_jwk(&self, key_id: &str) -> Result<serde_json::Value, ProducerError> {
         Ok(match self {
             JwkStorageWrapper::Stronghold(ref stronghold_storage) => {
                 json!(stronghold_storage
