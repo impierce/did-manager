@@ -1,25 +1,15 @@
+use did_jwk_extern::DIDJWK;
 use identity_iota::core::{FromJson, ToJson};
 use identity_iota::did::{CoreDID, DID};
 use identity_iota::document::CoreDocument;
-use log::{debug, info};
+use log::info;
 use shared::error::ConsumerError;
-use ssi_dids::did_resolve::ResolutionInputMetadata;
-use ssi_dids::DIDMethod;
+use ssi_dids::did_resolve::dereference;
 
 pub async fn resolve_did_jwk(did: CoreDID) -> Result<CoreDocument, ConsumerError> {
     info!("Resolving DID: {}", did);
-    let resolver = did_jwk_extern::DIDJWK.to_resolver();
-    let input_metadata = ResolutionInputMetadata::default();
-    let (result, document, metadata) = resolver.resolve(did.as_str(), &input_metadata).await;
-
-    if let Some(error) = result.error.clone() {
-        info!("Error: {:?}", error);
-        return Err(ConsumerError::Generic(error));
-    }
-
-    debug!("Result: {:#?}", result);
-    debug!("Document: {:#?}", document);
-    debug!("Metadata: {:#?}", metadata);
+    let (_, document, _) = dereference(&DIDJWK, did.as_str(), &Default::default()).await;
+    info!("{}", document.to_json_pretty().unwrap());
     CoreDocument::from_json(&document.to_json().unwrap()).map_err(|e| ConsumerError::Generic(e.to_string()))
 }
 
