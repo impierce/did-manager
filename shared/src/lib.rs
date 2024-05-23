@@ -14,10 +14,9 @@ pub enum JwkStorageWrapper {
 }
 
 impl JwkStorageWrapper {
-    // FIX THIS: errors and comment
-    // Use `public_key_jwk` as a `serde_json::Value` here because `StrongholdStorage` and `StrongholdExtStorage` utilize
-    // conflicting `KeyId` types.
-    pub async fn get_public_key_jwk(&self, key_id: &str) -> Result<serde_json::Value, ProducerError> {
+    // This function returns the `JWK` as a `serde_json::Value` object because `StrongholdStorage` and
+    // `StrongholdExtStorage` don't return the same exact `Jwk` type.
+    pub async fn get_public_key(&self, key_id: &str) -> Result<serde_json::Value, ProducerError> {
         Ok(match self {
             JwkStorageWrapper::Stronghold(ref stronghold_storage) => {
                 json!(stronghold_storage

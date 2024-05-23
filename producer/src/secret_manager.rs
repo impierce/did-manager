@@ -116,7 +116,6 @@ impl SecretManager {
             stronghold_ext_storage
                 .exists(&key_id)
                 .await
-                .inspect(|exists| info!("Key exists: {:?}", exists))
                 // TODO: use `.unwrap_or_default()` instead of `.expect()`?
                 .expect("Stronghold storage error")
                 .then_some({

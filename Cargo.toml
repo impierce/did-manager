@@ -35,6 +35,8 @@ identity_iota = { version = "1.2.0" }
 identity_storage = { git = "https://github.com/iotaledger/identity.rs", default_features = false }
 identity_stronghold = { version = "1.2.0", features = ["send-sync-storage"] }
 iota-sdk = { version = "1.0", features = ["client", "stronghold"] }
+iota_stronghold = { git = "https://github.com/iotaledger/stronghold.rs", branch = "2.0" }
+libsodium-sys-stable = { version = "1.20" }
 log = "0.4"
 rand = "0.8"
 serde_json = "1.0"
@@ -42,6 +44,3 @@ signature = "2.2"
 test-log = "0.2"
 thiserror = "1.0"
 tokio = { version = "1", features = ["full"] }
-# iota_stronghold = { version = "2.0" }
-iota_stronghold = { git = "https://github.com/iotaledger/stronghold.rs", branch = "2.0" }
-libsodium-sys-stable = { version = "1.20" }

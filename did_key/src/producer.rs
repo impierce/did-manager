@@ -17,7 +17,7 @@ pub async fn produce_did_key(storage: JwkStorageWrapper, key_id: &str) -> Result
     //     return Err(Error::other(format!("Key with id=[{}] does not exist", key_id)));
     // }
 
-    let public_key_jwk = storage.get_public_key_jwk(key_id).await?;
+    let public_key_jwk = storage.get_public_key(key_id).await?;
 
     info!("Producing did:key for key_id=[{:?}] ...", key_id);
 

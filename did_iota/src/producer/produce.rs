@@ -22,7 +22,7 @@ pub async fn produce_did_iota(
     managed_did: IotaDID,     // TODO(selv): see README.md
     managed_fragment: String, // TODO(selv): see README.md
 ) -> Result<CoreDocument, ProducerError> {
-    let public_key_jwk = storage.get_public_key_jwk(key_id).await?;
+    let public_key_jwk = storage.get_public_key(key_id).await?;
 
     let _ = match iota_method {
         IotaMethod::Testnet => {

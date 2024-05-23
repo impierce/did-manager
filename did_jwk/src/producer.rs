@@ -11,7 +11,7 @@ use ssi_dids::{DIDMethod, Source};
 const FRAGMENT: &str = "0";
 
 pub async fn produce_did_jwk(storage: JwkStorageWrapper, key_id: &str) -> Result<CoreDocument, ProducerError> {
-    let public_key_jwk = storage.get_public_key_jwk(key_id).await?;
+    let public_key_jwk = storage.get_public_key(key_id).await?;
 
     info!("Producing did:jwk for key_id=[{:?}] ...", key_id);
 

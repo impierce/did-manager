@@ -1,15 +1,15 @@
-use did_key_extern::{resolve, DIDCore, CONFIG_JOSE_PUBLIC};
+use did_method_key::DIDKey;
 use identity_iota::core::{FromJson, ToJson};
 use identity_iota::did::{CoreDID, DID};
 use identity_iota::document::CoreDocument;
 use identity_iota::resolver::Resolver;
 use log::info;
 use shared::error::ConsumerError;
+use ssi_dids::did_resolve::dereference;
 
 pub async fn resolve_did_key(did: CoreDID) -> Result<CoreDocument, ConsumerError> {
     info!("Resolving DID: {}", did);
-    let key = resolve(did.as_str()).unwrap();
-    let document = key.get_did_document(CONFIG_JOSE_PUBLIC);
+    let (_, document, _) = dereference(&DIDKey, did.as_str(), &Default::default()).await;
     info!("{}", document.to_json_pretty().unwrap());
     CoreDocument::from_json(&document.to_json().unwrap()).map_err(|e| ConsumerError::Generic(e.to_string()))
 }

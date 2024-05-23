@@ -10,7 +10,7 @@ pub async fn produce_did_web(
 ) -> Result<CoreDocument, ProducerError> {
     // TODO: check if key exists for given key_id?
 
-    let public_key_jwk = storage.get_public_key_jwk(key_id).await?;
+    let public_key_jwk = storage.get_public_key(key_id).await?;
 
     info!("Producing did:web for key_id=[{:?}] ...", key_id);
 
