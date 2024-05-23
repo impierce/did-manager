@@ -4,11 +4,9 @@ use identity_iota::{
 };
 use identity_stronghold::StrongholdStorage;
 use identity_stronghold_ext::StrongholdExtStorage;
-use iota_sdk::client::Password;
-use iota_sdk::{client::secret::stronghold::StrongholdSecretManager, crypto::keys::bip44::ed25519};
+use iota_sdk::client::{secret::stronghold::StrongholdSecretManager, Password};
 use iota_stronghold::{KeyProvider, SnapshotPath, Stronghold};
-use log::{debug, info};
-use serde_json::json;
+use log::info;
 use std::io::{Error, ErrorKind};
 
 use identity_storage::JwkStorage as _;
@@ -93,6 +91,7 @@ impl SecretManager {
             stronghold_storage
                 .exists(&key_id)
                 .await
+                // TODO: use `.unwrap_or_default()` instead of `.expect()`?
                 .expect("Stronghold storage error")
                 .then_some({
                     info!("Successfully verified key exists with {:?}", key_id);
@@ -118,6 +117,7 @@ impl SecretManager {
                 .exists(&key_id)
                 .await
                 .inspect(|exists| info!("Key exists: {:?}", exists))
+                // TODO: use `.unwrap_or_default()` instead of `.expect()`?
                 .expect("Stronghold storage error")
                 .then_some({
                     info!("Successfully verified key exists with {:?}", key_id);
@@ -126,6 +126,11 @@ impl SecretManager {
         } else {
             None
         };
+
+        if ed25519_key_id.is_none() && es256_key_id.is_none() {
+            // TODO: add proper "NoKeysFound" error type
+            return Err(Error::new(ErrorKind::Other, "No keys found"));
+        }
 
         Ok(SecretManager {
             stronghold_storage,
