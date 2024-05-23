@@ -36,18 +36,18 @@ impl SecretManager {
         jws_algorithm: JwsAlgorithm,
     ) -> Result<CoreDocument, ProducerError> {
         let (storage, key_id) = match jws_algorithm {
-            JwsAlgorithm::ES256 => (
-                JwkStorageWrapper::StrongholdExt(self.stronghold_ext_storage.clone()),
-                self.es256_key_id
-                    .as_ref()
-                    .ok_or(ProducerError::MissingKeyIdError("es256".to_string()))?
-                    .as_str(),
-            ),
             JwsAlgorithm::EdDSA => (
                 JwkStorageWrapper::Stronghold(self.stronghold_storage.clone()),
                 self.ed25519_key_id
                     .as_ref()
                     .ok_or(ProducerError::MissingKeyIdError("ed25519".to_string()))?
+                    .as_str(),
+            ),
+            JwsAlgorithm::ES256 => (
+                JwkStorageWrapper::StrongholdExt(self.stronghold_ext_storage.clone()),
+                self.es256_key_id
+                    .as_ref()
+                    .ok_or(ProducerError::MissingKeyIdError("es256".to_string()))?
                     .as_str(),
             ),
             _ => return Err(ProducerError::Generic("Unsupported JWS algorithm".to_string())),
