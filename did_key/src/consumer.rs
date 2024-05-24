@@ -1,4 +1,4 @@
-use did_method_key::DIDKey;
+use did_key_extern::DIDKey;
 use identity_iota::core::{FromJson, ToJson};
 use identity_iota::did::{CoreDID, DID};
 use identity_iota::document::CoreDocument;

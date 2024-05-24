@@ -2,6 +2,7 @@ use identity_iota::{
     core::ToJson,
     document::CoreDocument,
     iota::{IotaDID, NetworkName},
+    verification::jws::JwsAlgorithm,
 };
 use log::info;
 use shared::{error::ProducerError, JwkStorageWrapper};
@@ -22,7 +23,7 @@ pub async fn produce_did_iota(
     managed_did: IotaDID,     // TODO(selv): see README.md
     managed_fragment: String, // TODO(selv): see README.md
 ) -> Result<CoreDocument, ProducerError> {
-    let public_key_jwk = storage.get_public_key(key_id).await?;
+    let public_key_jwk = storage.get_public_key(key_id, JwsAlgorithm::EdDSA).await?;
 
     let _ = match iota_method {
         IotaMethod::Testnet => {

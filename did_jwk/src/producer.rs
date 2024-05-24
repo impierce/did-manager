@@ -1,5 +1,6 @@
 use identity_iota::core::FromJson;
 use identity_iota::verification::jwk::Jwk;
+use identity_iota::verification::jws::JwsAlgorithm;
 use identity_iota::verification::VerificationMethod;
 use identity_iota::{core::ToJson, did::CoreDID, document::CoreDocument};
 use log::info;
@@ -10,8 +11,12 @@ use ssi_dids::{DIDMethod, Source};
 // See specification: "Since did:jwk only contains a single key, the DID URL fragment identifier is always a fixed #0 value."
 const FRAGMENT: &str = "0";
 
-pub async fn produce_did_jwk(storage: JwkStorageWrapper, key_id: &str) -> Result<CoreDocument, ProducerError> {
-    let public_key_jwk = storage.get_public_key(key_id).await?;
+pub async fn produce_did_jwk(
+    storage: JwkStorageWrapper,
+    key_id: &str,
+    alg: JwsAlgorithm,
+) -> Result<CoreDocument, ProducerError> {
+    let public_key_jwk = storage.get_public_key(key_id, alg).await?;
 
     info!("Producing did:jwk for key_id=[{:?}] ...", key_id);
 
@@ -47,75 +52,46 @@ pub async fn produce_did_jwk(storage: JwkStorageWrapper, key_id: &str) -> Result
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde_json::json;
-    use shared::test_utils::new_stronghold_storage;
+    use shared::test_utils::existing_stronghold_storage;
     use test_log::test;
 
-    #[test(tokio::test)]
-    async fn produces_did_jwk_eddsa() {
-        let (stronghold_storage, key_id, _) = new_stronghold_storage().await;
+    const SNAPSHOT_PATH: &str = "../shared/tests/res/multi.stronghold";
+    const PASSWORD: &str = "sup3rSecr3t";
 
-        let storage = JwkStorageWrapper::Stronghold(stronghold_storage);
-        let document = produce_did_jwk(storage, key_id.as_str()).await.unwrap();
+    #[test(tokio::test)]
+    async fn produces_did_jwk_ed25519() {
+        // let (stronghold_storage, key_id, _) = new_stronghold_storage().await;
+        let key_id = "key-0";
+        let stronghold_storage = existing_stronghold_storage(SNAPSHOT_PATH, PASSWORD).await;
+
+        let storage = JwkStorageWrapper::StrongholdExt(stronghold_storage);
+        let document = produce_did_jwk(storage, key_id, JwsAlgorithm::EdDSA).await.unwrap();
 
         assert_eq!(
-            document.to_json_value().unwrap(),
-            json!({
-              "@context": [
-                "https://www.w3.org/ns/did/v1",
-                "https://w3id.org/security/suites/ed25519-2020/v1"
-              ],
-              "id": "did:jwk:eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJTRklDVzczSEN3Sm9CVENpQUNGMUUzV21yaDVMRTB4al9HMUpWU2VYUy1NIiwia3R5IjoiT0tQIiwieCI6IjZCeG92MWxoSFltQVVHMWNibDM1eUcyYzZtcFpsOVdkeXNqSUhhSjdhODgifQ",
-              "verificationMethod": [
-                {
-                  "id": "did:jwk:eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJTRklDVzczSEN3Sm9CVENpQUNGMUUzV21yaDVMRTB4al9HMUpWU2VYUy1NIiwia3R5IjoiT0tQIiwieCI6IjZCeG92MWxoSFltQVVHMWNibDM1eUcyYzZtcFpsOVdkeXNqSUhhSjdhODgifQ#0",
-                  "type": "JsonWebKey",
-                  "controller": "did:jwk:eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJTRklDVzczSEN3Sm9CVENpQUNGMUUzV21yaDVMRTB4al9HMUpWU2VYUy1NIiwia3R5IjoiT0tQIiwieCI6IjZCeG92MWxoSFltQVVHMWNibDM1eUcyYzZtcFpsOVdkeXNqSUhhSjdhODgifQ",
-                  "publicKeyJwk": {
-                    "kty": "OKP",
-                    "alg": "EdDSA",
-                    "kid": "SFICW73HCwJoBTCiACF1E3Wmrh5LE0xj_G1JVSeXS-M",
-                    "crv": "Ed25519",
-                    "x": "6Bxov1lhHYmAUG1cbl35yG2c6mpZl9WdysjIHaJ7a88"
-                  }
-                }
-              ]
-            })
+            document
+                .verification_method()
+                .first()
+                .unwrap()
+                .data()
+                .public_key_jwk()
+                .unwrap()
+                .alg()
+                .unwrap(),
+            "EdDSA"
         );
+
+        assert_eq!(document.id(), "did:jwk:eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJmMDJTaFlyYWsyZW56VTJoS2E5Qkt5LXY3SEdLM3NVcDNYbEU0Ym9qY1gwIiwia3R5IjoiT0tQIiwieCI6IjdhS2owdmpNWW9iZ180TWg1TWF0RkhlREZFaWlZdEhfLWdoajkxWF9TTFEifQ");
     }
 
-    // TODO: implement `StrongholdExt::insert`
-    // #[test(tokio::test)]
-    // async fn produces_did_jwk_es256() {
-    // let (stronghold_ext_storage, _, key_id) = new_stronghold_ext_storage().await;
+    #[test(tokio::test)]
+    async fn produces_did_jwk_es256() {
+        // let (stronghold_storage, key_id, _) = new_stronghold_storage().await;
+        let key_id = "key-1";
+        let stronghold_storage = existing_stronghold_storage(SNAPSHOT_PATH, PASSWORD).await;
 
-    //     let storage = JwkStorageWrapper::StrongholdExt(stronghold_ext_storage);
-    //     let document = produce_did_jwk(storage, key_id.as_str()).await.unwrap();
+        let storage = JwkStorageWrapper::StrongholdExt(stronghold_storage);
+        let document = produce_did_jwk(storage, key_id, JwsAlgorithm::ES256).await.unwrap();
 
-    //     assert_eq!(
-    //         document.to_json_value().unwrap(),
-    //         json!({
-    //           "@context": [
-    //             "https://www.w3.org/ns/did/v1",
-    //             "https://w3id.org/security/suites/jws-2020/v1"
-    //           ],
-    //           "id": "did:jwk:eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJTRklDVzczSEN3Sm9CVENpQUNGMUUzV21yaDVMRTB4al9HMUpWU2VYUy1NIiwia3R5IjoiT0tQIiwieCI6IjZCeG92MWxoSFltQVVHMWNibDM1eUcyYzZtcFpsOVdkeXNqSUhhSjdhODgifQ",
-    //           "verificationMethod": [
-    //             {
-    //               "id": "did:jwk:eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJTRklDVzczSEN3Sm9CVENpQUNGMUUzV21yaDVMRTB4al9HMUpWU2VYUy1NIiwia3R5IjoiT0tQIiwieCI6IjZCeG92MWxoSFltQVVHMWNibDM1eUcyYzZtcFpsOVdkeXNqSUhhSjdhODgifQ#0",
-    //               "type": "JsonWebKey",
-    //               "controller": "did:jwk:eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJTRklDVzczSEN3Sm9CVENpQUNGMUUzV21yaDVMRTB4al9HMUpWU2VYUy1NIiwia3R5IjoiT0tQIiwieCI6IjZCeG92MWxoSFltQVVHMWNibDM1eUcyYzZtcFpsOVdkeXNqSUhhSjdhODgifQ",
-    //               "publicKeyJwk": {
-    //                 "kty": "OKP",
-    //                 "alg": "ECDSA",
-    //                 "kid": "_",
-    //                 "crv": "P-256",
-    //                 "x": "_",
-    //                 "y": "_"
-    //               }
-    //             }
-    //           ]
-    //         })
-    //     );
-    // }
+        assert_eq!(document.id(), "did:jwk:eyJhbGciOiJFUzI1NiIsImNydiI6IlAtMjU2Iiwia2lkIjoiMGFIcU54SmViSEJ2MWFlOEhKTUFCekNDTjBmbWFSYmFvcWdmTG5MQ0ZCRSIsImt0eSI6IkVDIiwieCI6InFWdV9aR2xRb1M0c0xPSmdtaFc2N0lzeERRcW05NEtXT1VJNC1RQWsxcTAiLCJ5Ijoid1kydGt6aFlhWnc1bGxaZi1RTkR4MDNPUVZNMUo2X2g5LW1sN2tUVWlVdyJ9");
+    }
 }

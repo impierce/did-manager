@@ -6,8 +6,10 @@ use identity_iota::verification::{
     jws::JwsAlgorithm,
 };
 use identity_stronghold::StrongholdStorage;
+use identity_stronghold_ext::StrongholdExtStorage;
 use iota_sdk::client::secret::stronghold::StrongholdSecretManager;
 use iota_sdk::client::Password;
+use iota_stronghold::{KeyProvider, SnapshotPath, Stronghold};
 use log::debug;
 use rand::distributions::DistString;
 
@@ -52,7 +54,7 @@ pub fn random_stronghold_path() -> std::path::PathBuf {
     file.to_owned()
 }
 
-pub async fn new_stronghold_storage() -> (StrongholdStorage, KeyId, KeyId) {
+pub async fn new_stronghold_storage() -> (StrongholdStorage, KeyId, Option<KeyId>) {
     iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
 
     let stronghold = StrongholdSecretManager::builder()
@@ -69,5 +71,20 @@ pub async fn new_stronghold_storage() -> (StrongholdStorage, KeyId, KeyId) {
     // TODO: Error: { kind: UnsupportedKeyType, source: None, message: Some("Jwk `kty` EC not supported") }
     // let key_id_es256 = stronghold_storage.insert(test_jwk_es256()).await.unwrap();
 
-    (stronghold_storage, key_id.clone(), key_id)
+    (stronghold_storage, key_id.clone(), None)
+}
+
+// TODO: can be removed once `new_stronghold_storage()` can insert a given JWK
+pub async fn existing_stronghold_storage(path: &str, password: &str) -> StrongholdExtStorage {
+    iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
+
+    let stronghold = Stronghold::default();
+    stronghold
+        .load_snapshot(
+            &KeyProvider::with_passphrase_hashed_blake2b(password.as_bytes().to_vec()).unwrap(),
+            &SnapshotPath::from_path(path),
+        )
+        .unwrap();
+
+    StrongholdExtStorage::new(stronghold)
 }

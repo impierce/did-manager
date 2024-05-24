@@ -2,14 +2,18 @@ use identity_iota::{
     core::FromJson,
     did::{CoreDID, DID},
     document::CoreDocument,
-    verification::VerificationMethod,
+    verification::{jws::JwsAlgorithm, VerificationMethod},
 };
 use log::info;
 use serde_json::json;
 use shared::{error::ProducerError, JwkStorageWrapper};
 use ssi_dids::{DIDMethod, Source};
 
-pub async fn produce_did_key(storage: JwkStorageWrapper, key_id: &str) -> Result<CoreDocument, ProducerError> {
+pub async fn produce_did_key(
+    storage: JwkStorageWrapper,
+    key_id: &str,
+    alg: JwsAlgorithm,
+) -> Result<CoreDocument, ProducerError> {
     // TODO: Check if key exists in key_id_storage, if not return error
     // let exists = storage.key_storage().exists(key_id).await.unwrap();
 
@@ -17,11 +21,11 @@ pub async fn produce_did_key(storage: JwkStorageWrapper, key_id: &str) -> Result
     //     return Err(Error::other(format!("Key with id=[{}] does not exist", key_id)));
     // }
 
-    let public_key_jwk = storage.get_public_key(key_id).await?;
+    let public_key_jwk = storage.get_public_key(key_id, alg).await?;
 
     info!("Producing did:key for key_id=[{:?}] ...", key_id);
 
-    let did_str = did_method_key::DIDKey
+    let did_str = did_key_extern::DIDKey
         .generate(&Source::Key(&serde_json::from_value(public_key_jwk).unwrap()))
         .unwrap();
     let did = CoreDID::parse(did_str).unwrap();
@@ -59,7 +63,9 @@ mod tests {
         let (stronghold_storage, key_id, _) = new_stronghold_storage().await;
 
         let storage = JwkStorageWrapper::Stronghold(stronghold_storage);
-        let document = produce_did_key(storage, key_id.as_str()).await.unwrap();
+        let document = produce_did_key(storage, key_id.as_str(), JwsAlgorithm::EdDSA)
+            .await
+            .unwrap();
 
         assert_eq!(
             document.to_json_value().unwrap(),

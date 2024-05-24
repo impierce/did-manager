@@ -1,4 +1,9 @@
-use identity_iota::{core::ToJson, did::CoreDID, document::CoreDocument, verification::VerificationMethod};
+use identity_iota::{
+    core::ToJson,
+    did::CoreDID,
+    document::CoreDocument,
+    verification::{jws::JwsAlgorithm, VerificationMethod},
+};
 use log::{debug, info};
 use shared::{error::ProducerError, JwkStorageWrapper};
 
@@ -7,10 +12,11 @@ pub async fn produce_did_web(
     key_id: &str,
     host: url::Host,
     port: Option<u16>,
+    alg: JwsAlgorithm,
 ) -> Result<CoreDocument, ProducerError> {
     // TODO: check if key exists for given key_id?
 
-    let public_key_jwk = storage.get_public_key(key_id).await?;
+    let public_key_jwk = storage.get_public_key(key_id, alg).await?;
 
     info!("Producing did:web for key_id=[{:?}] ...", key_id);
 
@@ -88,6 +94,7 @@ mod tests {
             key_id.as_str(),
             url::Host::parse("localhost").unwrap(),
             Some(mock_server_port),
+            JwsAlgorithm::EdDSA,
         )
         .await
         .unwrap();
@@ -114,7 +121,7 @@ mod tests {
               "verificationMethod": [
                 {
                   "id": format!("did:web:localhost%3A{}#key-0", mock_server_port),
-                  "type": "JsonWebKey", // TODO: should be "JsonWebKey2020"?
+                  "type": "JsonWebKey2020",
                   "controller": format!("did:web:localhost%3A{}", mock_server_port),
                   "publicKeyJwk": {
                     "kty": "OKP",

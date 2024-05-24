@@ -1,5 +1,5 @@
 use identity_iota::{storage::JwkStorage, verification::jws::JwsAlgorithm};
-use identity_storage::JwkStorage as _;
+use identity_stronghold::StrongholdKeyType;
 use shared::error::ProducerError;
 
 use crate::SecretManager;
@@ -14,7 +14,7 @@ impl SecretManager {
                     .ok_or(ProducerError::MissingKeyIdError("es256".to_string()))?;
                 let public_key = self
                     .stronghold_ext_storage
-                    .get_public_key(key_id)
+                    .get_es256_public_key(key_id)
                     .await
                     .expect("failed to get public key");
                 let signature = self
@@ -31,7 +31,7 @@ impl SecretManager {
                     .ok_or(ProducerError::MissingKeyIdError("ed25519".to_string()))?;
                 let public_key = self
                     .stronghold_storage
-                    .get_public_key(key_id)
+                    .get_public_key_with_type(key_id, StrongholdKeyType::Ed25519)
                     .await
                     .expect("failed to get public key");
                 let signature = self
@@ -41,7 +41,7 @@ impl SecretManager {
                     .expect("failed to sign data");
                 Ok(signature)
             }
-            _ => Err(ProducerError::Generic("Unsupported JWS algorithm".to_string())),
+            _ => Err(ProducerError::Generic("Unsupported algorithm".to_string())),
         }
     }
 }

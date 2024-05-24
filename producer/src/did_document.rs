@@ -33,9 +33,9 @@ impl SecretManager {
     pub async fn produce_document(
         &self,
         did_method: DidMethod,
-        jws_algorithm: JwsAlgorithm,
+        alg: JwsAlgorithm,
     ) -> Result<CoreDocument, ProducerError> {
-        let (storage, key_id) = match jws_algorithm {
+        let (storage, key_id) = match alg {
             JwsAlgorithm::EdDSA => (
                 JwkStorageWrapper::Stronghold(self.stronghold_storage.clone()),
                 self.ed25519_key_id
@@ -58,15 +58,15 @@ impl SecretManager {
 
         let core_document: Option<CoreDocument> = match did_method {
             DidMethod::Jwk => {
-                let core_document = did_jwk::producer::produce_did_jwk(storage, key_id).await.unwrap();
+                let core_document = did_jwk::producer::produce_did_jwk(storage, key_id, alg).await.unwrap();
                 Some(core_document)
             }
             DidMethod::Key => {
-                let core_document = did_key::producer::produce_did_key(storage, key_id).await.unwrap();
+                let core_document = did_key::producer::produce_did_key(storage, key_id, alg).await.unwrap();
                 Some(core_document)
             }
             DidMethod::Web => {
-                let core_document = did_web::producer::produce_did_web(storage, key_id, host, port)
+                let core_document = did_web::producer::produce_did_web(storage, key_id, host, port, alg)
                     .await
                     .unwrap();
                 Some(core_document)

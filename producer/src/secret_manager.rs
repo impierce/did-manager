@@ -9,8 +9,6 @@ use iota_stronghold::{KeyProvider, SnapshotPath, Stronghold};
 use log::info;
 use std::io::{Error, ErrorKind};
 
-use identity_storage::JwkStorage as _;
-
 /// Generates or loads a Stronghold and uses the specified `KeyId` for all cryptographic operations
 #[derive(Clone, Debug)]
 pub struct SecretManager {

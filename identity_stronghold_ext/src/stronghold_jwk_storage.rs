@@ -7,9 +7,14 @@ use identity_storage::KeyStorageErrorKind;
 use identity_storage::KeyStorageResult;
 use identity_storage::KeyType;
 use identity_verification::jwk::EcCurve;
+use identity_verification::jwk::EdCurve;
 use identity_verification::jwk::Jwk;
 use identity_verification::jwk::JwkParamsEc;
+use identity_verification::jwk::JwkParamsOkp;
 use identity_verification::jws::JwsAlgorithm;
+use identity_verification::jwu;
+use iota_stronghold::procedures::KeyType as ProceduresKeyType;
+use iota_stronghold::procedures::StrongholdProcedure;
 use iota_stronghold::Client;
 use iota_stronghold::ClientError;
 use iota_stronghold::Location;
@@ -41,7 +46,7 @@ impl StrongholdExtStorage {
     }
 
     /// Retrieve the public key corresponding to `key_id`.
-    pub async fn get_public_key(&self, key_id: &KeyId) -> KeyStorageResult<Jwk> {
+    pub async fn get_es256_public_key(&self, key_id: &KeyId) -> KeyStorageResult<Jwk> {
         let stronghold = self.get_stronghold().await;
         let client = get_client(&stronghold)?;
 
@@ -75,6 +80,36 @@ impl StrongholdExtStorage {
 
         let mut jwk: Jwk = Jwk::from_params(params);
         jwk.set_alg(JwsAlgorithm::ES256.name());
+        jwk.set_kid(jwk.thumbprint_sha256_b64());
+
+        Ok(jwk)
+    }
+
+    pub async fn get_ed25519_public_key(&self, key_id: &KeyId) -> KeyStorageResult<Jwk> {
+        let stronghold = self.get_stronghold().await;
+        let client = get_client(&stronghold)?;
+
+        let location = Location::generic(
+            IDENTITY_VAULT_PATH.as_bytes().to_vec(),
+            key_id.to_string().as_bytes().to_vec(),
+        );
+
+        let public_key_procedure = iota_stronghold::procedures::PublicKey {
+            ty: ProceduresKeyType::Ed25519,
+            private_key: location,
+        };
+
+        let procedure_result = client
+            .execute_procedure(StrongholdProcedure::PublicKey(public_key_procedure))
+            .map_err(|err| KeyStorageError::new(KeyStorageErrorKind::KeyNotFound).with_source(err))?;
+
+        let public_key: Vec<u8> = procedure_result.into();
+
+        let mut params = JwkParamsOkp::new();
+        params.x = jwu::encode_b64(public_key);
+        EdCurve::Ed25519.name().clone_into(&mut params.crv);
+        let mut jwk: Jwk = Jwk::from_params(params);
+        jwk.set_alg(JwsAlgorithm::EdDSA.name());
         jwk.set_kid(jwk.thumbprint_sha256_b64());
 
         Ok(jwk)
