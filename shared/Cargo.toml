@@ -12,9 +12,12 @@ test = []
 
 [dependencies]
 identity_iota.workspace = true
+identity_storage.workspace = true
 identity_stronghold.workspace = true
+identity_stronghold_ext = { path = "../identity_stronghold_ext", features = ["send-sync-storage"] }
 iota-sdk.workspace = true
-iota_stronghold = { version = "2.0" }
+iota_stronghold.workspace = true
 log.workspace = true
 rand = "0.8"
+serde_json.workspace = true
 thiserror.workspace = true

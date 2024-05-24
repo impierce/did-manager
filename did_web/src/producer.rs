@@ -1,29 +1,24 @@
 use identity_iota::{
-    core::{Object, ToJson},
+    core::ToJson,
     did::CoreDID,
     document::CoreDocument,
-    storage::KeyId,
-    verification::VerificationMethod,
+    verification::{jws::JwsAlgorithm, VerificationMethod},
 };
 use log::{debug, info};
-use serde_json::json;
-use shared::JwkStorageWrapper;
-use std::io::Error;
+use shared::{error::ProducerError, JwkStorageWrapper};
 
 pub async fn produce_did_web(
     storage: JwkStorageWrapper,
-    key_id: &KeyId,
+    key_id: &str,
     host: url::Host,
     port: Option<u16>,
-) -> Result<CoreDocument, Error> {
+    alg: JwsAlgorithm,
+) -> Result<CoreDocument, ProducerError> {
     // TODO: check if key exists for given key_id?
 
-    let public_key_jwk = match storage {
-        JwkStorageWrapper::Stronghold(stronghold_storage) => stronghold_storage.get_public_key(key_id).await.unwrap(),
-        JwkStorageWrapper::PKCS11 => todo!(),
-    };
+    let public_key_jwk = storage.get_public_key(key_id, alg).await?;
 
-    info!("Producing did:web for key_id=[{:?}] ...", key_id.as_str());
+    info!("Producing did:web for key_id=[{:?}] ...", key_id);
 
     // Construct the URL from host and (optional) port
     // TODO: is there a better default than having to parse to create a new Url?
@@ -47,17 +42,14 @@ pub async fn produce_did_web(
 
     let controller = CoreDID::parse(&did_str).unwrap();
 
-    let verification_method =
-        VerificationMethod::new_from_jwk(controller.clone(), public_key_jwk.clone(), Some("key-0")).unwrap();
+    let verification_method = VerificationMethod::new_from_jwk(
+        controller.clone(),
+        serde_json::from_value(public_key_jwk).unwrap(),
+        Some("key-0"),
+    )
+    .unwrap();
 
-    let mut properties = Object::new();
-    properties.insert(
-        "@context".to_string(),
-        json!([
-            "https://www.w3.org/ns/did/v1",
-            "https://w3id.org/security/suites/ed25519-2020/v1" // TODO: make dynamic
-        ]),
-    );
+    let properties = storage.get_properties();
 
     let document = CoreDocument::builder(properties)
         .id(controller)
@@ -82,6 +74,7 @@ mod tests {
     use crate::consumer::resolve_did_web;
 
     use identity_iota::core::ToJson;
+    use serde_json::json;
     use shared::test_utils::new_stronghold_storage;
     use test_log::test;
     use wiremock::matchers::{method, path};
@@ -98,9 +91,10 @@ mod tests {
 
         let document = produce_did_web(
             JwkStorageWrapper::Stronghold(stronghold_storage),
-            &key_id,
+            key_id.as_str(),
             url::Host::parse("localhost").unwrap(),
             Some(mock_server_port),
+            JwsAlgorithm::EdDSA,
         )
         .await
         .unwrap();
@@ -127,7 +121,7 @@ mod tests {
               "verificationMethod": [
                 {
                   "id": format!("did:web:localhost%3A{}#key-0", mock_server_port),
-                  "type": "JsonWebKey", // TODO: should be "JsonWebKey2020"?
+                  "type": "JsonWebKey2020",
                   "controller": format!("did:web:localhost%3A{}", mock_server_port),
                   "publicKeyJwk": {
                     "kty": "OKP",

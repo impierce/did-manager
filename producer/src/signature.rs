@@ -1,19 +1,48 @@
-use identity_iota::storage::JwkStorage;
+use identity_iota::{storage::JwkStorage, verification::jws::JwsAlgorithm};
+use identity_stronghold::StrongholdKeyType;
 use shared::error::ProducerError;
 
 use crate::SecretManager;
 
 impl SecretManager {
-    pub async fn sign(&self, data: &[u8]) -> Result<Vec<u8>, ProducerError> {
-        let public_key = self
-            .stronghold_storage
-            .get_public_key(&self.ed25519_key_id.as_ref().unwrap())
-            .await?;
-        let signature = self
-            .stronghold_storage
-            .sign(&self.ed25519_key_id.as_ref().unwrap(), data, &public_key)
-            .await?;
-        Ok(signature)
+    pub async fn sign(&self, data: &[u8], jws_algorithm: JwsAlgorithm) -> Result<Vec<u8>, ProducerError> {
+        match jws_algorithm {
+            JwsAlgorithm::ES256 => {
+                let key_id = self
+                    .es256_key_id
+                    .as_ref()
+                    .ok_or(ProducerError::MissingKeyIdError("es256".to_string()))?;
+                let public_key = self
+                    .stronghold_ext_storage
+                    .get_es256_public_key(key_id)
+                    .await
+                    .expect("failed to get public key");
+                let signature = self
+                    .stronghold_ext_storage
+                    .sign(key_id, data, &public_key)
+                    .await
+                    .expect("failed to sign data");
+                Ok(signature)
+            }
+            JwsAlgorithm::EdDSA => {
+                let key_id = self
+                    .ed25519_key_id
+                    .as_ref()
+                    .ok_or(ProducerError::MissingKeyIdError("ed25519".to_string()))?;
+                let public_key = self
+                    .stronghold_storage
+                    .get_public_key_with_type(key_id, StrongholdKeyType::Ed25519)
+                    .await
+                    .expect("failed to get public key");
+                let signature = self
+                    .stronghold_storage
+                    .sign(key_id, data, &public_key)
+                    .await
+                    .expect("failed to sign data");
+                Ok(signature)
+            }
+            _ => Err(ProducerError::Generic("Unsupported algorithm".to_string())),
+        }
     }
 }
 
@@ -40,7 +69,7 @@ mod tests {
         .await
         .unwrap();
 
-        let signature = secret_manager.sign("foobar".as_bytes()).await;
+        let signature = secret_manager.sign("foobar".as_bytes(), JwsAlgorithm::EdDSA).await;
 
         assert!(signature.is_ok());
 

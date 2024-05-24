@@ -1,0 +1,25 @@
+[package]
+name = "identity_stronghold_ext"
+version = "0.1.0"
+edition = "2021"
+description = "Secure JWK storage with Stronghold Ext for IOTA Identity"
+homepage = "https://www.impierce.com/"
+license = "Apache-2.0"
+repository = "https://github.com/impierce/did-manager"
+keywords = ["iota", "storage", "identity", "kms", "stronghold"]
+
+[dependencies]
+async-trait = { version = "0.1.64", default-features = false }
+elliptic-curve = { version = "0.13", features = ["jwk"] }
+identity_storage.workspace = true
+identity_verification = { git = "https://github.com/iotaledger/identity.rs", default_features = false }
+iota_stronghold.workspace = true
+p256 = { version = "0.13", features = ["jwk"] }
+serde_json.workspace = true
+stronghold_ext = { path = "../../../tmp/tensor-programming/stronghold_ext", features = ["crypto"] }
+tokio.workspace = true
+
+[features]
+default = []
+# Enables `Send` + `Sync` bounds for the trait implementations on `StrongholdStorage`.
+send-sync-storage = ["identity_storage/send-sync-storage"]

@@ -17,6 +17,6 @@ log.workspace = true
 tokio.workspace = true
 
 [dev-dependencies]
-iota_stronghold = { version = "2.0" }
+iota_stronghold = { version = "2.1" }
 serde_json.workspace = true
 test-log.workspace = true
