@@ -9,7 +9,7 @@ rust-version.workspace = true
 
 [dependencies]
 shared = { path = "../shared" }
-did-method-key = "0.2.2"             # https://github.com/spruceid/ssi/tree/main/did-key     <== outdated?
+did-key-extern = { version = "0.2.2", package = "did-method-key" }
 identity_iota.workspace = true
 identity_storage.workspace = true
 identity_stronghold.workspace = true

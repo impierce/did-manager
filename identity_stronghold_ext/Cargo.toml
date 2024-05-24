@@ -14,10 +14,9 @@ elliptic-curve = { version = "0.13", features = ["jwk"] }
 identity_storage.workspace = true
 identity_verification = { git = "https://github.com/iotaledger/identity.rs", default_features = false }
 iota_stronghold.workspace = true
-libsodium-sys-stable.workspace = true
 p256 = { version = "0.13", features = ["jwk"] }
 serde_json.workspace = true
-stronghold_ext = { git = "https://github.com/tensor-programming/stronghold_ext", features = ["crypto"] }
+stronghold_ext = { path = "../../../tmp/tensor-programming/stronghold_ext", features = ["crypto"] }
 tokio.workspace = true
 
 [features]
