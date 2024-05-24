@@ -134,9 +134,10 @@ mod tests {
     use shared::test_utils::random_stronghold_path;
     use test_log::test;
 
-    const SNAPSHOT_PATH: &str = "tests/res/test.stronghold";
-    const PASSWORD: &str = "secure_password";
-    const KEY_ID: &str = "9O66nzWqYYy1LmmiOudOlh2SMIaUWoTS";
+    const SNAPSHOT_PATH: &str = "tests/res/multi.stronghold";
+    const PASSWORD: &str = "sup3rSecr3t";
+    const KEY_ID_ED25519: &str = "key-0";
+    const KEY_ID_ES256: &str = "key-1";
 
     #[test(tokio::test)]
     async fn create_document_from_generated_stronghold() {
@@ -159,21 +160,20 @@ mod tests {
     }
 
     #[test(tokio::test)]
-    async fn recreate_expected_document_from_existing_stronghold() {
+    async fn recreate_expected_document_from_existing_ed25519_key() {
         let secret_manager = SecretManager::load(
             SNAPSHOT_PATH.to_owned(),
             PASSWORD.to_owned(),
-            Some(KEY_ID.to_owned()),
-            None,
+            Some(KEY_ID_ED25519.to_owned()),
+            Some(KEY_ID_ES256.to_owned()),
             None,
             None,
         )
         .await
         .unwrap();
 
-        // TODO: Some(url::Host::parse("localhost").unwrap()), Some(8080)
         let document = secret_manager
-            .produce_document(DidMethod::Web, JwsAlgorithm::EdDSA)
+            .produce_document(DidMethod::Jwk, JwsAlgorithm::EdDSA)
             .await;
 
         assert_eq!(
@@ -190,9 +190,48 @@ mod tests {
             json!({
                 "kty": "OKP",
                 "alg": "EdDSA",
-                "kid": "aHq-0PIf6_ljLhyx4W86Gviqb-671OAI67E6vXpZc7Q",
+                "kid": "f02ShYrak2enzU2hKa9BKy-v7HGK3sUp3XlE4bojcX0",
                 "crv": "Ed25519",
-                "x": "P2BkYS6z4UHmsxn6FX1oHsyx7eiUSFEMJ1D_RC8M0-w"
+                "x": "7aKj0vjMYobg_4Mh5MatFHeDFEiiYtH_-ghj91X_SLQ"
+            })
+        )
+    }
+
+    #[test(tokio::test)]
+    async fn recreate_expected_document_from_existing_es256_key() {
+        let secret_manager = SecretManager::load(
+            SNAPSHOT_PATH.to_owned(),
+            PASSWORD.to_owned(),
+            Some(KEY_ID_ED25519.to_owned()),
+            Some(KEY_ID_ES256.to_owned()),
+            None,
+            None,
+        )
+        .await
+        .unwrap();
+
+        let document = secret_manager
+            .produce_document(DidMethod::Jwk, JwsAlgorithm::ES256)
+            .await;
+
+        assert_eq!(
+            document
+                .unwrap()
+                .verification_method()
+                .first()
+                .unwrap()
+                .data()
+                .public_key_jwk()
+                .unwrap()
+                .to_json_value()
+                .unwrap(),
+            json!({
+                "kty": "EC",
+                "alg": "ES256",
+                "kid": "0aHqNxJebHBv1ae8HJMABzCCN0fmaRbaoqgfLnLCFBE",
+                "crv": "P-256",
+                "x": "qVu_ZGlQoS4sLOJgmhW67IsxDQqm94KWOUI4-QAk1q0",
+                "y": "wY2tkzhYaZw5llZf-QNDx03OQVM1J6_h9-ml7kTUiUw"
             })
         )
     }

@@ -94,6 +94,7 @@ impl SecretManager {
                 // TODO: use `.unwrap_or_default()` instead of `.expect()`?
                 .expect("Stronghold storage error")
                 .then_some({
+                    // TODO: this is always printed (no matter whether the key exists or not) which is misleading
                     info!("Successfully verified key exists with {:?}", key_id);
                     key_id
                 })
@@ -112,19 +113,21 @@ impl SecretManager {
         let stronghold_ext_storage = StrongholdExtStorage::new(stronghold);
 
         let es256_key_id = if let Some(key_id) = es256_key_id.map(identity_storage::KeyId::new) {
-            info!("In here we have the key_id: {:?}", key_id);
             stronghold_ext_storage
                 .exists(&key_id)
                 .await
                 // TODO: use `.unwrap_or_default()` instead of `.expect()`?
                 .expect("Stronghold storage error")
                 .then_some({
+                    // TODO: this is always printed (no matter whether the key exists or not) which is misleading
                     info!("Successfully verified key exists with {:?}", key_id);
                     key_id
                 })
         } else {
             None
         };
+
+        info!("ed25519_key_id: {ed25519_key_id:?}, es256_key_id: {es256_key_id:?}");
 
         if ed25519_key_id.is_none() && es256_key_id.is_none() {
             // TODO: add proper "NoKeysFound" error type
