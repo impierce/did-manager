@@ -33,9 +33,7 @@ pub fn test_jwk_es256() -> Jwk {
     params.x = "SVqB4JcUD6lsfvqMr-OKUNUphdNn64Eay60978ZlL74".to_string();
     params.y = "lf0u0pMj4lGAzZix5u4Cm5CMQIgMNpkwy163wtKYVKI".to_string();
     params.d = Some("0g5vAEKzugrXaRbgKG0Tj2qJ5lMP4Bezds1_sTybkfk".to_string());
-    params.crv = EcCurve::P256.name().to_owned();
-    // EcCurve::P256.name().clone_into(&mut params.crv);
-    // let mut jwk = Jwk::from_params(params);
+    EcCurve::P256.name().clone_into(&mut params.crv);
     jwk.set_alg(JwsAlgorithm::ES256.name());
     jwk.set_key_ops(vec![JwkOperation::Verify]);
     let _ = jwk.set_params(params);

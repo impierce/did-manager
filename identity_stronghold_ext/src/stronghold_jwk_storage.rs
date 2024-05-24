@@ -63,14 +63,14 @@ impl StrongholdExtStorage {
 
         let public_key: Vec<u8> = procedure_result.into();
 
-        let encoded_point = p256::EncodedPoint::from_bytes(&public_key).expect("Invalid encoded point");
+        let encoded_point = p256::EncodedPoint::from_bytes(public_key).expect("Invalid encoded point");
 
         let verifying_key =
             p256::ecdsa::VerifyingKey::from_encoded_point(&encoded_point).expect("Failed to decompress point");
 
         let public_key = verifying_key.to_encoded_point(false).as_bytes().to_vec();
 
-        let encoded_point = p256::EncodedPoint::from_bytes(&public_key).expect("Failed to parse compressed public key");
+        let encoded_point = p256::EncodedPoint::from_bytes(public_key).expect("Failed to parse compressed public key");
 
         let jwk_ec_key = elliptic_curve::JwkEcKey::from_encoded_point::<p256::NistP256>(&encoded_point)
             .expect("Failed to decompress point");

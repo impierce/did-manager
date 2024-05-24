@@ -6,7 +6,7 @@ use identity_iota::verification::jws::JwsAlgorithm;
 use identity_stronghold::StrongholdStorage;
 use identity_stronghold_ext::StrongholdExtStorage;
 use serde_json::json;
-use std::{collections::BTreeMap, str::FromStr};
+use std::collections::BTreeMap;
 
 pub enum JwkStorageWrapper {
     Stronghold(StrongholdStorage),
