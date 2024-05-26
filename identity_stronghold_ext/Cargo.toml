@@ -16,7 +16,7 @@ identity_verification = { git = "https://github.com/iotaledger/identity.rs", def
 iota_stronghold.workspace = true
 p256 = { version = "0.13", features = ["jwk"] }
 serde_json.workspace = true
-stronghold_ext = { path = "../../../tmp/tensor-programming/stronghold_ext", features = ["crypto"] }
+stronghold_ext = { git = "https://github.com/tensor-programming/stronghold_ext.git", features = ["crypto"] }
 tokio.workspace = true
 
 [features]
