@@ -6,7 +6,6 @@ use identity_iota::verification::jws::JwsAlgorithm;
 use identity_stronghold::StrongholdStorage;
 use identity_stronghold_ext::StrongholdExtStorage;
 use serde_json::json;
-use std::collections::BTreeMap;
 
 pub enum JwkStorageWrapper {
     Stronghold(StrongholdStorage),
@@ -52,24 +51,5 @@ impl JwkStorageWrapper {
             }
             JwkStorageWrapper::PKCS11 => todo!(),
         })
-    }
-
-    pub fn get_properties(&self) -> BTreeMap<String, serde_json::Value> {
-        let mut properties = BTreeMap::new();
-        properties.insert(
-            "@context".to_string(),
-            match self {
-                JwkStorageWrapper::Stronghold(_) => json!([
-                    "https://www.w3.org/ns/did/v1",
-                    "https://w3id.org/security/suites/ed25519-2020/v1"
-                ]),
-                JwkStorageWrapper::StrongholdExt(_) => json!([
-                    "https://www.w3.org/ns/did/v1",
-                    "https://w3id.org/security/suites/jws-2020/v1"
-                ]),
-                JwkStorageWrapper::PKCS11 => unimplemented!("PKCS11"),
-            },
-        );
-        properties
     }
 }

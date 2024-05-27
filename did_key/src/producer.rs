@@ -1,11 +1,10 @@
 use identity_iota::{
-    core::FromJson,
+    core::{FromJson, ToJson},
     did::{CoreDID, DID},
     document::CoreDocument,
-    verification::{jws::JwsAlgorithm, VerificationMethod},
+    verification::{jwk::Jwk, jws::JwsAlgorithm, VerificationMethod},
 };
-use log::info;
-use serde_json::json;
+use log::{debug, info};
 use shared::{error::ProducerError, JwkStorageWrapper};
 use ssi_dids::{DIDMethod, Source};
 
@@ -23,67 +22,72 @@ pub async fn produce_did_key(
 
     let public_key_jwk = storage.get_public_key(key_id, alg).await?;
 
-    info!("Producing did:key for key_id=[{:?}] ...", key_id);
+    info!("Producing `did:key` for key_id `{key_id}` ({alg}) ...");
 
-    let did_str = did_key_extern::DIDKey
-        .generate(&Source::Key(&serde_json::from_value(public_key_jwk).unwrap()))
-        .unwrap();
-    let did = CoreDID::parse(did_str).unwrap();
-    info!("DID: {}", did);
+    let jwk: ssi_jwk::JWK = serde_json::from_value(public_key_jwk.clone()).unwrap();
 
-    let verification_method = VerificationMethod::from_json_value(json!({
-        "id": format!("{}#{}", did, did.method_id()),
-        "type": "Ed25519VerificationKey2020",
-        "controller": did,
-        "publicKeyMultibase": did.method_id()
-    }))
-    .unwrap();
+    if let Some(did_str) = did_key_extern::DIDKey.generate(&Source::Key(&jwk)) {
+        info!("DID: `{did_str}`");
 
-    let properties = storage.get_properties();
+        let controller = CoreDID::parse(did_str).unwrap();
 
-    let document = CoreDocument::builder(properties)
-        .id(did)
-        .verification_method(verification_method)
-        .build()
+        let verification_method = VerificationMethod::new_from_jwk(
+            controller.clone(),
+            Jwk::from_json_value(public_key_jwk).unwrap(),
+            Some(controller.method_id()),
+        )
         .unwrap();
 
-    Ok(document)
+        let document = CoreDocument::builder(Default::default())
+            .id(controller)
+            .verification_method(verification_method)
+            .build()
+            .unwrap();
+
+        debug!("DID Document: {}", document.to_json_pretty().unwrap());
+
+        return Ok(document);
+    };
+    Err(ProducerError::Generic("Done without result".to_string()))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    use identity_iota::core::ToJson;
-    use shared::test_utils::new_stronghold_storage;
+    use shared::test_utils::existing_stronghold_storage;
     use test_log::test;
 
+    const SNAPSHOT_PATH: &str = "../shared/tests/res/multi.stronghold";
+    const PASSWORD: &str = "sup3rSecr3t";
+
     #[test(tokio::test)]
-    async fn produces_did_key() {
-        let (stronghold_storage, key_id, _) = new_stronghold_storage().await;
+    async fn produces_did_key_ed25519() {
+        let stronghold_storage = existing_stronghold_storage(SNAPSHOT_PATH, PASSWORD).await;
+        let key_id = "key-0";
 
-        let storage = JwkStorageWrapper::Stronghold(stronghold_storage);
-        let document = produce_did_key(storage, key_id.as_str(), JwsAlgorithm::EdDSA)
-            .await
-            .unwrap();
+        let storage = JwkStorageWrapper::StrongholdExt(stronghold_storage);
+        let document = produce_did_key(storage, key_id, JwsAlgorithm::EdDSA).await.unwrap();
 
+        // Only the resulting `DID` is asserted instead of the entire `DID document` since it is not transferred anyway.
         assert_eq!(
-            document.to_json_value().unwrap(),
-            json!({
-              "@context": [
-                "https://www.w3.org/ns/did/v1",
-                "https://w3id.org/security/suites/ed25519-2020/v1"
-              ],
-              "id": "did:key:z6Mkv5KkqNHuR6bPVT8fud3m9JaHBSEjEmiLp7HuGAwtbkk6",
-              "verificationMethod": [
-                {
-                  "id": "did:key:z6Mkv5KkqNHuR6bPVT8fud3m9JaHBSEjEmiLp7HuGAwtbkk6#z6Mkv5KkqNHuR6bPVT8fud3m9JaHBSEjEmiLp7HuGAwtbkk6",
-                  "type": "Ed25519VerificationKey2020",
-                  "controller": "did:key:z6Mkv5KkqNHuR6bPVT8fud3m9JaHBSEjEmiLp7HuGAwtbkk6",
-                  "publicKeyMultibase": "z6Mkv5KkqNHuR6bPVT8fud3m9JaHBSEjEmiLp7HuGAwtbkk6"
-                }
-              ]
-            })
+            document.id(),
+            "did:key:z6MkvStWVzSLzVnSXfXB2AxgtuStsanmJjSMEyUGy9ZJmWaw"
+        );
+    }
+
+    #[test(tokio::test)]
+    async fn produces_did_key_es256() {
+        let stronghold_storage = existing_stronghold_storage(SNAPSHOT_PATH, PASSWORD).await;
+        let key_id = "key-1";
+
+        let storage = JwkStorageWrapper::StrongholdExt(stronghold_storage);
+        let document = produce_did_key(storage, key_id, JwsAlgorithm::ES256).await.unwrap();
+
+        // Only the resulting `DID` is asserted instead of the entire `DID document` since it is not transferred anyway.
+        assert_eq!(
+            document.id(),
+            "did:key:zDnaebq568DdHEjAY95yngDEEzJvJLPyEmDA8pS8VxVLBB3pp"
         );
     }
 }

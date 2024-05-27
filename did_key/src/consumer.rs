@@ -2,30 +2,15 @@ use did_key_extern::DIDKey;
 use identity_iota::core::{FromJson, ToJson};
 use identity_iota::did::{CoreDID, DID};
 use identity_iota::document::CoreDocument;
-use identity_iota::resolver::Resolver;
-use log::info;
+use log::{debug, info};
 use shared::error::ConsumerError;
 use ssi_dids::did_resolve::dereference;
 
 pub async fn resolve_did_key(did: CoreDID) -> Result<CoreDocument, ConsumerError> {
-    info!("Resolving DID: {}", did);
+    info!("Resolving DID: `{did}`");
     let (_, document, _) = dereference(&DIDKey, did.as_str(), &Default::default()).await;
-    info!("{}", document.to_json_pretty().unwrap());
+    debug!("{}", document.to_json_pretty().unwrap());
     CoreDocument::from_json(&document.to_json().unwrap()).map_err(|e| ConsumerError::Generic(e.to_string()))
-}
-
-async fn configure() -> Resolver {
-    let mut resolver = Resolver::<CoreDocument>::new();
-    resolver.attach_handler("key".to_owned(), resolve_did_key);
-    resolver
-}
-
-#[allow(dead_code)]
-async fn resolve_did(did: &str) -> Result<CoreDocument, ConsumerError> {
-    let did = CoreDID::parse(did)?;
-    let resolver: Resolver = configure().await;
-    let document: CoreDocument = resolver.resolve(&did).await?;
-    Ok(document)
 }
 
 #[cfg(test)]
@@ -43,7 +28,7 @@ mod tests {
     #[test(tokio::test)]
     async fn resolves_did_key_ed25519() {
         let did = "did:key:z6Mkk7yqnGF3YwTrLpqrW6PGsKci7dNqh1CjnvMbzrMerSeL";
-        let document = resolve_did(did).await.unwrap();
+        let document = resolve_did_key(CoreDID::parse(did).unwrap()).await.unwrap();
 
         let actual = document
             .verification_method()
@@ -67,7 +52,7 @@ mod tests {
     async fn resolves_did_key_es256() {
         // Test vector from https://w3c-ccg.github.io/did-method-key/#p-256 (p256 always start with `zDn`)
         let did = "did:key:zDnaerDaTF5BXEavCrfRZEk316dpbLsfPDZ3WJ5hRTPFU2169";
-        let document = resolve_did(did).await.unwrap();
+        let document = resolve_did_key(CoreDID::parse(did).unwrap()).await.unwrap();
 
         let actual = document
             .verification_method()
@@ -92,7 +77,7 @@ mod tests {
     async fn resolves_did_key_es256k() {
         // Test vector from https://w3c-ccg.github.io/did-method-key/#secp256k1 (secp256k1 always start with `zQ3s`)
         let did = "did:key:zQ3shokFTS3brHcDQrn82RUDfCZESWL1ZdCEJwekUDPQiYBme";
-        let document = resolve_did(did).await.unwrap();
+        let document = resolve_did_key(CoreDID::parse(did).unwrap()).await.unwrap();
 
         let actual = document
             .verification_method()
