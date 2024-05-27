@@ -76,6 +76,7 @@ impl SecretManager {
                     &storage,
                     key_id,
                     did_iota::produce::IotaMethod::Testnet,
+                    JwsAlgorithm::EdDSA,
                     IotaDID::parse(self.did.clone().expect("externally managed `DID` not specified"))?,
                     self.fragment
                         .clone()
@@ -91,6 +92,7 @@ impl SecretManager {
                     &storage,
                     key_id,
                     did_iota::produce::IotaMethod::Shimmer,
+                    JwsAlgorithm::EdDSA,
                     IotaDID::parse(self.did.clone().expect("externally managed `DID` not specified"))?,
                     self.fragment
                         .clone()
@@ -106,6 +108,7 @@ impl SecretManager {
                     &storage,
                     key_id,
                     did_iota::produce::IotaMethod::Mainnet,
+                    JwsAlgorithm::EdDSA,
                     IotaDID::parse(self.did.clone().expect("externally managed `DID` not specified"))?,
                     self.fragment
                         .clone()

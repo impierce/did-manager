@@ -1,10 +1,10 @@
 use identity_iota::{
-    core::ToJson,
+    core::{FromJson, ToJson},
     document::CoreDocument,
     iota::{IotaDID, NetworkName},
-    verification::jws::JwsAlgorithm,
+    verification::{jwk::Jwk, jws::JwsAlgorithm},
 };
-use log::info;
+use log::{debug, info};
 use shared::{error::ProducerError, JwkStorageWrapper};
 
 use crate::producer::resolve::resolve;
@@ -16,26 +16,28 @@ pub enum IotaMethod {
 }
 
 /// Note: Producing a DID document on an IOTA network involves publishing it to the network.
+/// Currently only works for pre-funded, pre-published DID documents (runs a few sanity checks before returning the document).
 pub async fn produce_did_iota(
     storage: &JwkStorageWrapper,
     key_id: &str,
     iota_method: IotaMethod,
+    alg: JwsAlgorithm,
     managed_did: IotaDID,     // TODO(selv): see README.md
     managed_fragment: String, // TODO(selv): see README.md
 ) -> Result<CoreDocument, ProducerError> {
-    let public_key_jwk = storage.get_public_key(key_id, JwsAlgorithm::EdDSA).await?;
+    let public_key_jwk = storage.get_public_key(key_id, alg).await?;
 
     let _ = match iota_method {
         IotaMethod::Testnet => {
-            info!("Producing did:iota:rms (Testnet) for key_id=[{:?}] ...", key_id);
+            info!("Producing `did:iota:rms` for key_id `{key_id}` ({alg}) ...");
             NetworkName::try_from("rms").expect("Invalid network")
         }
         IotaMethod::Shimmer => {
-            info!("Producing did:iota:smr (Shimmer) for key_id=[{:?}] ...", key_id);
+            info!("Producing `did:iota:smr` for key_id `{key_id}` ({alg}) ...");
             NetworkName::try_from("smr").expect("Invalid network")
         }
         IotaMethod::Mainnet => {
-            info!("Producing did:iota (Mainnet) for key_id=[{:?}] ...", key_id);
+            info!("Producing `did:iota` for key_id `{key_id}` ({alg}) ...");
             NetworkName::try_from("iota").expect("Invalid network")
         }
     };
@@ -48,16 +50,13 @@ pub async fn produce_did_iota(
 
     // Sanity check: Do the public keys match?
     assert_eq!(
-        public_key_jwk,
-        verification_method
-            .data()
-            .public_key_jwk()
-            .unwrap()
-            .to_json_value()
-            .unwrap()
+        Jwk::from_json_value(public_key_jwk).unwrap(),
+        verification_method.data().public_key_jwk().unwrap().clone()
     );
 
-    info!("DID Document: {}", published_document.to_json_pretty().unwrap());
+    info!("DID: `{:?}`", published_document.id());
+
+    debug!("DID Document: {}", published_document.to_json_pretty().unwrap());
 
     Ok(published_document)
 }
@@ -91,6 +90,7 @@ mod tests {
             &storage,
             KEY_ID,
             IotaMethod::Testnet,
+            JwsAlgorithm::EdDSA,
             IotaDID::parse(IOTA_DID).unwrap(),
             FRAGMENT.to_string(),
         )
@@ -142,6 +142,7 @@ mod tests {
             &storage,
             KEY_ID,
             IotaMethod::Shimmer,
+            JwsAlgorithm::EdDSA,
             IotaDID::parse(IOTA_DID).unwrap(),
             FRAGMENT.to_string(),
         )
@@ -168,6 +169,7 @@ mod tests {
             &storage,
             KEY_ID,
             IotaMethod::Mainnet,
+            JwsAlgorithm::EdDSA,
             IotaDID::parse(IOTA_DID).unwrap(),
             FRAGMENT.to_string(),
         )
