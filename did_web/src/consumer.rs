@@ -1,14 +1,13 @@
 use identity_iota::core::{FromJson, ToJson};
 use identity_iota::did::{CoreDID, DID};
 use identity_iota::document::CoreDocument;
-use identity_iota::resolver::Resolver;
 use log::{debug, info};
 use shared::error::ConsumerError;
 use ssi_dids::did_resolve::ResolutionInputMetadata;
 use ssi_dids::DIDMethod;
 
 pub async fn resolve_did_web(did: CoreDID) -> Result<CoreDocument, ConsumerError> {
-    info!("Resolving DID: {}", did);
+    info!("Resolving DID: `{did}`");
     let resolver = did_web_extern::DIDWeb.to_resolver();
     let input_metadata = ResolutionInputMetadata::default();
     let (result, document, metadata) = resolver.resolve(did.as_str(), &input_metadata).await;
@@ -24,20 +23,6 @@ pub async fn resolve_did_web(did: CoreDID) -> Result<CoreDocument, ConsumerError
     CoreDocument::from_json(&document.to_json().unwrap()).map_err(|e| ConsumerError::Generic(e.to_string()))
 }
 
-async fn configure() -> Resolver {
-    let mut resolver = Resolver::<CoreDocument>::new();
-    resolver.attach_handler("web".to_owned(), resolve_did_web);
-    resolver
-}
-
-#[allow(dead_code)]
-async fn resolve_did(did: &str) -> Result<CoreDocument, ConsumerError> {
-    let did = CoreDID::parse(did)?;
-    let resolver: Resolver = configure().await;
-    let document: CoreDocument = resolver.resolve(&did).await?;
-    Ok(document)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -48,18 +33,21 @@ mod tests {
     use wiremock::{Mock, MockServer, ResponseTemplate};
 
     #[test(tokio::test)]
-    async fn resolves_did_web() {
+    async fn resolves_did_web_ed25519() {
         let mock_server = MockServer::start().await;
 
         Mock::given(method("GET"))
             .and(path("/.well-known/did.json"))
             .respond_with(ResponseTemplate::new(200).set_body_json(json!({
-              "@context": "https://www.w3.org/ns/did/v1",
+              "@context": [
+                "https://www.w3.org/ns/did/v1",
+                "https://w3id.org/security/suites/jws-2020/v1"
+              ],
               "id": format!("did:web:localhost%3A{}", mock_server.address().port()),
               "verificationMethod": [
                 {
                   "id": "did:web:localhost#key-0",
-                  "type": "Ed25519VerificationKey2018",
+                  "type": "JsonWebKey2020",
                   "controller": "did:web:localhost",
                   "publicKeyJwk": {
                     "kty": "OKP",
@@ -76,8 +64,11 @@ mod tests {
             .await;
 
         let did = format!("did:web:localhost%3A{}", mock_server.address().port());
-        let document = resolve_did(&did).await.unwrap();
+        let document = resolve_did_web(CoreDID::parse(&did).unwrap()).await.unwrap();
 
+        // TODO: improve assertion
         assert_eq!(document.id().as_str(), did);
     }
+
+    // Resolving other key types is pointless, since they are hosted by the DID document
 }

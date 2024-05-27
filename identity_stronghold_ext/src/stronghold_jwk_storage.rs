@@ -45,7 +45,7 @@ impl StrongholdExtStorage {
         self.0.lock().await
     }
 
-    /// Retrieve the public key corresponding to `key_id`.
+    /// Retrieve the public ES256 key corresponding to `key_id`.
     pub async fn get_es256_public_key(&self, key_id: &KeyId) -> KeyStorageResult<Jwk> {
         let stronghold = self.get_stronghold().await;
         let client = get_client(&stronghold)?;
@@ -85,6 +85,7 @@ impl StrongholdExtStorage {
         Ok(jwk)
     }
 
+    /// Retrieve the public Ed25519 key corresponding to `key_id`.
     pub async fn get_ed25519_public_key(&self, key_id: &KeyId) -> KeyStorageResult<Jwk> {
         let stronghold = self.get_stronghold().await;
         let client = get_client(&stronghold)?;

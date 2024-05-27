@@ -1,12 +1,18 @@
+use std::collections::BTreeMap;
+
 use identity_iota::{
-    core::ToJson,
+    core::{FromJson, ToJson},
     did::CoreDID,
     document::CoreDocument,
-    verification::{jws::JwsAlgorithm, VerificationMethod},
+    verification::{jwk::Jwk, jws::JwsAlgorithm, MethodType, VerificationMethod},
 };
 use log::{debug, info};
+use serde_json::json;
 use shared::{error::ProducerError, JwkStorageWrapper};
 
+const FRAGMENT: &str = "key-0";
+
+/// Currently, producing a `did:web` document is only supported for **one single key** (either `Ed25519` or `ES256`).
 pub async fn produce_did_web(
     storage: JwkStorageWrapper,
     key_id: &str,
@@ -18,38 +24,40 @@ pub async fn produce_did_web(
 
     let public_key_jwk = storage.get_public_key(key_id, alg).await?;
 
-    info!("Producing did:web for key_id=[{:?}] ...", key_id);
+    info!("Producing `did:web` for key_id `{key_id}` ({alg}) ...");
 
     // Construct the URL from host and (optional) port
-    // TODO: is there a better default than having to parse to create a new Url?
+    // TODO: is there a better default than having to parse _some_ valid Url in order to create a new Url instance?
     let mut url = url::Url::parse("https://example.net").unwrap();
     url.set_host(Some(&host.to_string())).unwrap();
     url.set_port(port).unwrap();
 
-    debug!("HOST: {}", url.as_str());
+    debug!("Host: {}", url.as_str());
 
-    let host_port = if port.is_some() {
+    // TODO: refactor
+    let host_with_port = if port.is_some() {
         format!("{}:{}", url.host_str().unwrap(), url.port().unwrap())
     } else {
         url.host_str().unwrap().to_string()
     };
 
-    let host_port_encoded = urlencoding::encode(&host_port);
+    let host_with_port_url_encoded = urlencoding::encode(&host_with_port);
 
-    let did_str = format!("did:web:{}", host_port_encoded);
+    let did_str = format!("did:web:{}", host_with_port_url_encoded);
 
-    info!("DID: {:?}", did_str);
+    info!("DID: `{did_str}`");
 
-    let controller = CoreDID::parse(&did_str).unwrap();
+    let controller = CoreDID::parse(did_str).unwrap();
 
     let verification_method = VerificationMethod::new_from_jwk(
         controller.clone(),
-        serde_json::from_value(public_key_jwk).unwrap(),
-        Some("key-0"),
+        Jwk::from_json_value(public_key_jwk).unwrap(),
+        Some(FRAGMENT),
     )
     .unwrap();
 
-    let properties = storage.get_properties();
+    // Patch the generated DID document since it's not according to spec.
+    let properties = get_properties(MethodType::JSON_WEB_KEY_2020);
 
     let document = CoreDocument::builder(properties)
         .id(controller)
@@ -67,6 +75,25 @@ pub async fn produce_did_web(
     Ok(document)
 }
 
+fn get_properties(method_type: MethodType) -> BTreeMap<String, serde_json::Value> {
+    let mut properties = BTreeMap::new();
+    properties.insert(
+        "@context".to_string(),
+        match method_type.as_str() {
+            "Ed25519VerificationKey2018" => json!([
+                "https://www.w3.org/ns/did/v1",
+                "https://w3id.org/security/suites/ed25519-2018/v1"
+            ]),
+            "JsonWebKey2020" => json!([
+                "https://www.w3.org/ns/did/v1",
+                "https://w3id.org/security/suites/jws-2020/v1"
+            ]),
+            _ => unimplemented!("Unsupported method type"),
+        },
+    );
+    properties
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -81,10 +108,9 @@ mod tests {
     use wiremock::{Mock, MockServer, ResponseTemplate};
 
     #[test(tokio::test)]
-    async fn produces_did_web() {
+    async fn produces_did_web_ed25519() {
         let (stronghold_storage, key_id, _) = new_stronghold_storage().await;
 
-        // Start mock server and assert
         let mock_server = MockServer::start().await;
 
         let mock_server_port: u16 = mock_server.address().port();
@@ -98,8 +124,6 @@ mod tests {
         )
         .await
         .unwrap();
-
-        info!("Document: {}", document.to_json_pretty().unwrap());
 
         Mock::given(method("GET"))
             .and(path("/.well-known/did.json"))
@@ -115,7 +139,7 @@ mod tests {
             json!({
               "@context": [
                 "https://www.w3.org/ns/did/v1",
-                "https://w3id.org/security/suites/ed25519-2020/v1"
+                "https://w3id.org/security/suites/jws-2020/v1"
               ],
               "id": format!("did:web:localhost%3A{}", mock_server_port),
               "verificationMethod": [
