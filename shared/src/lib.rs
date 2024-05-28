@@ -5,6 +5,7 @@ use error::ProducerError;
 use identity_iota::verification::jws::JwsAlgorithm;
 use identity_stronghold::StrongholdStorage;
 use identity_stronghold_ext::StrongholdExtStorage;
+use log::info;
 use serde_json::json;
 
 pub enum JwkStorageWrapper {
@@ -17,6 +18,7 @@ impl JwkStorageWrapper {
     // This function returns the `JWK` as a `serde_json::Value` object because `StrongholdStorage` and
     // `StrongholdExtStorage` don't return the same exact `Jwk` type.
     pub async fn get_public_key(&self, key_id: &str, alg: JwsAlgorithm) -> Result<serde_json::Value, ProducerError> {
+        info!("Getting public key `{key_id}` ({alg}) ...");
         Ok(match self {
             JwkStorageWrapper::Stronghold(ref stronghold_storage) => match alg {
                 JwsAlgorithm::EdDSA => json!(stronghold_storage
@@ -28,24 +30,28 @@ impl JwkStorageWrapper {
                     .unwrap()),
                 // TODO: throw ProducerError
                 _ => unimplemented!(
-                    "KeyType `{alg}` not supported! JwkStorageWrapper `Stronghold` only supports `EdDSA`"
+                    "KeyType `{alg}` not supported! JwkStorageWrapper `Stronghold` only supports [`EdDSA`]"
                 ),
             },
             JwkStorageWrapper::StrongholdExt(ref stronghold_ext_storage) => {
                 // let alg = JwsAlgorithm::from_str(alg)
                 //     .map_err(|_| ProducerError::Generic("Unsupported algorithm".to_string()))?;
                 match alg {
-                    JwsAlgorithm::ES256 => json!(stronghold_ext_storage
-                        .get_es256_public_key(&identity_storage::KeyId::new(key_id))
-                        .await
-                        .unwrap()),
                     JwsAlgorithm::EdDSA => json!(stronghold_ext_storage
                         .get_ed25519_public_key(&identity_storage::KeyId::new(key_id))
                         .await
                         .unwrap()),
+                    JwsAlgorithm::ES256 => json!(stronghold_ext_storage
+                        .get_es256_public_key(&identity_storage::KeyId::new(key_id))
+                        .await
+                        .unwrap()),
+                    JwsAlgorithm::ES256K => json!(stronghold_ext_storage
+                        .get_es256k_public_key(&identity_storage::KeyId::new(key_id))
+                        .await
+                        .unwrap()),
                     // TODO: throw ProducerError
                     _ => unimplemented!(
-                        "KeyType `{alg}` not supported! JwkStorageWrapper `Stronghold` only supports [`ES256`, `EdDSA`]"
+                        "KeyType `{alg}` not supported! JwkStorageWrapper `Stronghold` only supports [`EdDSA`, `ES256`, `ES256K`]"
                     ),
                 }
             }

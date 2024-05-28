@@ -58,13 +58,13 @@ mod tests {
     use shared::test_utils::existing_stronghold_storage;
     use test_log::test;
 
-    const SNAPSHOT_PATH: &str = "../shared/tests/res/multi.stronghold";
+    const SNAPSHOT_PATH: &str = "../shared/tests/res/full.stronghold";
     const PASSWORD: &str = "sup3rSecr3t";
 
     #[test(tokio::test)]
     async fn produces_did_key_ed25519() {
         let stronghold_storage = existing_stronghold_storage(SNAPSHOT_PATH, PASSWORD).await;
-        let key_id = "key-0";
+        let key_id = "ed25519-0";
 
         let storage = JwkStorageWrapper::StrongholdExt(stronghold_storage);
         let document = produce_did_key(storage, key_id, JwsAlgorithm::EdDSA).await.unwrap();
@@ -72,14 +72,14 @@ mod tests {
         // Only the resulting `DID` is asserted instead of the entire `DID document` since it is not transferred anyway.
         assert_eq!(
             document.id(),
-            "did:key:z6MkvStWVzSLzVnSXfXB2AxgtuStsanmJjSMEyUGy9ZJmWaw"
+            "did:key:z6MknqpNo3fqnbyg43tojeKZQ8akSsGKCyBABzGjUjLhCsZa"
         );
     }
 
     #[test(tokio::test)]
     async fn produces_did_key_es256() {
         let stronghold_storage = existing_stronghold_storage(SNAPSHOT_PATH, PASSWORD).await;
-        let key_id = "key-1";
+        let key_id = "es256-0";
 
         let storage = JwkStorageWrapper::StrongholdExt(stronghold_storage);
         let document = produce_did_key(storage, key_id, JwsAlgorithm::ES256).await.unwrap();
@@ -87,7 +87,22 @@ mod tests {
         // Only the resulting `DID` is asserted instead of the entire `DID document` since it is not transferred anyway.
         assert_eq!(
             document.id(),
-            "did:key:zDnaebq568DdHEjAY95yngDEEzJvJLPyEmDA8pS8VxVLBB3pp"
+            "did:key:zDnaernWptkn9RNS1J66GB48bagdRhprM24ZekPQeoUmswwwm"
+        );
+    }
+
+    #[test(tokio::test)]
+    async fn produces_did_key_es256k() {
+        let stronghold_storage = existing_stronghold_storage(SNAPSHOT_PATH, PASSWORD).await;
+        let key_id = "es256k-0";
+
+        let storage = JwkStorageWrapper::StrongholdExt(stronghold_storage);
+        let document = produce_did_key(storage, key_id, JwsAlgorithm::ES256K).await.unwrap();
+
+        // Only the resulting `DID` is asserted instead of the entire `DID document` since it is not transferred anyway.
+        assert_eq!(
+            document.id(),
+            "did:key:zQ3shcuB13y9MHwVERrwguTY5gLvPqDnxRHj14YJJzDRFJX7q"
         );
     }
 }

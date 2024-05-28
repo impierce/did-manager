@@ -54,13 +54,13 @@ mod tests {
     use shared::test_utils::existing_stronghold_storage;
     use test_log::test;
 
-    const SNAPSHOT_PATH: &str = "../shared/tests/res/multi.stronghold";
+    const SNAPSHOT_PATH: &str = "../shared/tests/res/full.stronghold";
     const PASSWORD: &str = "sup3rSecr3t";
 
     #[test(tokio::test)]
     async fn produces_did_jwk_ed25519() {
         let stronghold_storage = existing_stronghold_storage(SNAPSHOT_PATH, PASSWORD).await;
-        let key_id = "key-0";
+        let key_id = "ed25519-0";
 
         let storage = JwkStorageWrapper::StrongholdExt(stronghold_storage);
         let document = produce_did_jwk(storage, key_id, JwsAlgorithm::EdDSA).await.unwrap();
@@ -79,18 +79,56 @@ mod tests {
         );
 
         // Only the resulting `DID` is asserted instead of the entire `DID document` since it is not transferred anyway.
-        assert_eq!(document.id(), "did:jwk:eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJmMDJTaFlyYWsyZW56VTJoS2E5Qkt5LXY3SEdLM3NVcDNYbEU0Ym9qY1gwIiwia3R5IjoiT0tQIiwieCI6IjdhS2owdmpNWW9iZ180TWg1TWF0RkhlREZFaWlZdEhfLWdoajkxWF9TTFEifQ");
+        assert_eq!(document.id(), "did:jwk:eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJEN2szeEc1WVF6NjJONGpVRzhvVVNZU0lURVFZLUs5b2RCejNlY0xGSElBIiwia3R5IjoiT0tQIiwieCI6ImZLVFVnUnZ1czRZWGJfeFFNSmhRZVFta2Z1Zk1TX1I1QjhxelZaaDlrNEUifQ");
     }
 
     #[test(tokio::test)]
     async fn produces_did_jwk_es256() {
         let stronghold_storage = existing_stronghold_storage(SNAPSHOT_PATH, PASSWORD).await;
-        let key_id = "key-1";
+        let key_id = "es256-0";
 
         let storage = JwkStorageWrapper::StrongholdExt(stronghold_storage);
         let document = produce_did_jwk(storage, key_id, JwsAlgorithm::ES256).await.unwrap();
 
+        assert_eq!(
+            document
+                .verification_method()
+                .first()
+                .unwrap()
+                .data()
+                .public_key_jwk()
+                .unwrap()
+                .alg()
+                .unwrap(),
+            "ES256"
+        );
+
         // Only the resulting `DID` is asserted instead of the entire `DID document` since it is not transferred anyway.
-        assert_eq!(document.id(), "did:jwk:eyJhbGciOiJFUzI1NiIsImNydiI6IlAtMjU2Iiwia2lkIjoiMGFIcU54SmViSEJ2MWFlOEhKTUFCekNDTjBmbWFSYmFvcWdmTG5MQ0ZCRSIsImt0eSI6IkVDIiwieCI6InFWdV9aR2xRb1M0c0xPSmdtaFc2N0lzeERRcW05NEtXT1VJNC1RQWsxcTAiLCJ5Ijoid1kydGt6aFlhWnc1bGxaZi1RTkR4MDNPUVZNMUo2X2g5LW1sN2tUVWlVdyJ9");
+        assert_eq!(document.id(), "did:jwk:eyJhbGciOiJFUzI1NiIsImNydiI6IlAtMjU2Iiwia2lkIjoicnBYMFExMDdmWkd0NUJnRVVROUVjSl9OQWRMSEczQk5udGlHRjBuRTIxRSIsImt0eSI6IkVDIiwieCI6Img1TnBFb3RqUmxYTWxjcmdxWnEwSEFvZVVMYkt6WHVPVlh5S3M2ZHo0ZEEiLCJ5IjoiR2t3WUdsU0Y1LXVSSlo1cGpKSlhsM2tLamZlWlpMbHNfUEM0bWhEYXZZayJ9");
+    }
+
+    #[test(tokio::test)]
+    async fn produces_did_jwk_es256k() {
+        let stronghold_storage = existing_stronghold_storage(SNAPSHOT_PATH, PASSWORD).await;
+        let key_id = "es256k-0";
+
+        let storage = JwkStorageWrapper::StrongholdExt(stronghold_storage);
+        let document = produce_did_jwk(storage, key_id, JwsAlgorithm::ES256K).await.unwrap();
+
+        assert_eq!(
+            document
+                .verification_method()
+                .first()
+                .unwrap()
+                .data()
+                .public_key_jwk()
+                .unwrap()
+                .alg()
+                .unwrap(),
+            "ES256K"
+        );
+
+        // Only the resulting `DID` is asserted instead of the entire `DID document` since it is not transferred anyway.
+        assert_eq!(document.id(), "did:jwk:eyJhbGciOiJFUzI1NksiLCJjcnYiOiJzZWNwMjU2azEiLCJraWQiOiJkY0NlWWxnR1RHRkh0bEJIcXVyRXN6LUlBUk1ZOG8wbG5BOTNCLVZaSktBIiwia3R5IjoiRUMiLCJ4IjoiNWlTNEZTV0tJLTB0NC1RNDZJY0dObTR1NHpJR0xRMjZkZzI5TzhkZXhzdyIsInkiOiI1elhBeDFRWENzUDhjbm40VEhXMndTYmtwOE9xYnlBdmNETzIyWTN0UnNZIn0");
     }
 }

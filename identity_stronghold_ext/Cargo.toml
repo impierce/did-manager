@@ -13,7 +13,10 @@ async-trait = { version = "0.1.64", default-features = false }
 elliptic-curve = { version = "0.13", features = ["jwk"] }
 identity_storage.workspace = true
 identity_verification = { git = "https://github.com/iotaledger/identity.rs", default_features = false }
+iota-sdk.workspace = true
 iota_stronghold.workspace = true
+k256 = { version = "0.13", features = ["jwk"] }
+log.workspace = true
 p256 = { version = "0.13", features = ["jwk"] }
 serde_json.workspace = true
 stronghold_ext = { git = "https://github.com/tensor-programming/stronghold_ext.git", features = ["crypto"] }

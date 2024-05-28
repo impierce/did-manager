@@ -9,7 +9,7 @@ use identity_stronghold::StrongholdStorage;
 use identity_stronghold_ext::StrongholdExtStorage;
 use iota_sdk::client::secret::stronghold::StrongholdSecretManager;
 use iota_sdk::client::Password;
-use iota_stronghold::{KeyProvider, SnapshotPath, Stronghold};
+// use iota_stronghold::{KeyProvider, SnapshotPath, Stronghold};
 use log::debug;
 use rand::distributions::DistString;
 
@@ -76,13 +76,18 @@ pub async fn new_stronghold_storage() -> (StrongholdStorage, KeyId, Option<KeyId
 pub async fn existing_stronghold_storage(path: &str, password: &str) -> StrongholdExtStorage {
     iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
 
-    let stronghold = Stronghold::default();
-    stronghold
-        .load_snapshot(
-            &KeyProvider::with_passphrase_hashed_blake2b(password.as_bytes().to_vec()).unwrap(),
-            &SnapshotPath::from_path(path),
-        )
+    // let stronghold = Stronghold::default();
+    // stronghold
+    //     .load_snapshot(
+    //         &KeyProvider::with_passphrase_hashed_blake2b(password.as_bytes().to_vec()).unwrap(),
+    //         &SnapshotPath::from_path(path),
+    //     )
+    //     .unwrap();
+
+    let stronghold_adapter = StrongholdSecretManager::builder()
+        .password(Password::from(password.to_string()))
+        .build(path)
         .unwrap();
 
-    StrongholdExtStorage::new(stronghold)
+    StrongholdExtStorage::new(stronghold_adapter)
 }

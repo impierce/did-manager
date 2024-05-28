@@ -40,14 +40,21 @@ impl SecretManager {
                 JwkStorageWrapper::Stronghold(self.stronghold_storage.clone()),
                 self.ed25519_key_id
                     .as_ref()
-                    .ok_or(ProducerError::MissingKeyIdError("ed25519".to_string()))?
+                    .ok_or(ProducerError::MissingKeyIdError("No Ed25519 key present".to_string()))?
                     .as_str(),
             ),
             JwsAlgorithm::ES256 => (
                 JwkStorageWrapper::StrongholdExt(self.stronghold_ext_storage.clone()),
                 self.es256_key_id
                     .as_ref()
-                    .ok_or(ProducerError::MissingKeyIdError("es256".to_string()))?
+                    .ok_or(ProducerError::MissingKeyIdError("No ES256 key present".to_string()))?
+                    .as_str(),
+            ),
+            JwsAlgorithm::ES256K => (
+                JwkStorageWrapper::StrongholdExt(self.stronghold_ext_storage.clone()),
+                self.es256k_key_id
+                    .as_ref()
+                    .ok_or(ProducerError::MissingKeyIdError("No ES256K key present".to_string()))?
                     .as_str(),
             ),
             _ => return Err(ProducerError::Generic("Unsupported JWS algorithm".to_string())),
@@ -133,18 +140,18 @@ mod tests {
     use super::*;
 
     use identity_iota::core::{json, ToJson};
-    use log::info;
     use shared::test_utils::random_stronghold_path;
     use test_log::test;
 
-    const SNAPSHOT_PATH: &str = "tests/res/multi.stronghold";
+    const SNAPSHOT_PATH: &str = "tests/res/full.stronghold";
     const PASSWORD: &str = "sup3rSecr3t";
-    const KEY_ID_ED25519: &str = "key-0";
-    const KEY_ID_ES256: &str = "key-1";
+    const KEY_ID_ED25519: &str = "ed25519-0";
+    const KEY_ID_ES256: &str = "es256-0";
+    const KEY_ID_ES256K: &str = "es256k-0";
 
     #[test(tokio::test)]
     async fn create_document_from_generated_stronghold() {
-        iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
+        // iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
 
         let secret_manager = SecretManager::generate(
             random_stronghold_path().to_str().unwrap().to_string(),
@@ -155,10 +162,10 @@ mod tests {
 
         // TODO: Some(url::Host::parse("localhost").unwrap()), Some(8080)
         let document = secret_manager
-            .produce_document(DidMethod::Web, JwsAlgorithm::EdDSA)
+            .produce_document(DidMethod::Jwk, JwsAlgorithm::EdDSA)
             .await;
 
-        info!("Document: {}", document.as_ref().unwrap().to_json_pretty().unwrap());
+        // info!("Document: {}", document.as_ref().unwrap().to_json_pretty().unwrap());
         assert!(document.is_ok())
     }
 
@@ -169,6 +176,7 @@ mod tests {
             PASSWORD.to_owned(),
             Some(KEY_ID_ED25519.to_owned()),
             Some(KEY_ID_ES256.to_owned()),
+            Some(KEY_ID_ES256K.to_owned()),
             None,
             None,
         )
@@ -193,9 +201,9 @@ mod tests {
             json!({
                 "kty": "OKP",
                 "alg": "EdDSA",
-                "kid": "f02ShYrak2enzU2hKa9BKy-v7HGK3sUp3XlE4bojcX0",
+                "kid": "D7k3xG5YQz62N4jUG8oUSYSITEQY-K9odBz3ecLFHIA",
                 "crv": "Ed25519",
-                "x": "7aKj0vjMYobg_4Mh5MatFHeDFEiiYtH_-ghj91X_SLQ"
+                "x": "fKTUgRvus4YXb_xQMJhQeQmkfufMS_R5B8qzVZh9k4E"
             })
         )
     }
@@ -207,6 +215,7 @@ mod tests {
             PASSWORD.to_owned(),
             Some(KEY_ID_ED25519.to_owned()),
             Some(KEY_ID_ES256.to_owned()),
+            Some(KEY_ID_ES256K.to_owned()),
             None,
             None,
         )
@@ -231,10 +240,50 @@ mod tests {
             json!({
                 "kty": "EC",
                 "alg": "ES256",
-                "kid": "0aHqNxJebHBv1ae8HJMABzCCN0fmaRbaoqgfLnLCFBE",
+                "kid": "rpX0Q107fZGt5BgEUQ9EcJ_NAdLHG3BNntiGF0nE21E",
                 "crv": "P-256",
-                "x": "qVu_ZGlQoS4sLOJgmhW67IsxDQqm94KWOUI4-QAk1q0",
-                "y": "wY2tkzhYaZw5llZf-QNDx03OQVM1J6_h9-ml7kTUiUw"
+                "x": "h5NpEotjRlXMlcrgqZq0HAoeULbKzXuOVXyKs6dz4dA",
+                "y": "GkwYGlSF5-uRJZ5pjJJXl3kKjfeZZLls_PC4mhDavYk"
+            })
+        )
+    }
+
+    #[test(tokio::test)]
+    async fn recreate_expected_document_from_existing_es256k_key() {
+        let secret_manager = SecretManager::load(
+            SNAPSHOT_PATH.to_owned(),
+            PASSWORD.to_owned(),
+            Some(KEY_ID_ED25519.to_owned()),
+            Some(KEY_ID_ES256.to_owned()),
+            Some(KEY_ID_ES256K.to_owned()),
+            None,
+            None,
+        )
+        .await
+        .unwrap();
+
+        let document = secret_manager
+            .produce_document(DidMethod::Jwk, JwsAlgorithm::ES256K)
+            .await;
+
+        assert_eq!(
+            document
+                .unwrap()
+                .verification_method()
+                .first()
+                .unwrap()
+                .data()
+                .public_key_jwk()
+                .unwrap()
+                .to_json_value()
+                .unwrap(),
+            json!({
+                "kty": "EC",
+                "alg": "ES256K",
+                "kid": "dcCeYlgGTGFHtlBHqurEsz-IARMY8o0lnA93B-VZJKA",
+                "crv": "secp256k1",
+                "x": "5iS4FSWKI-0t4-Q46IcGNm4u4zIGLQ26dg29O8dexsw",
+                "y": "5zXAx1QXCsP8cnn4THW2wSbkp8OqbyAvcDO22Y3tRsY"
             })
         )
     }
