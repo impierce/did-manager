@@ -13,8 +13,7 @@ use std::io::Error;
 pub async fn produce_did_web(
     storage: JwkStorageWrapper,
     key_id: &KeyId,
-    host: url::Host,
-    port: Option<u16>,
+    origin: url::Origin,
 ) -> Result<CoreDocument, Error> {
     // TODO: check if key exists for given key_id?
 
@@ -25,21 +24,19 @@ pub async fn produce_did_web(
 
     info!("Producing did:web for key_id=[{:?}] ...", key_id.as_str());
 
-    // Construct the URL from host and (optional) port
-    // TODO: is there a better default than having to parse to create a new Url?
-    let mut url = url::Url::parse("https://example.net").unwrap();
-    url.set_host(Some(&host.to_string())).unwrap();
-    url.set_port(port).unwrap();
+    debug!("Origin: {}", &origin.ascii_serialization());
 
-    debug!("HOST: {}", url.as_str());
-
-    let host_port = if port.is_some() {
-        format!("{}:{}", url.host_str().unwrap(), url.port().unwrap())
-    } else {
-        url.host_str().unwrap().to_string()
+    let (scheme, host, port) = match origin {
+        url::Origin::Tuple(ref scheme, ref host, ref port) => (scheme, host, port),
+        url::Origin::Opaque(_) => {
+            return Err(Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "Opaque origin not supported",
+            ));
+        }
     };
 
-    let host_port_encoded = urlencoding::encode(&host_port);
+    let host_port_encoded = urlencoding::encode(format!("{}:{}", host, port).as_str()).to_string();
 
     let did_str = format!("did:web:{}", host_port_encoded);
 
@@ -65,9 +62,11 @@ pub async fn produce_did_web(
         .build()
         .unwrap();
 
+    let well_known = format!("{}/.well-known/did.json", origin.ascii_serialization());
+
     info!("Host the following json under the following url:");
     info!("================================================");
-    info!("{}", url.join(".well-known/did.json").unwrap());
+    info!("{}", well_known);
     info!("================================================");
     info!("{}", document.to_json_pretty().unwrap());
     info!("================================================");
@@ -99,8 +98,11 @@ mod tests {
         let document = produce_did_web(
             JwkStorageWrapper::Stronghold(stronghold_storage),
             &key_id,
-            url::Host::parse("localhost").unwrap(),
-            Some(mock_server_port),
+            url::Origin::Tuple(
+                "http".to_string(),
+                url::Host::Domain("localhost".to_string()),
+                mock_server_port,
+            ),
         )
         .await
         .unwrap();

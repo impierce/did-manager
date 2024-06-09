@@ -30,7 +30,7 @@ impl std::fmt::Display for DidMethod {
 
 /// Some DID methods require additional parameters for producing a document.
 pub enum MethodSpecificParameters {
-    Web { host: url::Host, port: Option<u16> },
+    Web { origin: url::Origin },
 }
 
 impl SecretManager {
@@ -53,15 +53,15 @@ impl SecretManager {
                 Some(core_document)
             }
             DidMethod::Web => {
-                let (host, port) = match method_specific_parameters {
-                    Some(MethodSpecificParameters::Web { host, port }) => (host, port),
+                let origin = match method_specific_parameters {
+                    Some(MethodSpecificParameters::Web { origin }) => origin,
                     None => {
                         return Err(ProducerError::Generic(
                             "Missing method-specific parameters for `did:web`".to_string(),
                         ))
                     }
                 };
-                let core_document = did_web::producer::produce_did_web(storage, &self.key_id, host, port)
+                let core_document = did_web::producer::produce_did_web(storage, &self.key_id, origin)
                     .await
                     .unwrap();
                 Some(core_document)
