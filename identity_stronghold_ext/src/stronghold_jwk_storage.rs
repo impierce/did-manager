@@ -30,12 +30,9 @@ use stronghold_ext::procs::es256::{self, Es256Procs};
 use stronghold_ext::procs::es256k::{self, Es256kProcs};
 use tokio::sync::MutexGuard;
 
-use crate::utils::get_client;
-use crate::utils::persist_changes;
-// use crate::utils::persist_changes;
+use crate::utils::{get_client, persist_changes};
 
 static IDENTITY_VAULT_PATH: &str = "iota_identity_vault";
-// pub(crate) static IDENTITY_CLIENT_PATH: &[u8] = b"iota_identity_client";
 
 /// Wrapper around a [`StrongholdSecretManager`] that implements the [`KeyIdStorage`](crate::KeyIdStorage)
 /// and [`JwkStorage`](crate::JwkStorage) interfaces.
@@ -47,22 +44,6 @@ impl StrongholdExtStorage {
     pub fn new(stronghold_secret_manager: StrongholdSecretManager) -> Self {
         Self(Arc::new(SecretManager::Stronghold(stronghold_secret_manager)))
     }
-
-    /// Shared reference to the inner [`SecretManager`].
-    // pub async fn as_secret_manager(&self) -> &SecretManager {
-    //     let stronghold = self.get_stronghold().await;
-    //     let foo = stronghold.clone();
-
-    //     // let st_ad = StrongholdSecretManager::builder().stronghold(stronghold).build(snapshot_path);
-
-    //     // let stronghold_adapter = StrongholdSecretManager::builder()
-    //     //     .password(Password::from(PASSWORD.to_owned()))
-    //     //     .build(SNAPSHOT_PATH.to_owned())
-    //     //     .unwrap();
-
-    //     &SecretManager::Stronghold(stronghold_adapter)
-    //     // let x = self.0.as_ref()
-    // }
 
     /// Shared reference to the inner [`SecretManager`].
     pub fn as_secret_manager(&self) -> &SecretManager {
@@ -196,7 +177,6 @@ impl JwkStorage for StrongholdExtStorage {
         let stronghold = self.get_stronghold().await;
 
         let client = get_client(&stronghold)?;
-        // check_key_alg_compatibility(key_type, alg)?;
 
         let keytype: ExtProceduresKeyType = ExtProceduresKeyType::try_from(&key_type)?;
 
@@ -211,19 +191,6 @@ impl JwkStorage for StrongholdExtStorage {
             IDENTITY_VAULT_PATH.as_bytes().to_vec(),
             key_id.to_string().as_bytes().to_vec(),
         );
-
-        // let generate_key_procedure = es256::GenerateKey {
-        //     output: location.clone(),
-        // };
-
-        // match keytype {
-        //     ExtProceduresKeyType::ES256 => {
-        //         // let generate_key_procedure = es256::GenerateKey {
-        //         //     output: location.clone(),
-        //         // };
-        //     }
-        //     _ => unimplemented!("not implemented"),
-        // }
 
         match keytype {
             ExtProceduresKeyType::Ed25519 => {
@@ -258,12 +225,6 @@ impl JwkStorage for StrongholdExtStorage {
                 })?;
             }
         };
-
-        // execute_procedure_ext(&client, generate_key_procedure).map_err(|err| {
-        //     KeyStorageError::new(KeyStorageErrorKind::Unspecified)
-        //         .with_custom_message("stronghold GenerateKey procedure failed")
-        //         .with_source(err)
-        // })?;
 
         let jwk = match keytype {
             ExtProceduresKeyType::Ed25519 => {
@@ -494,17 +455,12 @@ impl JwkStorage for StrongholdExtStorage {
     }
 }
 
-// fn execute_procedure_ext(client)
-
 #[derive(Debug, Clone)]
 enum ExtProceduresKeyType {
     Ed25519,
     ES256,
     ES256K,
 }
-// Ed25519,
-// X25519,
-// Secp256k1Ecdsa,
 
 impl TryFrom<&KeyType> for ExtProceduresKeyType {
     type Error = KeyStorageError;
@@ -514,8 +470,6 @@ impl TryFrom<&KeyType> for ExtProceduresKeyType {
             "Ed25519" => Ok(ExtProceduresKeyType::Ed25519),
             "ES256" => Ok(ExtProceduresKeyType::ES256),
             "ES256K" => Ok(ExtProceduresKeyType::ES256K),
-            // ED25519_KEY_TYPE_STR => Ok(StrongholdKeyType::Ed25519),
-            // BLS12381G2_KEY_TYPE_STR => Ok(StrongholdKeyType::Bls12381G2),
             _ => Err(KeyStorageError::new(KeyStorageErrorKind::UnsupportedKeyType)),
         }
     }
