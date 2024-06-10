@@ -267,8 +267,6 @@ mod tests {
 
     #[test(tokio::test)]
     async fn fails_to_generate_a_new_stronghold_when_file_already_exists() {
-        // iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
-
         let path = random_stronghold_path().to_str().unwrap().to_string();
 
         let _ = SecretManager::generate(path.clone(), PASSWORD.to_owned()).await;
@@ -289,8 +287,6 @@ mod tests {
 
     #[test(tokio::test)]
     async fn successfully_generates_a_new_stronghold() {
-        // iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
-
         let res = SecretManager::generate(
             random_stronghold_path().to_str().unwrap().to_string(),
             PASSWORD.to_owned(),

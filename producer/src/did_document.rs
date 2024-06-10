@@ -151,8 +151,6 @@ mod tests {
 
     #[test(tokio::test)]
     async fn create_document_from_generated_stronghold() {
-        // iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
-
         let secret_manager = SecretManager::generate(
             random_stronghold_path().to_str().unwrap().to_string(),
             PASSWORD.to_owned(),
