@@ -300,15 +300,6 @@ mod tests {
     async fn successfully_generates_a_new_ext_stronghold() {
         iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
 
-        // let stronghold = Stronghold::default();
-
-        // stronghold
-        //     .load_snapshot(
-        //         &KeyProvider::with_passphrase_hashed_blake2b(PASSWORD.as_bytes().to_vec()).unwrap(),
-        //         &SnapshotPath::from_path(random_stronghold_path().as_path()),
-        //     )
-        //     .unwrap();
-
         let stronghold_secret_manager = StrongholdSecretManager::builder()
             .password(Password::from("sup3rSecr3t".to_string()))
             .build("tests/res/full.stronghold")
@@ -339,14 +330,6 @@ mod tests {
 
         assert!(stronghold_storage.exists(&KeyId::new("ed25519-0")).await.unwrap());
         assert!(stronghold_storage.exists(&KeyId::new("es256-0")).await.unwrap());
-
-        // let storage = JwkStorageWrapper::StrongholdExt(stronghold_storage);
-
-        // let res = SecretManager::generate(
-        //     random_stronghold_path().to_str().unwrap().to_string(),
-        //     PASSWORD.to_owned(),
-        // )
-        // .await;
-        // assert!(res.is_ok());
+        assert!(stronghold_storage.exists(&KeyId::new("es256k-0")).await.unwrap());
     }
 }
