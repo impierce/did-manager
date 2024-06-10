@@ -58,7 +58,7 @@ mod tests {
     use shared::test_utils::existing_stronghold_storage;
     use test_log::test;
 
-    const SNAPSHOT_PATH: &str = "../shared/tests/res/full.stronghold";
+    const SNAPSHOT_PATH: &str = "../shared/tests/res/all_slots.stronghold";
     const PASSWORD: &str = "sup3rSecr3t";
 
     #[test(tokio::test)]

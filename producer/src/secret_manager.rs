@@ -302,7 +302,7 @@ mod tests {
 
         let stronghold_secret_manager = StrongholdSecretManager::builder()
             .password(Password::from("sup3rSecr3t".to_string()))
-            .build("tests/res/full.stronghold")
+            .build("tests/res/all_slots.stronghold")
             .unwrap();
 
         let stronghold_storage = StrongholdExtStorage::new(stronghold_secret_manager);

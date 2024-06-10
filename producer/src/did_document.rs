@@ -143,7 +143,7 @@ mod tests {
     use shared::test_utils::random_stronghold_path;
     use test_log::test;
 
-    const SNAPSHOT_PATH: &str = "tests/res/full.stronghold";
+    const SNAPSHOT_PATH: &str = "tests/res/all_slots.stronghold";
     const PASSWORD: &str = "sup3rSecr3t";
     const KEY_ID_ED25519: &str = "ed25519-0";
     const KEY_ID_ES256: &str = "es256-0";
