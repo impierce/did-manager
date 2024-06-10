@@ -34,8 +34,6 @@ impl JwkStorageWrapper {
                 ),
             },
             JwkStorageWrapper::StrongholdExt(ref stronghold_ext_storage) => {
-                // let alg = JwsAlgorithm::from_str(alg)
-                //     .map_err(|_| ProducerError::Generic("Unsupported algorithm".to_string()))?;
                 match alg {
                     JwsAlgorithm::EdDSA => json!(stronghold_ext_storage
                         .get_ed25519_public_key(&identity_storage::KeyId::new(key_id))

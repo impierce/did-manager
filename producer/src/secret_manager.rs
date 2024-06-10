@@ -130,14 +130,6 @@ impl SecretManager {
             None
         };
 
-        // let stronghold = Stronghold::default();
-        // stronghold
-        //     .load_snapshot(
-        //         &KeyProvider::with_passphrase_hashed_blake2b(password.as_bytes().to_vec()).unwrap(),
-        //         &SnapshotPath::from_path(snapshot_path.as_path()),
-        //     )
-        //     .unwrap();
-
         let stronghold_secret_manager = StrongholdSecretManager::builder()
             .password(password.clone())
             .build(snapshot_path.as_path())

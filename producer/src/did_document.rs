@@ -158,12 +158,10 @@ mod tests {
         .await
         .unwrap();
 
-        // TODO: Some(url::Host::parse("localhost").unwrap()), Some(8080)
         let document = secret_manager
             .produce_document(DidMethod::Jwk, JwsAlgorithm::EdDSA)
             .await;
 
-        // info!("Document: {}", document.as_ref().unwrap().to_json_pretty().unwrap());
         assert!(document.is_ok())
     }
 
