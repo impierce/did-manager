@@ -12,7 +12,7 @@ use shared::{error::ProducerError, JwkStorageWrapper};
 
 const FRAGMENT: &str = "key-0";
 
-/// Currently, producing a `did:web` document is only supported for **one single key** (either `Ed25519` or `ES256`).
+/// Currently, producing a `did:web` document is only supported for **one single key** (either `Ed25519`, `ES256` or `ES256K`).
 pub async fn produce_did_web(
     storage: JwkStorageWrapper,
     key_id: &str,
