@@ -28,12 +28,18 @@ impl std::fmt::Display for DidMethod {
     }
 }
 
-impl SecretManager {
-    pub async fn produce_document(&self, did_method: DidMethod) -> Result<CoreDocument, ProducerError> {
-        let storage = JwkStorageWrapper::Stronghold(self.stronghold_storage.clone());
+/// Some DID methods require additional parameters for producing a document.
+pub enum MethodSpecificParameters {
+    Web { origin: url::Origin },
+}
 
-        let host: url::Host = url::Host::parse("localhost").unwrap(); // TODO
-        let port: Option<u16> = None; // TODO: default?
+impl SecretManager {
+    pub async fn produce_document(
+        &self,
+        did_method: DidMethod,
+        method_specific_parameters: Option<MethodSpecificParameters>,
+    ) -> Result<CoreDocument, ProducerError> {
+        let storage = JwkStorageWrapper::Stronghold(self.stronghold_storage.clone());
 
         let core_document: Option<CoreDocument> = match did_method {
             DidMethod::Jwk => {
@@ -47,7 +53,15 @@ impl SecretManager {
                 Some(core_document)
             }
             DidMethod::Web => {
-                let core_document = did_web::producer::produce_did_web(storage, &self.key_id, host, port)
+                let origin = match method_specific_parameters {
+                    Some(MethodSpecificParameters::Web { origin }) => origin,
+                    None => {
+                        return Err(ProducerError::Generic(
+                            "Missing method-specific parameters for `did:web`".to_string(),
+                        ))
+                    }
+                };
+                let core_document = did_web::producer::produce_did_web(storage, &self.key_id, origin)
                     .await
                     .unwrap();
                 Some(core_document)
@@ -130,8 +144,7 @@ mod tests {
         .await
         .unwrap();
 
-        // TODO: Some(url::Host::parse("localhost").unwrap()), Some(8080)
-        let document = secret_manager.produce_document(DidMethod::Web).await;
+        let document = secret_manager.produce_document(DidMethod::Jwk, None).await;
 
         info!("Document: {}", document.as_ref().unwrap().to_json_pretty().unwrap());
         assert!(document.is_ok())
@@ -149,8 +162,7 @@ mod tests {
         .await
         .unwrap();
 
-        // TODO: Some(url::Host::parse("localhost").unwrap()), Some(8080)
-        let document = secret_manager.produce_document(DidMethod::Web).await;
+        let document = secret_manager.produce_document(DidMethod::Jwk, None).await;
 
         assert_eq!(
             document
