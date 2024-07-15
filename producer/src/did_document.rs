@@ -29,10 +29,16 @@ impl std::fmt::Display for DidMethod {
     }
 }
 
+/// Some DID methods require additional parameters for producing a document.
+pub enum MethodSpecificParameters {
+    Web { origin: url::Origin },
+}
+
 impl SecretManager {
     pub async fn produce_document(
         &self,
         did_method: DidMethod,
+        method_specific_parameters: Option<MethodSpecificParameters>,
         alg: JwsAlgorithm,
     ) -> Result<CoreDocument, ProducerError> {
         let (storage, key_id) = match alg {
@@ -60,9 +66,6 @@ impl SecretManager {
             _ => return Err(ProducerError::Generic("Unsupported JWS algorithm".to_string())),
         };
 
-        let host: url::Host = url::Host::parse("localhost").unwrap(); // TODO
-        let port: Option<u16> = None; // TODO: default?
-
         let core_document: Option<CoreDocument> = match did_method {
             DidMethod::Jwk => {
                 let core_document = did_jwk::producer::produce_did_jwk(storage, key_id, alg).await.unwrap();
@@ -73,7 +76,15 @@ impl SecretManager {
                 Some(core_document)
             }
             DidMethod::Web => {
-                let core_document = did_web::producer::produce_did_web(storage, key_id, host, port, alg)
+                let origin = match method_specific_parameters {
+                    Some(MethodSpecificParameters::Web { origin }) => origin,
+                    None => {
+                        return Err(ProducerError::Generic(
+                            "Missing method-specific parameters for `did:web`".to_string(),
+                        ))
+                    }
+                };
+                let core_document = did_web::producer::produce_did_web(storage, key_id, origin, alg)
                     .await
                     .unwrap();
                 Some(core_document)
@@ -159,7 +170,7 @@ mod tests {
         .unwrap();
 
         let document = secret_manager
-            .produce_document(DidMethod::Jwk, JwsAlgorithm::EdDSA)
+            .produce_document(DidMethod::Jwk, None, JwsAlgorithm::EdDSA)
             .await;
 
         assert!(document.is_ok())
@@ -180,7 +191,7 @@ mod tests {
         .unwrap();
 
         let document = secret_manager
-            .produce_document(DidMethod::Jwk, JwsAlgorithm::EdDSA)
+            .produce_document(DidMethod::Jwk, None, JwsAlgorithm::EdDSA)
             .await;
 
         assert_eq!(
@@ -219,7 +230,7 @@ mod tests {
         .unwrap();
 
         let document = secret_manager
-            .produce_document(DidMethod::Jwk, JwsAlgorithm::ES256)
+            .produce_document(DidMethod::Jwk, None, JwsAlgorithm::ES256)
             .await;
 
         assert_eq!(
@@ -259,7 +270,7 @@ mod tests {
         .unwrap();
 
         let document = secret_manager
-            .produce_document(DidMethod::Jwk, JwsAlgorithm::ES256K)
+            .produce_document(DidMethod::Jwk, None, JwsAlgorithm::ES256K)
             .await;
 
         assert_eq!(
