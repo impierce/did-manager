@@ -11,7 +11,6 @@ rust-version.workspace = true
 shared = { path = "../shared" }
 did-key-extern = { version = "0.2.2", package = "did-method-key" }
 identity_iota.workspace = true
-identity_storage.workspace = true
 identity_stronghold.workspace = true
 iota-sdk.workspace = true
 jsonwebkey = "0.3.5"
