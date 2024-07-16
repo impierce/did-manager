@@ -1,96 +1,134 @@
-use identity_iota::core::Object;
-use identity_iota::verification::VerificationMethod;
-use identity_iota::{core::ToJson, did::CoreDID, document::CoreDocument, storage::KeyId};
-use log::info;
-use serde_json::json;
-use shared::JwkStorageWrapper;
+use identity_iota::{
+    core::{FromJson, ToJson},
+    did::CoreDID,
+    document::CoreDocument,
+    verification::{jwk::Jwk, jws::JwsAlgorithm, VerificationMethod},
+};
+use log::{debug, info};
+use shared::{error::ProducerError, JwkStorageWrapper};
 use ssi_dids::{DIDMethod, Source};
-use std::io::Error;
-use std::io::ErrorKind;
 
 // See specification: "Since did:jwk only contains a single key, the DID URL fragment identifier is always a fixed #0 value."
 const FRAGMENT: &str = "0";
 
-pub async fn produce_did_jwk(storage: JwkStorageWrapper, key_id: &str) -> Result<CoreDocument, Error> {
-    let public_key_jwk = match storage {
-        JwkStorageWrapper::Stronghold(stronghold_storage) => {
-            stronghold_storage.get_public_key(&KeyId::new(key_id)).await.unwrap()
-        }
-        JwkStorageWrapper::PKCS11 => todo!(),
-    };
+pub async fn produce_did_jwk(
+    storage: JwkStorageWrapper,
+    key_id: &str,
+    alg: JwsAlgorithm,
+) -> Result<CoreDocument, ProducerError> {
+    let public_key_jwk = storage.get_public_key(key_id, alg).await?;
 
-    let jwk: ssi_jwk::JWK = serde_json::from_value(public_key_jwk.to_json_value().unwrap()).unwrap();
+    info!("Producing `did:jwk` for key_id `{key_id}` ({alg}) ...");
 
-    info!("Producing did:jwk for key_id=[{:?}] ...", key_id);
+    let jwk: ssi_jwk::JWK = serde_json::from_value(public_key_jwk.clone()).unwrap();
 
     if let Some(did_str) = did_jwk_extern::DIDJWK.generate(&Source::Key(&jwk)) {
-        info!("DID: {:?}", did_str);
+        info!("DID: `{did_str}`");
 
         let controller = CoreDID::parse(did_str).unwrap();
 
-        let verification_method =
-            VerificationMethod::new_from_jwk(controller.clone(), public_key_jwk.clone(), Some(FRAGMENT)).unwrap();
+        let verification_method = VerificationMethod::new_from_jwk(
+            controller.clone(),
+            Jwk::from_json_value(public_key_jwk).unwrap(),
+            Some(FRAGMENT),
+        )
+        .unwrap();
 
-        let mut properties = Object::new();
-        properties.insert(
-            "@context".to_string(),
-            json!([
-                "https://www.w3.org/ns/did/v1",
-                "https://w3id.org/security/suites/ed25519-2020/v1" // TODO: make dynamic
-            ]),
-        );
-
-        let document = CoreDocument::builder(properties)
+        let document = CoreDocument::builder(Default::default())
             .id(controller)
             .verification_method(verification_method)
             .build()
             .unwrap();
 
-        info!("DID Document: {}", document.to_json_pretty().unwrap());
+        debug!("DID Document: {}", document.to_json_pretty().unwrap());
 
         return Ok(document);
     };
-
-    Err(Error::new(ErrorKind::Other, "Done without result"))
+    Err(ProducerError::Generic("Done without result".to_string()))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    use shared::test_utils::new_stronghold_storage;
+    use shared::test_utils::existing_stronghold_storage;
     use test_log::test;
 
-    #[test(tokio::test)]
-    async fn produces_did_jwk() {
-        let (stronghold_storage, key_id) = new_stronghold_storage().await;
+    const SNAPSHOT_PATH: &str = "../shared/tests/res/all_slots.stronghold";
+    const PASSWORD: &str = "sup3rSecr3t";
 
-        let storage = JwkStorageWrapper::Stronghold(stronghold_storage);
-        let document = produce_did_jwk(storage, key_id.as_str()).await.unwrap();
+    #[test(tokio::test)]
+    async fn produces_did_jwk_ed25519() {
+        let stronghold_storage = existing_stronghold_storage(SNAPSHOT_PATH, PASSWORD).await;
+        let key_id = "ed25519-0";
+
+        let storage = JwkStorageWrapper::StrongholdExt(stronghold_storage);
+        let document = produce_did_jwk(storage, key_id, JwsAlgorithm::EdDSA).await.unwrap();
 
         assert_eq!(
-            document.to_json_value().unwrap(),
-            json!({
-              "@context": [
-                "https://www.w3.org/ns/did/v1",
-                "https://w3id.org/security/suites/ed25519-2020/v1"
-              ],
-              "id": "did:jwk:eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJTRklDVzczSEN3Sm9CVENpQUNGMUUzV21yaDVMRTB4al9HMUpWU2VYUy1NIiwia3R5IjoiT0tQIiwieCI6IjZCeG92MWxoSFltQVVHMWNibDM1eUcyYzZtcFpsOVdkeXNqSUhhSjdhODgifQ",
-              "verificationMethod": [
-                {
-                  "id": "did:jwk:eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJTRklDVzczSEN3Sm9CVENpQUNGMUUzV21yaDVMRTB4al9HMUpWU2VYUy1NIiwia3R5IjoiT0tQIiwieCI6IjZCeG92MWxoSFltQVVHMWNibDM1eUcyYzZtcFpsOVdkeXNqSUhhSjdhODgifQ#0",
-                  "type": "JsonWebKey",
-                  "controller": "did:jwk:eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJTRklDVzczSEN3Sm9CVENpQUNGMUUzV21yaDVMRTB4al9HMUpWU2VYUy1NIiwia3R5IjoiT0tQIiwieCI6IjZCeG92MWxoSFltQVVHMWNibDM1eUcyYzZtcFpsOVdkeXNqSUhhSjdhODgifQ",
-                  "publicKeyJwk": {
-                    "kty": "OKP",
-                    "alg": "EdDSA",
-                    "kid": "SFICW73HCwJoBTCiACF1E3Wmrh5LE0xj_G1JVSeXS-M",
-                    "crv": "Ed25519",
-                    "x": "6Bxov1lhHYmAUG1cbl35yG2c6mpZl9WdysjIHaJ7a88"
-                  }
-                }
-              ]
-            })
+            document
+                .verification_method()
+                .first()
+                .unwrap()
+                .data()
+                .public_key_jwk()
+                .unwrap()
+                .alg()
+                .unwrap(),
+            "EdDSA"
         );
+
+        // Only the resulting `DID` is asserted instead of the entire `DID document` since it is not transferred anyway.
+        assert_eq!(document.id(), "did:jwk:eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJEN2szeEc1WVF6NjJONGpVRzhvVVNZU0lURVFZLUs5b2RCejNlY0xGSElBIiwia3R5IjoiT0tQIiwieCI6ImZLVFVnUnZ1czRZWGJfeFFNSmhRZVFta2Z1Zk1TX1I1QjhxelZaaDlrNEUifQ");
+    }
+
+    #[test(tokio::test)]
+    async fn produces_did_jwk_es256() {
+        let stronghold_storage = existing_stronghold_storage(SNAPSHOT_PATH, PASSWORD).await;
+        let key_id = "es256-0";
+
+        let storage = JwkStorageWrapper::StrongholdExt(stronghold_storage);
+        let document = produce_did_jwk(storage, key_id, JwsAlgorithm::ES256).await.unwrap();
+
+        assert_eq!(
+            document
+                .verification_method()
+                .first()
+                .unwrap()
+                .data()
+                .public_key_jwk()
+                .unwrap()
+                .alg()
+                .unwrap(),
+            "ES256"
+        );
+
+        // Only the resulting `DID` is asserted instead of the entire `DID document` since it is not transferred anyway.
+        assert_eq!(document.id(), "did:jwk:eyJhbGciOiJFUzI1NiIsImNydiI6IlAtMjU2Iiwia2lkIjoicnBYMFExMDdmWkd0NUJnRVVROUVjSl9OQWRMSEczQk5udGlHRjBuRTIxRSIsImt0eSI6IkVDIiwieCI6Img1TnBFb3RqUmxYTWxjcmdxWnEwSEFvZVVMYkt6WHVPVlh5S3M2ZHo0ZEEiLCJ5IjoiR2t3WUdsU0Y1LXVSSlo1cGpKSlhsM2tLamZlWlpMbHNfUEM0bWhEYXZZayJ9");
+    }
+
+    #[test(tokio::test)]
+    async fn produces_did_jwk_es256k() {
+        let stronghold_storage = existing_stronghold_storage(SNAPSHOT_PATH, PASSWORD).await;
+        let key_id = "es256k-0";
+
+        let storage = JwkStorageWrapper::StrongholdExt(stronghold_storage);
+        let document = produce_did_jwk(storage, key_id, JwsAlgorithm::ES256K).await.unwrap();
+
+        assert_eq!(
+            document
+                .verification_method()
+                .first()
+                .unwrap()
+                .data()
+                .public_key_jwk()
+                .unwrap()
+                .alg()
+                .unwrap(),
+            "ES256K"
+        );
+
+        // Only the resulting `DID` is asserted instead of the entire `DID document` since it is not transferred anyway.
+        assert_eq!(document.id(), "did:jwk:eyJhbGciOiJFUzI1NksiLCJjcnYiOiJzZWNwMjU2azEiLCJraWQiOiJkY0NlWWxnR1RHRkh0bEJIcXVyRXN6LUlBUk1ZOG8wbG5BOTNCLVZaSktBIiwia3R5IjoiRUMiLCJ4IjoiNWlTNEZTV0tJLTB0NC1RNDZJY0dObTR1NHpJR0xRMjZkZzI5TzhkZXhzdyIsInkiOiI1elhBeDFRWENzUDhjbm40VEhXMndTYmtwOE9xYnlBdmNETzIyWTN0UnNZIn0");
     }
 }

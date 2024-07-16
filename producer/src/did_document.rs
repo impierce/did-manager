@@ -1,5 +1,6 @@
 use identity_iota::document::CoreDocument;
 use identity_iota::iota::IotaDID;
+use identity_iota::verification::jws::JwsAlgorithm;
 use serde::{Deserialize, Serialize};
 use shared::error::ProducerError;
 use shared::JwkStorageWrapper;
@@ -38,18 +39,40 @@ impl SecretManager {
         &self,
         did_method: DidMethod,
         method_specific_parameters: Option<MethodSpecificParameters>,
+        alg: JwsAlgorithm,
     ) -> Result<CoreDocument, ProducerError> {
-        let storage = JwkStorageWrapper::Stronghold(self.stronghold_storage.clone());
+        let (storage, key_id) = match alg {
+            JwsAlgorithm::EdDSA => (
+                JwkStorageWrapper::Stronghold(self.stronghold_storage.clone()),
+                self.ed25519_key_id
+                    .as_ref()
+                    .ok_or(ProducerError::MissingKeyIdError("No Ed25519 key present".to_string()))?
+                    .as_str(),
+            ),
+            JwsAlgorithm::ES256 => (
+                JwkStorageWrapper::StrongholdExt(self.stronghold_ext_storage.clone()),
+                self.es256_key_id
+                    .as_ref()
+                    .ok_or(ProducerError::MissingKeyIdError("No ES256 key present".to_string()))?
+                    .as_str(),
+            ),
+            JwsAlgorithm::ES256K => (
+                JwkStorageWrapper::StrongholdExt(self.stronghold_ext_storage.clone()),
+                self.es256k_key_id
+                    .as_ref()
+                    .ok_or(ProducerError::MissingKeyIdError("No ES256K key present".to_string()))?
+                    .as_str(),
+            ),
+            _ => return Err(ProducerError::Generic("Unsupported JWS algorithm".to_string())),
+        };
 
         let core_document: Option<CoreDocument> = match did_method {
             DidMethod::Jwk => {
-                let core_document = did_jwk::producer::produce_did_jwk(storage, self.key_id.as_str())
-                    .await
-                    .unwrap();
+                let core_document = did_jwk::producer::produce_did_jwk(storage, key_id, alg).await.unwrap();
                 Some(core_document)
             }
             DidMethod::Key => {
-                let core_document = did_key::producer::produce_did_key(storage, &self.key_id).await.unwrap();
+                let core_document = did_key::producer::produce_did_key(storage, key_id, alg).await.unwrap();
                 Some(core_document)
             }
             DidMethod::Web => {
@@ -61,7 +84,7 @@ impl SecretManager {
                         ))
                     }
                 };
-                let core_document = did_web::producer::produce_did_web(storage, &self.key_id, origin)
+                let core_document = did_web::producer::produce_did_web(storage, key_id, origin, alg)
                     .await
                     .unwrap();
                 Some(core_document)
@@ -69,8 +92,9 @@ impl SecretManager {
             DidMethod::ShimmerTestnet => {
                 let core_document = did_iota::produce::produce_did_iota(
                     &storage,
-                    &self.key_id,
+                    key_id,
                     did_iota::produce::IotaMethod::Testnet,
+                    JwsAlgorithm::EdDSA,
                     IotaDID::parse(self.did.clone().expect("externally managed `DID` not specified"))?,
                     self.fragment
                         .clone()
@@ -84,8 +108,9 @@ impl SecretManager {
             DidMethod::Shimmer => {
                 let core_document = did_iota::produce::produce_did_iota(
                     &storage,
-                    &self.key_id,
+                    key_id,
                     did_iota::produce::IotaMethod::Shimmer,
+                    JwsAlgorithm::EdDSA,
                     IotaDID::parse(self.did.clone().expect("externally managed `DID` not specified"))?,
                     self.fragment
                         .clone()
@@ -99,8 +124,9 @@ impl SecretManager {
             DidMethod::IotaMainnet => {
                 let core_document = did_iota::produce::produce_did_iota(
                     &storage,
-                    &self.key_id,
+                    key_id,
                     did_iota::produce::IotaMethod::Mainnet,
+                    JwsAlgorithm::EdDSA,
                     IotaDID::parse(self.did.clone().expect("externally managed `DID` not specified"))?,
                     self.fragment
                         .clone()
@@ -125,18 +151,17 @@ mod tests {
     use super::*;
 
     use identity_iota::core::{json, ToJson};
-    use log::info;
     use shared::test_utils::random_stronghold_path;
     use test_log::test;
 
-    const SNAPSHOT_PATH: &str = "tests/res/test.stronghold";
-    const PASSWORD: &str = "secure_password";
-    const KEY_ID: &str = "9O66nzWqYYy1LmmiOudOlh2SMIaUWoTS";
+    const SNAPSHOT_PATH: &str = "../shared/tests/res/all_slots.stronghold";
+    const PASSWORD: &str = "sup3rSecr3t";
+    const KEY_ID_ED25519: &str = "ed25519-0";
+    const KEY_ID_ES256: &str = "es256-0";
+    const KEY_ID_ES256K: &str = "es256k-0";
 
     #[test(tokio::test)]
     async fn create_document_from_generated_stronghold() {
-        iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
-
         let secret_manager = SecretManager::generate(
             random_stronghold_path().to_str().unwrap().to_string(),
             PASSWORD.to_owned(),
@@ -144,25 +169,30 @@ mod tests {
         .await
         .unwrap();
 
-        let document = secret_manager.produce_document(DidMethod::Jwk, None).await;
+        let document = secret_manager
+            .produce_document(DidMethod::Jwk, None, JwsAlgorithm::EdDSA)
+            .await;
 
-        info!("Document: {}", document.as_ref().unwrap().to_json_pretty().unwrap());
         assert!(document.is_ok())
     }
 
     #[test(tokio::test)]
-    async fn recreate_expected_document_from_existing_stronghold() {
+    async fn recreate_expected_document_from_existing_ed25519_key() {
         let secret_manager = SecretManager::load(
             SNAPSHOT_PATH.to_owned(),
             PASSWORD.to_owned(),
-            KEY_ID.to_owned(),
+            Some(KEY_ID_ED25519.to_owned()),
+            Some(KEY_ID_ES256.to_owned()),
+            Some(KEY_ID_ES256K.to_owned()),
             None,
             None,
         )
         .await
         .unwrap();
 
-        let document = secret_manager.produce_document(DidMethod::Jwk, None).await;
+        let document = secret_manager
+            .produce_document(DidMethod::Jwk, None, JwsAlgorithm::EdDSA)
+            .await;
 
         assert_eq!(
             document
@@ -178,9 +208,89 @@ mod tests {
             json!({
                 "kty": "OKP",
                 "alg": "EdDSA",
-                "kid": "aHq-0PIf6_ljLhyx4W86Gviqb-671OAI67E6vXpZc7Q",
+                "kid": "D7k3xG5YQz62N4jUG8oUSYSITEQY-K9odBz3ecLFHIA",
                 "crv": "Ed25519",
-                "x": "P2BkYS6z4UHmsxn6FX1oHsyx7eiUSFEMJ1D_RC8M0-w"
+                "x": "fKTUgRvus4YXb_xQMJhQeQmkfufMS_R5B8qzVZh9k4E"
+            })
+        )
+    }
+
+    #[test(tokio::test)]
+    async fn recreate_expected_document_from_existing_es256_key() {
+        let secret_manager = SecretManager::load(
+            SNAPSHOT_PATH.to_owned(),
+            PASSWORD.to_owned(),
+            Some(KEY_ID_ED25519.to_owned()),
+            Some(KEY_ID_ES256.to_owned()),
+            Some(KEY_ID_ES256K.to_owned()),
+            None,
+            None,
+        )
+        .await
+        .unwrap();
+
+        let document = secret_manager
+            .produce_document(DidMethod::Jwk, None, JwsAlgorithm::ES256)
+            .await;
+
+        assert_eq!(
+            document
+                .unwrap()
+                .verification_method()
+                .first()
+                .unwrap()
+                .data()
+                .public_key_jwk()
+                .unwrap()
+                .to_json_value()
+                .unwrap(),
+            json!({
+                "kty": "EC",
+                "alg": "ES256",
+                "kid": "rpX0Q107fZGt5BgEUQ9EcJ_NAdLHG3BNntiGF0nE21E",
+                "crv": "P-256",
+                "x": "h5NpEotjRlXMlcrgqZq0HAoeULbKzXuOVXyKs6dz4dA",
+                "y": "GkwYGlSF5-uRJZ5pjJJXl3kKjfeZZLls_PC4mhDavYk"
+            })
+        )
+    }
+
+    #[test(tokio::test)]
+    async fn recreate_expected_document_from_existing_es256k_key() {
+        let secret_manager = SecretManager::load(
+            SNAPSHOT_PATH.to_owned(),
+            PASSWORD.to_owned(),
+            Some(KEY_ID_ED25519.to_owned()),
+            Some(KEY_ID_ES256.to_owned()),
+            Some(KEY_ID_ES256K.to_owned()),
+            None,
+            None,
+        )
+        .await
+        .unwrap();
+
+        let document = secret_manager
+            .produce_document(DidMethod::Jwk, None, JwsAlgorithm::ES256K)
+            .await;
+
+        assert_eq!(
+            document
+                .unwrap()
+                .verification_method()
+                .first()
+                .unwrap()
+                .data()
+                .public_key_jwk()
+                .unwrap()
+                .to_json_value()
+                .unwrap(),
+            json!({
+                "kty": "EC",
+                "alg": "ES256K",
+                "kid": "dcCeYlgGTGFHtlBHqurEsz-IARMY8o0lnA93B-VZJKA",
+                "crv": "secp256k1",
+                "x": "5iS4FSWKI-0t4-Q46IcGNm4u4zIGLQ26dg29O8dexsw",
+                "y": "5zXAx1QXCsP8cnn4THW2wSbkp8OqbyAvcDO22Y3tRsY"
             })
         )
     }

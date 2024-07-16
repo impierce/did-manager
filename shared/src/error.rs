@@ -20,6 +20,8 @@ pub enum ProducerError {
     IdentityDidError(#[from] identity_iota::did::Error),
     #[error("Identity error: `{0}`")]
     IdentityResolverError(#[from] identity_iota::resolver::Error),
+    #[error("No `{0}` `KeyId` available")]
+    MissingKeyIdError(String),
     #[error("Generic producer error: `{0}`")]
     Generic(String),
 }

@@ -1,38 +1,35 @@
 use identity_iota::{
-    core::{Object, ToJson},
+    core::{FromJson, ToJson},
     did::CoreDID,
     document::CoreDocument,
-    storage::KeyId,
-    verification::VerificationMethod,
+    verification::{jwk::Jwk, jws::JwsAlgorithm, MethodType, VerificationMethod},
 };
 use log::{debug, info};
 use serde_json::json;
-use shared::JwkStorageWrapper;
-use std::io::Error;
+use shared::{error::ProducerError, JwkStorageWrapper};
+use std::collections::BTreeMap;
 
+const FRAGMENT: &str = "key-0";
+
+/// Currently, producing a `did:web` document is only supported for **one single key** (either `Ed25519`, `ES256` or `ES256K`).
 pub async fn produce_did_web(
     storage: JwkStorageWrapper,
-    key_id: &KeyId,
+    key_id: &str,
     origin: url::Origin,
-) -> Result<CoreDocument, Error> {
+    alg: JwsAlgorithm,
+) -> Result<CoreDocument, ProducerError> {
     // TODO: check if key exists for given key_id?
 
-    let public_key_jwk = match storage {
-        JwkStorageWrapper::Stronghold(stronghold_storage) => stronghold_storage.get_public_key(key_id).await.unwrap(),
-        JwkStorageWrapper::PKCS11 => todo!(),
-    };
+    let public_key_jwk = storage.get_public_key(key_id, alg).await?;
 
-    info!("Producing did:web for key_id=[{:?}] ...", key_id.as_str());
+    info!("Producing `did:web` for key_id `{key_id}` ({alg}) ...");
 
     debug!("Origin: {}", &origin.ascii_serialization());
 
     let (_scheme, host, port) = match origin {
         url::Origin::Tuple(ref scheme, ref host, ref port) => (scheme, host, port),
         url::Origin::Opaque(_) => {
-            return Err(Error::new(
-                std::io::ErrorKind::InvalidInput,
-                "Opaque origin not supported",
-            ));
+            return Err(ProducerError::Generic("Opaque origin not supported".to_string()));
         }
     };
 
@@ -40,21 +37,19 @@ pub async fn produce_did_web(
 
     let did_str = format!("did:web:{}", host_port_encoded);
 
-    info!("DID: {:?}", did_str);
+    info!("DID: `{did_str}`");
 
-    let controller = CoreDID::parse(&did_str).unwrap();
+    let controller = CoreDID::parse(did_str).unwrap();
 
-    let verification_method =
-        VerificationMethod::new_from_jwk(controller.clone(), public_key_jwk.clone(), Some("key-0")).unwrap();
+    let verification_method = VerificationMethod::new_from_jwk(
+        controller.clone(),
+        Jwk::from_json_value(public_key_jwk).unwrap(),
+        Some(FRAGMENT),
+    )
+    .unwrap();
 
-    let mut properties = Object::new();
-    properties.insert(
-        "@context".to_string(),
-        json!([
-            "https://www.w3.org/ns/did/v1",
-            "https://w3id.org/security/suites/ed25519-2020/v1" // TODO: make dynamic
-        ]),
-    );
+    // Patch the generated DID document since it's not according to spec.
+    let properties = get_properties(MethodType::JSON_WEB_KEY_2020);
 
     let document = CoreDocument::builder(properties)
         .id(controller)
@@ -74,6 +69,25 @@ pub async fn produce_did_web(
     Ok(document)
 }
 
+fn get_properties(method_type: MethodType) -> BTreeMap<String, serde_json::Value> {
+    let mut properties = BTreeMap::new();
+    properties.insert(
+        "@context".to_string(),
+        match method_type.as_str() {
+            "Ed25519VerificationKey2018" => json!([
+                "https://www.w3.org/ns/did/v1",
+                "https://w3id.org/security/suites/ed25519-2018/v1"
+            ]),
+            "JsonWebKey2020" => json!([
+                "https://www.w3.org/ns/did/v1",
+                "https://w3id.org/security/suites/jws-2020/v1"
+            ]),
+            _ => unimplemented!("Unsupported method type"),
+        },
+    );
+    properties
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -81,33 +95,32 @@ mod tests {
     use crate::consumer::resolve_did_web;
 
     use identity_iota::core::ToJson;
+    use serde_json::json;
     use shared::test_utils::new_stronghold_storage;
     use test_log::test;
     use wiremock::matchers::{method, path};
     use wiremock::{Mock, MockServer, ResponseTemplate};
 
     #[test(tokio::test)]
-    async fn produces_did_web() {
-        let (stronghold_storage, key_id) = new_stronghold_storage().await;
+    async fn produces_did_web_ed25519() {
+        let (stronghold_storage, key_id, _) = new_stronghold_storage().await;
 
-        // Start mock server and assert
         let mock_server = MockServer::start().await;
 
         let mock_server_port: u16 = mock_server.address().port();
 
         let document = produce_did_web(
             JwkStorageWrapper::Stronghold(stronghold_storage),
-            &key_id,
+            key_id.as_str(),
             url::Origin::Tuple(
                 "http".to_string(),
                 url::Host::Domain("localhost".to_string()),
                 mock_server_port,
             ),
+            JwsAlgorithm::EdDSA,
         )
         .await
         .unwrap();
-
-        info!("Document: {}", document.to_json_pretty().unwrap());
 
         Mock::given(method("GET"))
             .and(path("/.well-known/did.json"))
@@ -123,13 +136,13 @@ mod tests {
             json!({
               "@context": [
                 "https://www.w3.org/ns/did/v1",
-                "https://w3id.org/security/suites/ed25519-2020/v1"
+                "https://w3id.org/security/suites/jws-2020/v1"
               ],
               "id": format!("did:web:localhost%3A{}", mock_server_port),
               "verificationMethod": [
                 {
                   "id": format!("did:web:localhost%3A{}#key-0", mock_server_port),
-                  "type": "JsonWebKey", // TODO: should be "JsonWebKey2020"?
+                  "type": "JsonWebKey2020",
                   "controller": format!("did:web:localhost%3A{}", mock_server_port),
                   "publicKeyJwk": {
                     "kty": "OKP",
