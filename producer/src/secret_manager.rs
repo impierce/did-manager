@@ -121,7 +121,7 @@ impl SecretManager {
                 .await
                 // TODO: use `.unwrap_or_default()` instead of `.expect()`?
                 .expect("Stronghold storage error")
-                .then_some({
+                .then(|| {
                     // TODO: this is always printed (no matter whether the key exists or not) which is misleading
                     info!("Successfully verified key exists with {:?}", key_id);
                     key_id
@@ -143,7 +143,7 @@ impl SecretManager {
                 .await
                 // TODO: use `.unwrap_or_default()` instead of `.expect()`?
                 .expect("Stronghold storage error")
-                .then_some({
+                .then(|| {
                     // TODO: this is always printed (no matter whether the key exists or not) which is misleading
                     info!("Successfully verified key exists with {:?}", key_id);
                     key_id
@@ -158,7 +158,7 @@ impl SecretManager {
                 .await
                 // TODO: use `.unwrap_or_default()` instead of `.expect()`?
                 .expect("Stronghold storage error")
-                .then_some({
+                .then(|| {
                     // TODO: this is always printed (no matter whether the key exists or not) which is misleading
                     info!("Successfully verified key exists with {:?}", key_id);
                     key_id
