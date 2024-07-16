@@ -12,13 +12,13 @@ use std::io::{Error, ErrorKind};
 /// Generates or loads a Stronghold and uses the specified `KeyId` for all cryptographic operations
 #[derive(Clone, Debug)]
 pub struct SecretManager {
-    pub(crate) stronghold_storage: StrongholdStorage,
-    pub(crate) stronghold_ext_storage: StrongholdExtStorage,
-    pub(crate) ed25519_key_id: Option<KeyId>,
-    pub(crate) es256_key_id: Option<KeyId>,
-    pub(crate) es256k_key_id: Option<KeyId>,
-    pub(crate) did: Option<String>, // TODO(selv): externally managed DID (see did_iota/README.md)
-    pub(crate) fragment: Option<String>, // TODO(selv): externally managed fragment (see did_iota/README.md)
+    pub stronghold_storage: StrongholdStorage,
+    pub stronghold_ext_storage: StrongholdExtStorage,
+    pub ed25519_key_id: Option<KeyId>,
+    pub es256_key_id: Option<KeyId>,
+    pub es256k_key_id: Option<KeyId>,
+    pub did: Option<String>,      // TODO(selv): externally managed DID (see did_iota/README.md)
+    pub fragment: Option<String>, // TODO(selv): externally managed fragment (see did_iota/README.md)
 }
 
 impl SecretManager {
