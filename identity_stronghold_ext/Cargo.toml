@@ -12,14 +12,16 @@ keywords = ["iota", "storage", "identity", "kms", "stronghold"]
 async-trait = { version = "0.1.64", default-features = false }
 elliptic-curve = { version = "0.13", features = ["jwk"] }
 identity_storage.workspace = true
-identity_verification = { version = "1.3", default_features = false }
+identity_verification = { version = "1.3", default-features = false }
 iota-sdk.workspace = true
 iota_stronghold.workspace = true
 k256 = { version = "0.13", features = ["jwk"] }
 log.workspace = true
 p256 = { version = "0.13", features = ["jwk"] }
 serde_json.workspace = true
-stronghold_ext = { git = "https://github.com/tensor-programming/stronghold_ext.git", features = ["crypto"] }
+stronghold_ext = { git = "https://github.com/tensor-programming/stronghold_ext.git", features = [
+    "crypto",
+] }
 tokio.workspace = true
 
 [features]
