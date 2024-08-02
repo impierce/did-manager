@@ -42,14 +42,6 @@ impl SecretManager {
 
         let stronghold_storage = StrongholdStorage::new(stronghold_secret_manager);
 
-        // Generate new Ed25519 key
-        let jwk_gen_output = stronghold_storage
-            .generate(KeyType::new("Ed25519"), JwsAlgorithm::EdDSA)
-            .await
-            .unwrap();
-
-        info!("Generated new Ed25519 key at {:?}", &jwk_gen_output.key_id);
-
         let stronghold_secret_manager = StrongholdSecretManager::builder()
             .password(Password::from(password))
             .build(snapshot_path.as_path())
@@ -81,7 +73,7 @@ impl SecretManager {
         Ok(SecretManager {
             stronghold_storage,
             stronghold_ext_storage,
-            ed25519_key_id: Some(jwk_gen_output.key_id), // TODO: return key_id from storage or storage_ext?
+            ed25519_key_id: Some(ed25519_jwk_gen_output.key_id),
             es256_key_id: Some(es256_jwk_gen_output.key_id),
             es256k_key_id: Some(es256k_jwk_gen_output.key_id),
             did: None,

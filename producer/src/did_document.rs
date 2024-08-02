@@ -43,7 +43,7 @@ impl SecretManager {
     ) -> Result<CoreDocument, ProducerError> {
         let (storage, key_id) = match alg {
             JwsAlgorithm::EdDSA => (
-                JwkStorageWrapper::Stronghold(self.stronghold_storage.clone()),
+                JwkStorageWrapper::StrongholdExt(self.stronghold_ext_storage.clone()),
                 self.ed25519_key_id
                     .as_ref()
                     .ok_or(ProducerError::MissingKeyIdError("No Ed25519 key present".to_string()))?
