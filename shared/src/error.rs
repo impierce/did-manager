@@ -24,4 +24,6 @@ pub enum ProducerError {
     MissingKeyIdError(String),
     #[error("Generic producer error: `{0}`")]
     Generic(String),
+    #[error("Could not create `SecretManager`: `{0}`")]
+    SecretManagerBuilder(String),
 }

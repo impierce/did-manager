@@ -58,17 +58,13 @@ mod tests {
 
     #[test(tokio::test)]
     async fn produces_the_expected_signature() {
-        let secret_manager = SecretManager::load(
-            SNAPSHOT_PATH.to_owned(),
-            PASSWORD.to_owned(),
-            Some(KEY_ID.to_owned()),
-            None,
-            None,
-            None,
-            None,
-        )
-        .await
-        .unwrap();
+        let secret_manager = SecretManager::builder()
+            .snapshot_path(SNAPSHOT_PATH)
+            .password(PASSWORD)
+            .with_ed25519_key(KEY_ID)
+            .build()
+            .await
+            .unwrap();
 
         let signature = secret_manager.sign("foobar".as_bytes(), JwsAlgorithm::EdDSA).await;
 
