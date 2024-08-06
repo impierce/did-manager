@@ -1,3 +1,5 @@
+// #[cfg(feature = "cache")]
+pub mod cache;
 pub mod did_document;
 pub mod secret_manager;
 pub mod signature;

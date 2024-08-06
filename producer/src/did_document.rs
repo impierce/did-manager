@@ -70,13 +70,12 @@ impl SecretManager {
         // Try to retrieve from cache first
         let core_document: Option<CoreDocument> = match self.cache {
             Some(ref cache) => {
-                let did = CoreDID::parse(self.did.clone().expect("externally managed `DID` not specified")).unwrap();
-                let hit = cache.retrieve(&did);
-                hit
+                let did = CoreDID::parse(self.did.clone().expect("externally managed `DID` not specified"))?;
+                cache.retrieve(&did)
             }
             None => None,
         };
-
+        // Return the document if it was found in the cache
         if let Some(core_document) = core_document {
             return Ok(core_document);
         }
@@ -119,6 +118,9 @@ impl SecretManager {
                 )
                 .await
                 .unwrap();
+                if let Some(ref cache) = self.cache {
+                    cache.insert(core_document.clone());
+                }
                 Some(core_document)
             }
             DidMethod::Shimmer => {
@@ -166,8 +168,12 @@ impl SecretManager {
 mod tests {
     use super::*;
 
+    use crate::cache::InMemoryCache;
+
     use identity_iota::core::{json, ToJson};
+    use log::info;
     use shared::test_utils::random_stronghold_path;
+    use std::time::Instant;
     use test_log::test;
 
     const SNAPSHOT_PATH: &str = "../shared/tests/res/all_slots.stronghold";
@@ -296,14 +302,46 @@ mod tests {
     #[test(tokio::test)]
     async fn cached_did_document_is_returned() {
         let secret_manager = SecretManager::builder()
-            .snapshot_path(SNAPSHOT_PATH)
-            .password(PASSWORD)
+            .snapshot_path("../shared/tests/res/selv.stronghold")
+            .password("VNvRtH4tKyWwvJDpL6Vuc2aoLiKAecGQ")
+            .with_ed25519_key("UVDxWhG2rB39FkaR7I27mHeUNrGtUgcr")
+            .with_did("did:iota:rms:0x42ad588322e58b3c07aa39e4948d021ee17ecb5747915e9e1f35f028d7ecaf90")
+            .with_fragment("bQKQRzaop7CgEvqVq8UlgLGsdF-R-hnLFkKFZqW2VN0")
+            .with_cache(InMemoryCache::builder().build())
             .build()
             .await
             .unwrap();
 
+        // We measure the time it takes to produce the document
+        let instant_before_with_empty_cache = Instant::now();
+
         let document = secret_manager
-            .produce_document(DidMethod::Jwk, None, JwsAlgorithm::EdDSA)
+            .produce_document(DidMethod::ShimmerTestnet, None, JwsAlgorithm::EdDSA)
             .await;
+
+        assert!(document.is_ok());
+
+        let total_millis_uncached = instant_before_with_empty_cache.elapsed().as_millis();
+
+        // // We wait for one second
+        // std::thread::sleep(std::time::Duration::new(1, 0));
+
+        // We measure the time again (with cached document)
+        let instant_before_with_filled_cached = Instant::now();
+
+        let document = secret_manager
+            .produce_document(DidMethod::ShimmerTestnet, None, JwsAlgorithm::EdDSA)
+            .await;
+
+        assert!(document.is_ok());
+
+        let total_millis_cached = instant_before_with_filled_cached.elapsed().as_millis();
+
+        info!(
+            "Time to produce document: empty cache: {}ms, filled cache: {}ms",
+            total_millis_uncached, total_millis_cached
+        );
+
+        assert!(total_millis_uncached > total_millis_cached);
     }
 }

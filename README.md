@@ -38,6 +38,12 @@ let document: CoreDocument = resolver.resolve(did).await.unwrap();
 use did_manager::{DidMethod, SecretManager};
 use identity_iota::document::CoreDocument;
 
-let secret_manager = SecretManager::generate("/path/to/file", "p4ssw0rd").await.unwrap();
+let secret_manager = SecretManager::builder()
+            .snapshot_path("/path/to/file.stronghold")
+            .password("p4ssw0rd")
+            .build()
+            .await
+            .unwrap();
+
 let document: CoreDocument = secret_manager.produce_document(DidMethod::Jwk).await.unwrap();
 ```

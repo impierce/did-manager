@@ -70,7 +70,7 @@ mod tests {
     use serde_json::json;
     use test_log::test;
 
-    const SNAPSHOT_PATH: &str = "tests/res/selv.stronghold";
+    const SNAPSHOT_PATH: &str = "../shared/tests/res/selv.stronghold";
     const PASSWORD: &str = "VNvRtH4tKyWwvJDpL6Vuc2aoLiKAecGQ";
     const KEY_ID: &str = "UVDxWhG2rB39FkaR7I27mHeUNrGtUgcr";
 

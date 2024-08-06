@@ -10,7 +10,6 @@ use iota_sdk::client::{secret::stronghold::StrongholdSecretManager, Password};
 use iota_stronghold::SnapshotPath;
 use log::{debug, info, warn};
 use shared::error::ProducerError;
-use std::io::{Error, ErrorKind};
 
 use crate::cache::InMemoryCache;
 
@@ -32,16 +31,11 @@ pub struct SecretManager {
 /// Currently, there's two implementations of `StrongholdStorage`:
 /// - "default": unaltered implementation from `identity.rs`
 /// - "extended": custom procedures that allow additional key types (such as `ES256` and `ES256K`)
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub enum StrongholdStorageType {
     Default,
+    #[default]
     Extended,
-}
-
-impl Default for StrongholdStorageType {
-    fn default() -> Self {
-        StrongholdStorageType::Extended
-    }
 }
 
 // #[derive(Default)]
@@ -105,6 +99,11 @@ impl SecretManagerBuilder {
 
     pub fn with_fragment(mut self, fragment: &str) -> Self {
         self.fragment = Some(fragment.to_owned());
+        self
+    }
+
+    pub fn with_cache(mut self, cache: InMemoryCache) -> Self {
+        self.cache = Some(cache);
         self
     }
 
@@ -195,7 +194,7 @@ impl SecretManagerBuilder {
                 if stronghold_storage
                     .exists(&self.ed25519_key_id.clone().expect("No key id provided for `Ed25519`"))
                     .await
-                    .map_err(|e| ProducerError::KeyStorageError(e))?
+                    .map_err(ProducerError::KeyStorageError)?
                 {
                     debug!("Key exists: `{}`", &self.ed25519_key_id.clone().unwrap());
                 } else {
@@ -244,7 +243,7 @@ async fn check_key_existence(
     if stronghold_ext_storage
         .exists(key_id)
         .await
-        .map_err(|e| ProducerError::KeyStorageError(e))?
+        .map_err(ProducerError::KeyStorageError)?
     {
         debug!("Key exists: `{}`", key_id);
         Ok(())
@@ -261,7 +260,7 @@ async fn generate(
     let jwk_gen_output = stronghold_ext_storage
         .generate(key_type.clone(), alg)
         .await
-        .map_err(|e| ProducerError::KeyStorageError(e))?;
+        .map_err(ProducerError::KeyStorageError)?;
     info!(
         "Generated new {:?} key with key ID {:?}",
         &key_type.as_str(),
