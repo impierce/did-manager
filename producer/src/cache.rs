@@ -20,7 +20,6 @@ pub struct InMemoryCache {
     pub ttl: u64,
 }
 
-// #[derive(Default)]
 pub struct InMemoryCacheBuilder {
     include: Vec<CoreDID>,
     ttl: u64,

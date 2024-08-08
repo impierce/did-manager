@@ -24,7 +24,6 @@ pub struct SecretManager {
     pub es256k_key_id: Option<KeyId>,
     pub did: Option<String>,      // TODO(selv): externally managed DID (see did_iota/README.md)
     pub fragment: Option<String>, // TODO(selv): externally managed fragment (see did_iota/README.md)
-    // #[cfg(feature = "cache")]
     pub cache: Option<InMemoryCache>,
 }
 

@@ -75,6 +75,7 @@ impl SecretManager {
             }
             None => None,
         };
+
         // Return the document if it was found in the cache
         if let Some(core_document) = core_document {
             return Ok(core_document);
@@ -312,7 +313,7 @@ mod tests {
             .await
             .unwrap();
 
-        // We measure the time it takes to produce the document
+        // We measure the time it takes to produce the document intially
         let instant_before_with_empty_cache = Instant::now();
 
         let document = secret_manager
@@ -322,9 +323,6 @@ mod tests {
         assert!(document.is_ok());
 
         let total_millis_uncached = instant_before_with_empty_cache.elapsed().as_millis();
-
-        // // We wait for one second
-        // std::thread::sleep(std::time::Duration::new(1, 0));
 
         // We measure the time again (with cached document)
         let instant_before_with_filled_cached = Instant::now();
