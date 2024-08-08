@@ -33,7 +33,7 @@ mod tests {
     use wiremock::{Mock, MockServer, ResponseTemplate};
 
     #[test(tokio::test)]
-    async fn resolves_did_web_ed25519() {
+    async fn resolves_did_web_with_ed25519_key() {
         let mock_server = MockServer::start().await;
 
         Mock::given(method("GET"))

@@ -33,7 +33,22 @@ pub async fn produce_did_web(
         }
     };
 
-    let host_port_encoded = urlencoding::encode(format!("{}:{}", host, port).as_str()).to_string();
+    // IP addresses are not allowed
+    match host {
+        url::Host::Domain(_) => {}
+        url::Host::Ipv4(_) => {
+            return Err(ProducerError::Generic("IPv4 address not allowed".to_string()));
+        }
+        url::Host::Ipv6(_) => {
+            return Err(ProducerError::Generic("IPv6 address not allowed".to_string()));
+        }
+    }
+
+    // Omit default HTTPS port
+    let host_port_encoded = match port {
+        443 => host.to_string(),
+        _ => urlencoding::encode(format!("{}:{}", host, port).as_str()).to_string(),
+    };
 
     let did_str = format!("did:web:{}", host_port_encoded);
 
@@ -90,6 +105,8 @@ fn get_properties(method_type: MethodType) -> BTreeMap<String, serde_json::Value
 
 #[cfg(test)]
 mod tests {
+    use std::net::Ipv4Addr;
+
     use super::*;
 
     use crate::consumer::resolve_did_web;
@@ -102,7 +119,7 @@ mod tests {
     use wiremock::{Mock, MockServer, ResponseTemplate};
 
     #[test(tokio::test)]
-    async fn produces_did_web_ed25519() {
+    async fn produces_did_web_with_ed25519_key() {
         let (stronghold_storage, key_id, _) = new_stronghold_storage().await;
 
         let mock_server = MockServer::start().await;
@@ -155,5 +172,36 @@ mod tests {
               ]
             })
         );
+    }
+
+    #[test(tokio::test)]
+    async fn default_https_port_is_omitted() {
+        let (stronghold_storage, key_id, _) = new_stronghold_storage().await;
+
+        let document = produce_did_web(
+            JwkStorageWrapper::Stronghold(stronghold_storage),
+            key_id.as_str(),
+            url::Origin::Tuple("https".to_string(), url::Host::Domain("example.org".to_string()), 443),
+            JwsAlgorithm::EdDSA,
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(document.id().to_string(), "did:web:example.org");
+    }
+
+    #[test(tokio::test)]
+    async fn fails_for_ip_address() {
+        let (stronghold_storage, key_id, _) = new_stronghold_storage().await;
+
+        let document = produce_did_web(
+            JwkStorageWrapper::Stronghold(stronghold_storage),
+            key_id.as_str(),
+            url::Origin::Tuple("https".to_string(), url::Host::Ipv4(Ipv4Addr::new(1, 1, 1, 1)), 443),
+            JwsAlgorithm::EdDSA,
+        )
+        .await;
+
+        assert!(document.is_err());
     }
 }
