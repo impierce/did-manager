@@ -91,6 +91,14 @@ impl SecretManagerBuilder {
         self
     }
 
+    pub fn with_es256_key(mut self, key_id: &str) -> Self {
+        self.storage_type = StrongholdStorageType::Extended;
+        self.ed25519_key_id = None;
+        self.es256_key_id = Some(KeyId::new(key_id));
+        self.es256k_key_id = None;
+        self
+    }
+
     pub fn with_did(mut self, did: &str) -> Self {
         self.did = Some(did.to_owned());
         self
