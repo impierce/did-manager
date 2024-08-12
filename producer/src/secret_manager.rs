@@ -86,16 +86,12 @@ impl SecretManagerBuilder {
     pub fn with_ed25519_key(mut self, key_id: &str) -> Self {
         self.storage_type = StrongholdStorageType::Default;
         self.ed25519_key_id = Some(KeyId::new(key_id));
-        self.es256_key_id = None;
-        self.es256k_key_id = None;
         self
     }
 
     pub fn with_es256_key(mut self, key_id: &str) -> Self {
         self.storage_type = StrongholdStorageType::Extended;
-        self.ed25519_key_id = None;
         self.es256_key_id = Some(KeyId::new(key_id));
-        self.es256k_key_id = None;
         self
     }
 
@@ -209,23 +205,17 @@ impl SecretManagerBuilder {
                 }
             }
             StrongholdStorageType::Extended => {
-                check_key_existence(
-                    &stronghold_ext_storage,
-                    &self.ed25519_key_id.clone().expect("No key id provided for `Ed25519`"),
-                )
-                .await?;
+                if let Some(ed25519_key_id) = &self.ed25519_key_id {
+                    check_key_existence(&stronghold_ext_storage, ed25519_key_id).await?;
+                }
 
-                check_key_existence(
-                    &stronghold_ext_storage,
-                    &self.es256_key_id.clone().expect("No key id provided for `ES256`"),
-                )
-                .await?;
+                if let Some(es256_key_id) = &self.es256_key_id {
+                    check_key_existence(&stronghold_ext_storage, es256_key_id).await?;
+                }
 
-                check_key_existence(
-                    &stronghold_ext_storage,
-                    &self.es256k_key_id.clone().expect("No key id provided for `ES256K`"),
-                )
-                .await?;
+                if let Some(es256k_key_id) = &self.es256k_key_id {
+                    check_key_existence(&stronghold_ext_storage, es256k_key_id).await?;
+                }
             }
         }
 
@@ -285,14 +275,25 @@ mod tests {
 
     const SNAPSHOT_PATH: &str = "tests/res/test.stronghold";
     const PASSWORD: &str = "secure_password";
-    const KEY_ID: &str = "9O66nzWqYYy1LmmiOudOlh2SMIaUWoTS";
+    const ED25519_KEY_ID: &str = "9O66nzWqYYy1LmmiOudOlh2SMIaUWoTS";
 
     #[test(tokio::test)]
     async fn successfully_loads_an_existing_stronghold() {
         assert!(SecretManager::builder()
             .snapshot_path(SNAPSHOT_PATH)
             .password(PASSWORD)
-            .with_ed25519_key(KEY_ID)
+            .with_ed25519_key(ED25519_KEY_ID)
+            .build()
+            .await
+            .is_ok());
+    }
+
+    #[test(tokio::test)]
+    async fn successfully_loads_an_existing_stronghold_with_es256_key() {
+        assert!(SecretManager::builder()
+            .snapshot_path("../shared/tests/res/all_slots.stronghold")
+            .password("sup3rSecr3t")
+            .with_es256_key("es256-0")
             .build()
             .await
             .is_ok());
@@ -303,7 +304,7 @@ mod tests {
         assert!(SecretManager::builder()
             .snapshot_path(SNAPSHOT_PATH)
             .password("wrong_password")
-            .with_ed25519_key(KEY_ID)
+            .with_ed25519_key(ED25519_KEY_ID)
             .build()
             .await
             .is_err());
@@ -354,7 +355,7 @@ mod tests {
     async fn providing_an_existing_key_id_fails_on_second_run() {
         let path = random_stronghold_path().to_str().unwrap().to_string();
 
-        // Successfully creates the Stronghold, but with a generated key ID
+        // Successfully creates the Stronghold, but with a generated key ID (not the passed one)
         assert!(SecretManager::builder()
             .snapshot_path(&path)
             .password(PASSWORD)
@@ -363,7 +364,7 @@ mod tests {
             .await
             .is_ok());
 
-        // When the same key ID is provided, it should fail
+        // When the same key ID is provided (for example on reboot), it should fail
         assert!(SecretManager::builder()
             .snapshot_path(&path)
             .password(PASSWORD)
