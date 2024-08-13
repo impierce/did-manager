@@ -13,6 +13,10 @@ use shared::error::ProducerError;
 
 use crate::cache::InMemoryCache;
 
+const DEFAULT_KEY_ID_ED25519: &str = "ed25519-0";
+const DEFAULT_KEY_ID_ES256: &str = "es256-0";
+const DEFAULT_KEY_ID_ES256K: &str = "es256k-0";
+
 /// Generates or loads a Stronghold and uses the specified `KeyId` for all cryptographic operations
 #[derive(Clone, Debug)]
 pub struct SecretManager {
@@ -37,7 +41,7 @@ pub enum StrongholdStorageType {
     Extended,
 }
 
-// #[derive(Default)]
+#[derive(Default)]
 pub struct SecretManagerBuilder {
     snapshot_path: Option<String>,
     password: Option<String>,
@@ -48,22 +52,6 @@ pub struct SecretManagerBuilder {
     did: Option<String>,
     fragment: Option<String>,
     cache: Option<InMemoryCache>,
-}
-
-impl Default for SecretManagerBuilder {
-    fn default() -> Self {
-        Self {
-            snapshot_path: None,
-            password: None,
-            storage_type: StrongholdStorageType::default(),
-            ed25519_key_id: Some(KeyId::new("ed25519-0")),
-            es256_key_id: Some(KeyId::new("es256-0")),
-            es256k_key_id: Some(KeyId::new("es256k-0")),
-            did: None,
-            fragment: None,
-            cache: None,
-        }
-    }
 }
 
 impl SecretManager {
@@ -160,6 +148,14 @@ impl SecretManagerBuilder {
 
         let stronghold_ext_storage = StrongholdExtStorage::new(stronghold_secret_manager);
 
+        // If no key IDs have been provided, use the default ones.
+        // This prevents a crash when user just wants a "default" Stronghold and restarts the app without specifying any key IDs.
+        if self.ed25519_key_id.is_none() && self.es256_key_id.is_none() && self.es256k_key_id.is_none() {
+            self.ed25519_key_id = Some(KeyId::new(DEFAULT_KEY_ID_ED25519));
+            self.es256_key_id = Some(KeyId::new(DEFAULT_KEY_ID_ES256));
+            self.es256k_key_id = Some(KeyId::new(DEFAULT_KEY_ID_ES256K));
+        };
+
         // If Stronghold doesn't exist yet, generate new keys
         if !exists {
             info!("Generating new keys ...");
@@ -181,9 +177,15 @@ impl SecretManagerBuilder {
                     self.ed25519_key_id = Some(jwk_gen_output.key_id);
                 }
                 StrongholdStorageType::Extended => {
-                    generate(&stronghold_ext_storage, KeyType::new("Ed25519"), JwsAlgorithm::EdDSA).await?;
-                    generate(&stronghold_ext_storage, KeyType::new("ES256"), JwsAlgorithm::ES256).await?;
-                    generate(&stronghold_ext_storage, KeyType::new("ES256K"), JwsAlgorithm::ES256K).await?;
+                    let ed25519_key_id =
+                        generate(&stronghold_ext_storage, KeyType::new("Ed25519"), JwsAlgorithm::EdDSA).await?;
+                    self.ed25519_key_id = Some(ed25519_key_id);
+                    let es256_key_id =
+                        generate(&stronghold_ext_storage, KeyType::new("ES256"), JwsAlgorithm::ES256).await?;
+                    self.es256_key_id = Some(es256_key_id);
+                    let es256k_key_id =
+                        generate(&stronghold_ext_storage, KeyType::new("ES256K"), JwsAlgorithm::ES256K).await?;
+                    self.es256k_key_id = Some(es256k_key_id);
                 }
             }
         }
@@ -245,6 +247,7 @@ async fn check_key_existence(
         debug!("Key exists: `{}`", key_id);
         Ok(())
     } else {
+        warn!("Key does not exist: `{}`", key_id);
         Err(ProducerError::KeyStorageError(SingleStructError::new(KeyNotFound)))
     }
 }
@@ -253,7 +256,7 @@ async fn generate(
     stronghold_ext_storage: &StrongholdExtStorage,
     key_type: KeyType,
     alg: JwsAlgorithm,
-) -> Result<(), ProducerError> {
+) -> Result<KeyId, ProducerError> {
     let jwk_gen_output = stronghold_ext_storage
         .generate(key_type.clone(), alg)
         .await
@@ -263,7 +266,7 @@ async fn generate(
         &key_type.as_str(),
         &jwk_gen_output.key_id.as_str()
     );
-    Ok(())
+    Ok(jwk_gen_output.key_id)
 }
 
 #[cfg(test)]
