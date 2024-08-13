@@ -7,3 +7,7 @@ Cargo.lock
 
 # rustfmt
 **/*.rs.bk
+
+**/.env
+**/.env.*
+!**/.env.example
