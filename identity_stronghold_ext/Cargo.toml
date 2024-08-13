@@ -19,7 +19,7 @@ k256 = { version = "0.13", features = ["jwk"] }
 log.workspace = true
 p256 = { version = "0.13", features = ["jwk"] }
 serde_json.workspace = true
-stronghold_ext = { git = "https://github.com/tensor-programming/stronghold_ext.git", features = [
+stronghold_ext = { git = "https://github.com/impierce/stronghold_ext.git", features = [
     "crypto",
 ] }
 tokio.workspace = true
