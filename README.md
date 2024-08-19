@@ -1,6 +1,7 @@
 # DID Manager
 
 [![semantic-release: angular](https://img.shields.io/badge/semantic--release-angular-e10079?logo=semantic-release)](https://github.com/semantic-release/semantic-release)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/impierce/did-manager/badge)](https://scorecard.dev/viewer/?uri=github.com/impierce/did-manager)
 
 ---
 
