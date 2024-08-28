@@ -1,3 +1,4 @@
+use identity_iota::did::CoreDID;
 use identity_iota::document::CoreDocument;
 use identity_iota::iota::IotaDID;
 use identity_iota::verification::jws::JwsAlgorithm;
@@ -36,7 +37,7 @@ pub enum MethodSpecificParameters {
 
 impl SecretManager {
     pub async fn produce_document(
-        &self,
+        &mut self,
         did_method: DidMethod,
         method_specific_parameters: Option<MethodSpecificParameters>,
         alg: JwsAlgorithm,
@@ -66,6 +67,21 @@ impl SecretManager {
             _ => return Err(ProducerError::Generic("Unsupported JWS algorithm".to_string())),
         };
 
+        // Try to retrieve from cache first
+        let core_document: Option<CoreDocument> = match &mut self.cache {
+            Some(cache) => {
+                let did = CoreDID::parse(self.did.as_ref().expect("externally managed `DID` not specified"))?;
+                cache.retrieve(&did)
+            }
+            None => None,
+        };
+
+        // Return the document if it was found in the cache
+        if let Some(core_document) = core_document {
+            return Ok(core_document);
+        }
+
+        // If cache miss, produce the document
         let core_document: Option<CoreDocument> = match did_method {
             DidMethod::Jwk => {
                 let core_document = did_jwk::producer::produce_did_jwk(storage, key_id, alg).await.unwrap();
@@ -94,8 +110,8 @@ impl SecretManager {
                     &storage,
                     key_id,
                     did_iota::produce::IotaMethod::Testnet,
-                    JwsAlgorithm::EdDSA,
-                    IotaDID::parse(self.did.clone().expect("externally managed `DID` not specified"))?,
+                    alg,
+                    IotaDID::parse(self.did.as_ref().expect("externally managed `DID` not specified"))?,
                     self.fragment
                         .clone()
                         .expect("externally managed `fragment` not specified")
@@ -103,6 +119,9 @@ impl SecretManager {
                 )
                 .await
                 .unwrap();
+                if let Some(cache) = &mut self.cache {
+                    cache.insert(core_document.clone());
+                }
                 Some(core_document)
             }
             DidMethod::Shimmer => {
@@ -110,8 +129,8 @@ impl SecretManager {
                     &storage,
                     key_id,
                     did_iota::produce::IotaMethod::Shimmer,
-                    JwsAlgorithm::EdDSA,
-                    IotaDID::parse(self.did.clone().expect("externally managed `DID` not specified"))?,
+                    alg,
+                    IotaDID::parse(self.did.as_ref().expect("externally managed `DID` not specified"))?,
                     self.fragment
                         .clone()
                         .expect("externally managed `fragment` not specified")
@@ -126,8 +145,8 @@ impl SecretManager {
                     &storage,
                     key_id,
                     did_iota::produce::IotaMethod::Mainnet,
-                    JwsAlgorithm::EdDSA,
-                    IotaDID::parse(self.did.clone().expect("externally managed `DID` not specified"))?,
+                    alg,
+                    IotaDID::parse(self.did.as_ref().expect("externally managed `DID` not specified"))?,
                     self.fragment
                         .clone()
                         .expect("externally managed `fragment` not specified")
@@ -150,24 +169,25 @@ impl SecretManager {
 mod tests {
     use super::*;
 
+    use crate::cache::InMemoryCache;
+
     use identity_iota::core::{json, ToJson};
+    use log::info;
     use shared::test_utils::random_stronghold_path;
+    use std::time::Instant;
     use test_log::test;
 
     const SNAPSHOT_PATH: &str = "../shared/tests/res/all_slots.stronghold";
     const PASSWORD: &str = "sup3rSecr3t";
-    const KEY_ID_ED25519: &str = "ed25519-0";
-    const KEY_ID_ES256: &str = "es256-0";
-    const KEY_ID_ES256K: &str = "es256k-0";
 
     #[test(tokio::test)]
     async fn create_document_from_generated_stronghold() {
-        let secret_manager = SecretManager::generate(
-            random_stronghold_path().to_str().unwrap().to_string(),
-            PASSWORD.to_owned(),
-        )
-        .await
-        .unwrap();
+        let mut secret_manager = SecretManager::builder()
+            .snapshot_path(random_stronghold_path().to_str().unwrap())
+            .password(PASSWORD)
+            .build()
+            .await
+            .unwrap();
 
         let document = secret_manager
             .produce_document(DidMethod::Jwk, None, JwsAlgorithm::EdDSA)
@@ -178,17 +198,12 @@ mod tests {
 
     #[test(tokio::test)]
     async fn recreate_expected_document_from_existing_ed25519_key() {
-        let secret_manager = SecretManager::load(
-            SNAPSHOT_PATH.to_owned(),
-            PASSWORD.to_owned(),
-            Some(KEY_ID_ED25519.to_owned()),
-            Some(KEY_ID_ES256.to_owned()),
-            Some(KEY_ID_ES256K.to_owned()),
-            None,
-            None,
-        )
-        .await
-        .unwrap();
+        let mut secret_manager = SecretManager::builder()
+            .snapshot_path(SNAPSHOT_PATH)
+            .password(PASSWORD)
+            .build()
+            .await
+            .unwrap();
 
         let document = secret_manager
             .produce_document(DidMethod::Jwk, None, JwsAlgorithm::EdDSA)
@@ -217,17 +232,12 @@ mod tests {
 
     #[test(tokio::test)]
     async fn recreate_expected_document_from_existing_es256_key() {
-        let secret_manager = SecretManager::load(
-            SNAPSHOT_PATH.to_owned(),
-            PASSWORD.to_owned(),
-            Some(KEY_ID_ED25519.to_owned()),
-            Some(KEY_ID_ES256.to_owned()),
-            Some(KEY_ID_ES256K.to_owned()),
-            None,
-            None,
-        )
-        .await
-        .unwrap();
+        let mut secret_manager = SecretManager::builder()
+            .snapshot_path(SNAPSHOT_PATH)
+            .password(PASSWORD)
+            .build()
+            .await
+            .unwrap();
 
         let document = secret_manager
             .produce_document(DidMethod::Jwk, None, JwsAlgorithm::ES256)
@@ -257,17 +267,12 @@ mod tests {
 
     #[test(tokio::test)]
     async fn recreate_expected_document_from_existing_es256k_key() {
-        let secret_manager = SecretManager::load(
-            SNAPSHOT_PATH.to_owned(),
-            PASSWORD.to_owned(),
-            Some(KEY_ID_ED25519.to_owned()),
-            Some(KEY_ID_ES256.to_owned()),
-            Some(KEY_ID_ES256K.to_owned()),
-            None,
-            None,
-        )
-        .await
-        .unwrap();
+        let mut secret_manager = SecretManager::builder()
+            .snapshot_path(SNAPSHOT_PATH)
+            .password(PASSWORD)
+            .build()
+            .await
+            .unwrap();
 
         let document = secret_manager
             .produce_document(DidMethod::Jwk, None, JwsAlgorithm::ES256K)
@@ -293,5 +298,48 @@ mod tests {
                 "y": "5zXAx1QXCsP8cnn4THW2wSbkp8OqbyAvcDO22Y3tRsY"
             })
         )
+    }
+
+    #[test(tokio::test)]
+    async fn cached_did_document_is_returned() {
+        let mut secret_manager = SecretManager::builder()
+            .snapshot_path("../shared/tests/res/selv.stronghold")
+            .password("VNvRtH4tKyWwvJDpL6Vuc2aoLiKAecGQ")
+            .with_ed25519_key("UVDxWhG2rB39FkaR7I27mHeUNrGtUgcr")
+            .with_did("did:iota:rms:0x42ad588322e58b3c07aa39e4948d021ee17ecb5747915e9e1f35f028d7ecaf90")
+            .with_fragment("bQKQRzaop7CgEvqVq8UlgLGsdF-R-hnLFkKFZqW2VN0")
+            .with_cache(InMemoryCache::builder().build())
+            .build()
+            .await
+            .unwrap();
+
+        // We measure the time it takes to produce the document intially
+        let instant_before_with_empty_cache = Instant::now();
+
+        let document = secret_manager
+            .produce_document(DidMethod::ShimmerTestnet, None, JwsAlgorithm::EdDSA)
+            .await;
+
+        assert!(document.is_ok());
+
+        let total_millis_uncached = instant_before_with_empty_cache.elapsed().as_millis();
+
+        // We measure the time again (with cached document)
+        let instant_before_with_filled_cached = Instant::now();
+
+        let document = secret_manager
+            .produce_document(DidMethod::ShimmerTestnet, None, JwsAlgorithm::EdDSA)
+            .await;
+
+        assert!(document.is_ok());
+
+        let total_millis_cached = instant_before_with_filled_cached.elapsed().as_millis();
+
+        info!(
+            "Time to produce document: empty cache: {}ms, filled cache: {}ms",
+            total_millis_uncached, total_millis_cached
+        );
+
+        assert!(total_millis_uncached > total_millis_cached);
     }
 }
