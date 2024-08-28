@@ -3,7 +3,6 @@ use identity_iota::document::CoreDocument;
 use log::info;
 use std::{
     collections::HashMap,
-    sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
 
@@ -13,9 +12,9 @@ use std::{
 /// * **lazy**: the cache does not automatically run any clean up tasks. It evaluates the cache entries only when they are accessed.
 ///
 /// NOTE: Use with caution! Caches can hold outdated data. A short TTL is recommended.
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct InMemoryCache {
-    entries: Arc<Mutex<HashMap<CoreDID, CacheEntry>>>,
+    entries: HashMap<CoreDID, CacheEntry>,
     pub include: Vec<CoreDID>,
     pub ttl: u64,
 }
@@ -43,7 +42,7 @@ struct CacheEntry {
 impl InMemoryCache {
     pub fn new() -> Self {
         Self {
-            entries: Mutex::new(HashMap::new()).into(),
+            entries: HashMap::new(),
             include: Vec::new(),
             ttl: 5_000,
         }
@@ -53,7 +52,7 @@ impl InMemoryCache {
         InMemoryCacheBuilder::default()
     }
 
-    pub fn insert(&self, document: CoreDocument) {
+    pub fn insert(&mut self, document: CoreDocument) {
         let expires_at = Instant::now() + Duration::from_millis(self.ttl);
         if !self.include.is_empty() && !self.include.contains(document.id()) {
             return;
@@ -62,20 +61,18 @@ impl InMemoryCache {
             document: document.clone(),
             expires_at,
         };
-        let mut entries = self.entries.lock().unwrap();
-        match entries.insert(document.id().clone(), entry) {
+        match self.entries.insert(document.id().clone(), entry) {
             Some(_) => info!("[*] Existing cache entry updated: `{:?}`", document.id()),
             None => info!("[+] New cache entry inserted: `{:?}`", document.id()),
         };
     }
 
     /// Retrieves a DID Document from the cache. If it exists, but is expired, then remove it.
-    pub fn retrieve(&self, did: &CoreDID) -> Option<CoreDocument> {
-        let mut entries = self.entries.lock().unwrap();
-        let entry = entries.get(did)?;
+    pub fn retrieve(&mut self, did: &CoreDID) -> Option<CoreDocument> {
+        let entry = self.entries.get(did)?;
 
         if entry.expires_at < Instant::now() {
-            if entries.remove(did).is_some() {
+            if self.entries.remove(did).is_some() {
                 info!("[-] Expired cache entry removed: `{:?}`", did)
             }
             return None;
@@ -111,7 +108,7 @@ impl InMemoryCacheBuilder {
 
     pub fn build(self) -> InMemoryCache {
         InMemoryCache {
-            entries: Mutex::new(HashMap::new()).into(),
+            entries: HashMap::new(),
             include: self.include,
             ttl: self.ttl,
         }
@@ -134,7 +131,7 @@ mod tests {
 
     #[test(tokio::test)]
     async fn successfully_inserts_new_cache_entry() {
-        let cache = InMemoryCache::new();
+        let mut cache = InMemoryCache::new();
         let did = CoreDID::parse("did:example:123").unwrap();
         let document = CoreDocument::builder(Default::default())
             .id(did.clone())
@@ -147,7 +144,7 @@ mod tests {
 
     #[test(tokio::test)]
     async fn expired_entry_is_not_retrieved_but_lazily_removed() {
-        let cache = InMemoryCache::builder().build();
+        let mut cache = InMemoryCache::builder().build();
         let did = CoreDID::parse("did:example:123").unwrap();
         let document = CoreDocument::builder(Default::default())
             .id(did.clone())
@@ -159,16 +156,16 @@ mod tests {
             expires_at: Instant::now() - Duration::from_millis(1_000),
         };
 
-        cache.entries.lock().unwrap().insert(did.clone(), expired_entry);
+        cache.entries.insert(did.clone(), expired_entry);
 
-        assert!(cache.entries.lock().unwrap().contains_key(&did));
+        assert!(cache.entries.contains_key(&did));
         assert_eq!(cache.retrieve(&did), None);
-        assert!(cache.entries.lock().unwrap().is_empty());
+        assert!(cache.entries.is_empty());
     }
 
     #[test(tokio::test)]
     async fn entry_that_has_not_expired_is_retrieved() {
-        let cache = InMemoryCache::builder().ttl(5_000).build();
+        let mut cache = InMemoryCache::builder().ttl(5_000).build();
         let did = CoreDID::parse("did:example:123").unwrap();
         let document = CoreDocument::builder(Default::default())
             .id(did.clone())
@@ -180,16 +177,16 @@ mod tests {
             expires_at: Instant::now() + Duration::from_millis(6_000),
         };
 
-        cache.entries.lock().unwrap().insert(did.clone(), expired_entry);
+        cache.entries.insert(did.clone(), expired_entry);
 
-        assert!(cache.entries.lock().unwrap().contains_key(&did));
+        assert!(cache.entries.contains_key(&did));
         assert_eq!(cache.retrieve(&did), Some(document));
-        assert!(cache.entries.lock().unwrap().contains_key(&did));
+        assert!(cache.entries.contains_key(&did));
     }
 
     #[test(tokio::test)]
     async fn when_included_matches_then_entry_is_retrieved() {
-        let cache = InMemoryCache::builder()
+        let mut cache = InMemoryCache::builder()
             .include(vec![CoreDID::parse("did:example:123").unwrap()])
             .build();
         let did = CoreDID::parse("did:example:123").unwrap();
@@ -199,12 +196,12 @@ mod tests {
             .unwrap();
         cache.insert(document.clone());
 
-        assert!(cache.entries.lock().unwrap().get(&did).is_some());
+        assert!(cache.entries.get(&did).is_some());
     }
 
     #[test(tokio::test)]
     async fn when_included_not_matches_then_entry_is_not_inserted() {
-        let cache = InMemoryCache::builder()
+        let mut cache = InMemoryCache::builder()
             .include(vec![CoreDID::parse("did:example:123").unwrap()])
             .build();
         let did = CoreDID::parse("did:foo:bar").unwrap();
@@ -214,6 +211,6 @@ mod tests {
             .unwrap();
         cache.insert(document.clone());
 
-        assert!(cache.entries.lock().unwrap().is_empty());
+        assert!(cache.entries.is_empty());
     }
 }
