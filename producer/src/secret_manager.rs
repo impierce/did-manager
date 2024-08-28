@@ -22,7 +22,6 @@ const DEFAULT_KEY_ID_ES256K: &str = "es256k-0";
 pub struct SecretManager {
     pub stronghold_storage: StrongholdStorage,
     pub stronghold_ext_storage: StrongholdExtStorage,
-    // stronghold_storage_type: StrongholdStorageType,
     pub ed25519_key_id: Option<KeyId>,
     pub es256_key_id: Option<KeyId>,
     pub es256k_key_id: Option<KeyId>,
