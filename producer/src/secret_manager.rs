@@ -195,12 +195,16 @@ impl SecretManagerBuilder {
                 if self.es256_key_id.is_some() || self.es256k_key_id.is_some() {
                     warn!("Key IDs for ECDSA keys are ignored for Stronghold Storage of type `Default`");
                 }
+                let ed25519_key_id = self
+                    .ed25519_key_id
+                    .as_ref()
+                    .ok_or(SingleStructError::new(KeyNotFound))?;
                 if stronghold_storage
-                    .exists(&self.ed25519_key_id.clone().expect("No key id provided for `Ed25519`"))
+                    .exists(ed25519_key_id)
                     .await
                     .map_err(ProducerError::KeyStorageError)?
                 {
-                    debug!("Key exists: `{}`", &self.ed25519_key_id.clone().unwrap());
+                    debug!("Key exists: `{}`", ed25519_key_id);
                 } else {
                     return Err(ProducerError::KeyStorageError(SingleStructError::new(KeyNotFound)));
                 }
