@@ -141,7 +141,7 @@ impl SecretManagerBuilder {
 
         // We have to do this twice, since `StrongholdAdapter` does not implement the `Copy` trait
         let stronghold_secret_manager = StrongholdSecretManager::builder()
-            .password(password.clone())
+            .password(password)
             .build(snapshot_path.as_path())
             .map_err(|e| ProducerError::SecretManagerBuilder(e.to_string()))?;
 
