@@ -98,36 +98,35 @@ impl SecretManagerBuilder {
     }
 
     pub async fn build(mut self) -> Result<SecretManager, ProducerError> {
-        // Fail if no snapshot path is provided
-        if self.snapshot_path.is_none() {
-            return Err(ProducerError::SecretManagerBuilder(
-                "No snapshot path provided".to_string(),
-            ));
-        }
+        let snapshot_path = match self.snapshot_path {
+            Some(ref snapshot_path) => snapshot_path,
+            None => {
+                // Fail if no snapshot path is provided
+                return Err(ProducerError::SecretManagerBuilder(
+                    "No snapshot path provided".to_string(),
+                ));
+            }
+        };
 
-        // Fail if no password is provided
-        if self.password.is_none() {
-            return Err(ProducerError::SecretManagerBuilder("No password provided".to_string()));
-        }
-
-        // Check if Stronghold snapshot exists
-        let exists = std::path::Path::new(&self.snapshot_path.clone().unwrap())
+        // Check if Stronghold snapshot exists at provided path
+        let exists = std::path::Path::new(snapshot_path)
             .try_exists()
-            .unwrap();
+            .map_err(|e| ProducerError::SecretManagerBuilder(e.to_string()))?;
 
         match exists {
-            true => info!(
-                "Loading existing Stronghold from {:?} ...",
-                self.snapshot_path.as_ref().unwrap()
-            ),
-            false => info!(
-                "Generating new Stronghold at {:?} ...",
-                self.snapshot_path.as_ref().unwrap()
-            ),
+            true => info!("Loading existing Stronghold from {snapshot_path:?} ..."),
+            false => info!("Generating new Stronghold at {snapshot_path:?} ..."),
         }
 
-        let snapshot_path = SnapshotPath::from_path(self.snapshot_path.unwrap());
-        let password = Password::from(self.password.unwrap());
+        let snapshot_path = SnapshotPath::from_path(snapshot_path);
+
+        let password = match self.password {
+            Some(password) => Password::from(password),
+            None => {
+                // Fail if no password is provided
+                return Err(ProducerError::SecretManagerBuilder("No password provided".to_string()));
+            }
+        };
 
         #[cfg(test)]
         iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
