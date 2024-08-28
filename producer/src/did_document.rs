@@ -70,7 +70,7 @@ impl SecretManager {
         // Try to retrieve from cache first
         let core_document: Option<CoreDocument> = match self.cache {
             Some(ref cache) => {
-                let did = CoreDID::parse(self.did.clone().expect("externally managed `DID` not specified"))?;
+                let did = CoreDID::parse(self.did.as_ref().expect("externally managed `DID` not specified"))?;
                 cache.retrieve(&did)
             }
             None => None,
@@ -111,7 +111,7 @@ impl SecretManager {
                     key_id,
                     did_iota::produce::IotaMethod::Testnet,
                     alg,
-                    IotaDID::parse(self.did.clone().expect("externally managed `DID` not specified"))?,
+                    IotaDID::parse(self.did.as_ref().expect("externally managed `DID` not specified"))?,
                     self.fragment
                         .clone()
                         .expect("externally managed `fragment` not specified")
@@ -130,7 +130,7 @@ impl SecretManager {
                     key_id,
                     did_iota::produce::IotaMethod::Shimmer,
                     alg,
-                    IotaDID::parse(self.did.clone().expect("externally managed `DID` not specified"))?,
+                    IotaDID::parse(self.did.as_ref().expect("externally managed `DID` not specified"))?,
                     self.fragment
                         .clone()
                         .expect("externally managed `fragment` not specified")
@@ -146,7 +146,7 @@ impl SecretManager {
                     key_id,
                     did_iota::produce::IotaMethod::Mainnet,
                     alg,
-                    IotaDID::parse(self.did.clone().expect("externally managed `DID` not specified"))?,
+                    IotaDID::parse(self.did.as_ref().expect("externally managed `DID` not specified"))?,
                     self.fragment
                         .clone()
                         .expect("externally managed `fragment` not specified")
