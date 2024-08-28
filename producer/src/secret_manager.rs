@@ -18,7 +18,7 @@ const DEFAULT_KEY_ID_ES256: &str = "es256-0";
 const DEFAULT_KEY_ID_ES256K: &str = "es256k-0";
 
 /// Generates or loads a Stronghold and uses the specified `KeyId` for all cryptographic operations
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct SecretManager {
     pub stronghold_storage: StrongholdStorage,
     pub stronghold_ext_storage: StrongholdExtStorage,

@@ -37,7 +37,7 @@ pub enum MethodSpecificParameters {
 
 impl SecretManager {
     pub async fn produce_document(
-        &self,
+        &mut self,
         did_method: DidMethod,
         method_specific_parameters: Option<MethodSpecificParameters>,
         alg: JwsAlgorithm,
@@ -68,8 +68,8 @@ impl SecretManager {
         };
 
         // Try to retrieve from cache first
-        let core_document: Option<CoreDocument> = match self.cache {
-            Some(ref cache) => {
+        let core_document: Option<CoreDocument> = match &mut self.cache {
+            Some(cache) => {
                 let did = CoreDID::parse(self.did.as_ref().expect("externally managed `DID` not specified"))?;
                 cache.retrieve(&did)
             }
@@ -119,7 +119,7 @@ impl SecretManager {
                 )
                 .await
                 .unwrap();
-                if let Some(ref cache) = self.cache {
+                if let Some(cache) = &mut self.cache {
                     cache.insert(core_document.clone());
                 }
                 Some(core_document)
@@ -182,7 +182,7 @@ mod tests {
 
     #[test(tokio::test)]
     async fn create_document_from_generated_stronghold() {
-        let secret_manager = SecretManager::builder()
+        let mut secret_manager = SecretManager::builder()
             .snapshot_path(random_stronghold_path().to_str().unwrap())
             .password(PASSWORD)
             .build()
@@ -198,7 +198,7 @@ mod tests {
 
     #[test(tokio::test)]
     async fn recreate_expected_document_from_existing_ed25519_key() {
-        let secret_manager = SecretManager::builder()
+        let mut secret_manager = SecretManager::builder()
             .snapshot_path(SNAPSHOT_PATH)
             .password(PASSWORD)
             .build()
@@ -232,7 +232,7 @@ mod tests {
 
     #[test(tokio::test)]
     async fn recreate_expected_document_from_existing_es256_key() {
-        let secret_manager = SecretManager::builder()
+        let mut secret_manager = SecretManager::builder()
             .snapshot_path(SNAPSHOT_PATH)
             .password(PASSWORD)
             .build()
@@ -267,7 +267,7 @@ mod tests {
 
     #[test(tokio::test)]
     async fn recreate_expected_document_from_existing_es256k_key() {
-        let secret_manager = SecretManager::builder()
+        let mut secret_manager = SecretManager::builder()
             .snapshot_path(SNAPSHOT_PATH)
             .password(PASSWORD)
             .build()
@@ -302,7 +302,7 @@ mod tests {
 
     #[test(tokio::test)]
     async fn cached_did_document_is_returned() {
-        let secret_manager = SecretManager::builder()
+        let mut secret_manager = SecretManager::builder()
             .snapshot_path("../shared/tests/res/selv.stronghold")
             .password("VNvRtH4tKyWwvJDpL6Vuc2aoLiKAecGQ")
             .with_ed25519_key("UVDxWhG2rB39FkaR7I27mHeUNrGtUgcr")
