@@ -2,6 +2,7 @@
 
 [![semantic-release: angular](https://img.shields.io/badge/semantic--release-angular-e10079?logo=semantic-release)](https://github.com/semantic-release/semantic-release)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/impierce/did-manager/badge)](https://scorecard.dev/viewer/?uri=github.com/impierce/did-manager)
+[![Coveralls](https://coveralls.io/repos/github/impierce/did-manager/badge.svg?branch=beta)](https://coveralls.io/github/impierce/did-manager?branch=beta)
 
 ---
 
@@ -51,4 +52,18 @@ let secret_manager = SecretManager::builder()
             .unwrap();
 
 let document: CoreDocument = secret_manager.produce_document(DidMethod::Jwk).await.unwrap();
+```
+
+## Development
+
+### Test coverage
+
+To generate a test coverage report locally, run the following command:
+
+```bash
+# Install tarpaulin
+cargo install cargo-tarpaulin
+
+# Create a test coverage report
+cargo tarpaulin --workspace --out html --output-dir target/coverage
 ```
