@@ -22,7 +22,9 @@ jobs:
         with:
           node-version: "lts/*"
 
-      - run: echo $TITLE | npx commitlint
+      - run: |
+          npm install --no-save @commitlint/config-angular
+          echo $TITLE | npx commitlint
         env:
           # Security: we mitigate script injections by using an intermediate environment variable
           # https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#using-an-intermediate-environment-variable
