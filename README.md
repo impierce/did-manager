@@ -2,6 +2,7 @@
 
 [![semantic-release: angular](https://img.shields.io/badge/semantic--release-angular-e10079?logo=semantic-release)](https://github.com/semantic-release/semantic-release)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/impierce/did-manager/badge)](https://scorecard.dev/viewer/?uri=github.com/impierce/did-manager)
+[![Coveralls](https://coveralls.io/repos/github/impierce/did-manager/badge.svg?branch=beta)](https://coveralls.io/github/impierce/did-manager?branch=beta)
 
 ---
 
