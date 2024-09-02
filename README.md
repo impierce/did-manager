@@ -53,3 +53,17 @@ let secret_manager = SecretManager::builder()
 
 let document: CoreDocument = secret_manager.produce_document(DidMethod::Jwk).await.unwrap();
 ```
+
+## Development
+
+### Test coverage
+
+To generate a test coverage report locally, run the following command:
+
+```bash
+# Install tarpaulin
+cargo install cargo-tarpaulin
+
+# Create a test coverage report
+cargo tarpaulin --workspace --out html --output-dir target/coverage
+```
