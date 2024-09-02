@@ -2,7 +2,10 @@ name: Lint PR title
 
 on:
   pull_request:
-    branches: ["dev"]
+    branches:
+      - main
+      - next
+      - beta
     # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request
     # types: [opened, synchronize, reopened, edited]
 
