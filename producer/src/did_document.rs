@@ -69,10 +69,13 @@ impl SecretManager {
 
         // Try to retrieve from cache first
         let core_document: Option<CoreDocument> = match &mut self.cache {
-            Some(cache) => {
-                let did = CoreDID::parse(self.did.as_ref().expect("externally managed `DID` not specified"))?;
-                cache.retrieve(&did)
-            }
+            Some(cache) => match &self.did {
+                Some(did) => {
+                    let did = CoreDID::parse(did)?;
+                    cache.retrieve(&did)
+                }
+                None => None,
+            },
             None => None,
         };
 
