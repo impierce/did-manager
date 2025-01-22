@@ -31,9 +31,9 @@ repository = "https://github.com/impierce/did-manager"
 rust-version = "1.75"
 
 [workspace.dependencies]
-identity_iota = { version = "1.3", default-features = false, features = ["resolver", "iota-client"] }
-identity_storage = { version = "1.3", default-features = false }
-identity_stronghold = { version = "1.3", features = ["send-sync-storage"] }
+identity_iota = { version = "1.5", default-features = false, features = ["resolver", "iota-client"] }
+identity_storage = { version = "1.5", default-features = false }
+identity_stronghold = { version = "1.5", features = ["send-sync-storage"] }
 iota-sdk = { version = "1.1", features = ["stronghold"] }
 iota_stronghold = { version = "2.1" }
 log = "0.4"
