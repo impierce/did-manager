@@ -10,7 +10,6 @@ rust-version.workspace = true
 [dependencies]
 shared = { path = "../shared" }
 
-bls12_381_plus = "=0.8.15"           # TODO: if not pinned, we get an error: "conflicting implementations of trait `From<bls12_381_plus::scalar::Scalar>` for type `Issuer`"
 identity_iota.workspace = true
 identity_stronghold.workspace = true
 iota-sdk.workspace = true
