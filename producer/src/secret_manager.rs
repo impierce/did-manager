@@ -217,9 +217,9 @@ impl SecretManagerBuilder {
                     check_key_existence(&stronghold_ext_storage, es256_key_id).await?;
                 }
 
-                if let Some(es256k_key_id) = &self.es256k_key_id {
-                    check_key_existence(&stronghold_ext_storage, es256k_key_id).await?;
-                }
+                // if let Some(es256k_key_id) = &self.es256k_key_id {
+                //     check_key_existence(&stronghold_ext_storage, es256k_key_id).await?;
+                // }
             }
         }
 
@@ -254,7 +254,7 @@ async fn check_key_existence(
     }
 }
 
-async fn generate(
+pub async fn generate(
     stronghold_ext_storage: &StrongholdExtStorage,
     key_type: KeyType,
     alg: JwsAlgorithm,

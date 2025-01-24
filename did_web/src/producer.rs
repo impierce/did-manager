@@ -84,7 +84,7 @@ pub async fn produce_did_web(
     Ok(document)
 }
 
-fn get_properties(method_type: MethodType) -> BTreeMap<String, serde_json::Value> {
+pub fn get_properties(method_type: MethodType) -> BTreeMap<String, serde_json::Value> {
     let mut properties = BTreeMap::new();
     properties.insert(
         "@context".to_string(),

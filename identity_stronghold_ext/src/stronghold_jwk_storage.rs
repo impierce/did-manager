@@ -15,6 +15,7 @@ use identity_verification::jws::JwsAlgorithm;
 use identity_verification::jwu;
 use iota_sdk::client::secret::stronghold::StrongholdSecretManager;
 use iota_sdk::client::secret::SecretManager;
+use iota_stronghold::procedures::Ed25519Sign;
 use iota_stronghold::procedures::GenerateKey;
 use iota_stronghold::procedures::KeyType as ProceduresKeyType;
 use iota_stronghold::procedures::PublicKey;
@@ -103,7 +104,8 @@ impl StrongholdExtStorage {
             private_key: location.clone(),
         });
 
-        let procedure_result = execute_procedure_ext(&client, pub_key).unwrap();
+        let procedure_result = execute_procedure_ext(&client, pub_key)
+            .map_err(|err| KeyStorageError::new(KeyStorageErrorKind::KeyNotFound).with_source(err))?;
 
         let public_key: Vec<u8> = procedure_result.into();
 
@@ -387,9 +389,14 @@ impl JwkStorage for StrongholdExtStorage {
                 JwsAlgorithm::from_str(alg_str).map_err(|_| KeyStorageErrorKind::UnsupportedSignatureAlgorithm)
             })?;
 
-        // Check that `kty` is `Ec` and `crv = P-256`.
-        match alg {
+        let location = Location::generic(
+            IDENTITY_VAULT_PATH.as_bytes().to_vec(),
+            key_id.to_string().as_bytes().to_vec(),
+        );
+
+        let signature = match alg {
             JwsAlgorithm::ES256 => {
+                // Check that `kty` is `Ec` and `crv = P-256`.
                 let ec_params = public_key.try_ec_params().map_err(|err| {
                     KeyStorageError::new(KeyStorageErrorKind::Unspecified)
                         .with_custom_message(format!("expected a Jwk with Ec params in order to sign with {alg}"))
@@ -403,33 +410,65 @@ impl JwkStorage for StrongholdExtStorage {
                         )),
                     );
                 }
+
+                let procedure = Es256Procs::Sign(stronghold_ext::procs::es256::Sign {
+                    private_key: location,
+                    msg: data.to_vec(),
+                });
+
+                let stronghold = self.get_stronghold().await;
+                let client = get_client(&stronghold)?;
+
+                let signature: Vec<u8> = execute_procedure_ext(&client, procedure)
+                    .map_err(|err| {
+                        KeyStorageError::new(KeyStorageErrorKind::Unspecified)
+                            .with_custom_message("stronghold Es256Procs::Sign procedure failed")
+                            .with_source(err)
+                    })?
+                    .into();
+
+                signature
+            }
+            JwsAlgorithm::EdDSA => {
+                // Check that `kty` is `Okp` and `crv = Ed25519`.
+                let okp_params = public_key.try_okp_params().map_err(|err| {
+                    KeyStorageError::new(KeyStorageErrorKind::Unspecified)
+                        .with_custom_message(format!("expected a Jwk with Okp params in order to sign with {alg}"))
+                        .with_source(err)
+                })?;
+                if okp_params.crv != EdCurve::Ed25519.name() {
+                    return Err(
+                        KeyStorageError::new(KeyStorageErrorKind::Unspecified).with_custom_message(format!(
+                            "expected Jwk with Okp {} crv in order to sign with {alg}",
+                            EdCurve::Ed25519
+                        )),
+                    );
+                }
+
+                let procedure: Ed25519Sign = Ed25519Sign {
+                    private_key: location,
+                    msg: data.to_vec(),
+                };
+
+                let stronghold = self.get_stronghold().await;
+                let client = get_client(&stronghold)?;
+
+                let signature = client
+                    .execute_procedure(procedure)
+                    .map_err(|err| {
+                        KeyStorageError::new(KeyStorageErrorKind::Unspecified)
+                            .with_custom_message("stronghold Ed25519Sign procedure failed")
+                            .with_source(err)
+                    })?
+                    .to_vec();
+
+                signature
             }
             other => {
                 return Err(KeyStorageError::new(KeyStorageErrorKind::UnsupportedSignatureAlgorithm)
                     .with_custom_message(format!("{other} is not supported")));
             }
         };
-
-        let location = Location::generic(
-            IDENTITY_VAULT_PATH.as_bytes().to_vec(),
-            key_id.to_string().as_bytes().to_vec(),
-        );
-
-        let procedure = Es256Procs::Sign(stronghold_ext::procs::es256::Sign {
-            private_key: location,
-            msg: data.to_vec(),
-        });
-
-        let stronghold = self.get_stronghold().await;
-        let client = get_client(&stronghold)?;
-
-        let signature: Vec<u8> = execute_procedure_ext(&client, procedure)
-            .map_err(|err| {
-                KeyStorageError::new(KeyStorageErrorKind::Unspecified)
-                    .with_custom_message("stronghold Es256Procs::Sign procedure failed")
-                    .with_source(err)
-            })?
-            .into();
 
         Ok(signature)
     }
