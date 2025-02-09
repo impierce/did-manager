@@ -45,18 +45,18 @@ pub async fn produce_did_iota(
     // Sanity check: Can the document be resolved from the ledger?
     let published_document = resolve(managed_did).await?;
 
-    // // Sanity check: Is the method in the document?
-    // let verification_method = published_document.resolve_method(&managed_fragment, None).unwrap();
+    // Sanity check: Is the method in the document?
+    let verification_method = published_document.resolve_method(&managed_fragment, None).unwrap();
 
-    // // Sanity check: Do the public keys match?
-    // assert_eq!(
-    //     Jwk::from_json_value(public_key_jwk).unwrap(),
-    //     verification_method.data().public_key_jwk().unwrap().clone()
-    // );
+    // Sanity check: Do the public keys match?
+    assert_eq!(
+        Jwk::from_json_value(public_key_jwk).unwrap(),
+        verification_method.data().public_key_jwk().unwrap().clone()
+    );
 
     info!("DID: `{:?}`", published_document.id());
 
-    info!("DID Document: {}", published_document.to_json_pretty().unwrap());
+    debug!("DID Document: {}", published_document.to_json_pretty().unwrap());
 
     Ok(published_document)
 }

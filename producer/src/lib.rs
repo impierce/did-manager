@@ -4,6 +4,5 @@ pub mod secret_manager;
 pub mod signature;
 
 pub use crate::did_document::MethodSpecificParameters;
-pub use crate::secret_manager::{generate, SecretManager};
-pub use did_web;
+pub use crate::secret_manager::SecretManager;
 pub use identity_iota::document::CoreDocument;
