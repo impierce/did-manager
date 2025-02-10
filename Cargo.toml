@@ -22,7 +22,6 @@ members = [
 
 [dependencies]
 consumer = { path = "consumer" }
-# identity_stronghold_ext = { path = "identity_stronghold_ext" }
 producer = { path = "producer" }
 
 [workspace.package]

@@ -419,15 +419,13 @@ impl JwkStorage for StrongholdExtStorage {
                 let stronghold = self.get_stronghold().await;
                 let client = get_client(&stronghold)?;
 
-                let signature: Vec<u8> = execute_procedure_ext(&client, procedure)
+                execute_procedure_ext(&client, procedure)
                     .map_err(|err| {
                         KeyStorageError::new(KeyStorageErrorKind::Unspecified)
                             .with_custom_message("stronghold Es256Procs::Sign procedure failed")
                             .with_source(err)
                     })?
-                    .into();
-
-                signature
+                    .into()
             }
             JwsAlgorithm::EdDSA => {
                 // Check that `kty` is `Okp` and `crv = Ed25519`.
@@ -453,16 +451,14 @@ impl JwkStorage for StrongholdExtStorage {
                 let stronghold = self.get_stronghold().await;
                 let client = get_client(&stronghold)?;
 
-                let signature = client
+                client
                     .execute_procedure(procedure)
                     .map_err(|err| {
                         KeyStorageError::new(KeyStorageErrorKind::Unspecified)
                             .with_custom_message("stronghold Ed25519Sign procedure failed")
                             .with_source(err)
                     })?
-                    .to_vec();
-
-                signature
+                    .to_vec()
             }
             other => {
                 return Err(KeyStorageError::new(KeyStorageErrorKind::UnsupportedSignatureAlgorithm)
@@ -511,5 +507,79 @@ impl TryFrom<&KeyType> for ExtProceduresKeyType {
             "ES256K" => Ok(ExtProceduresKeyType::ES256K),
             _ => Err(KeyStorageError::new(KeyStorageErrorKind::UnsupportedKeyType)),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use iota_sdk::client::Password;
+    use iota_stronghold::SnapshotPath;
+    use test_log::test;
+
+    const SNAPSHOT_PATH: &str = "../shared/tests/res/all_slots.stronghold";
+    const PASSWORD: &str = "sup3rSecr3t";
+    const ED25519_KEY_ID: &str = "ed25519-0";
+    const ES256_KEY_ID: &str = "es256-0";
+
+    #[test(tokio::test)]
+    async fn produces_the_expected_ed25519_signature() {
+        iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
+
+        let stronghold_secret_manager = StrongholdSecretManager::builder()
+            .password(Password::from(PASSWORD.to_string()))
+            .build(SnapshotPath::from_path(SNAPSHOT_PATH).as_path())
+            .unwrap();
+
+        let stronghold_ext_storage = StrongholdExtStorage::new(stronghold_secret_manager);
+
+        let public_key = stronghold_ext_storage
+            .get_ed25519_public_key(&KeyId::new(ED25519_KEY_ID))
+            .await
+            .expect("failed to get public key");
+
+        let signature = stronghold_ext_storage
+            .sign(&KeyId::new(ED25519_KEY_ID), b"foobar", &public_key)
+            .await
+            .expect("failed to sign data");
+
+        assert_eq!(
+            hex::encode(signature),
+            "17702e79bc9fd6e0f0525210cdcfbf50\
+             c02aedf36b26a34d31e56ff06ec9735d\
+             0b0734cc9585de9db5434c9497e63e02\
+             b1badd496c6451a9ccf1b90cb23aeb06"
+        );
+    }
+
+    #[test(tokio::test)]
+    async fn produces_the_expected_es256_signature() {
+        iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
+
+        let stronghold_secret_manager = StrongholdSecretManager::builder()
+            .password(Password::from(PASSWORD.to_string()))
+            .build(SnapshotPath::from_path(SNAPSHOT_PATH).as_path())
+            .unwrap();
+
+        let stronghold_ext_storage = StrongholdExtStorage::new(stronghold_secret_manager);
+
+        let public_key = stronghold_ext_storage
+            .get_es256_public_key(&KeyId::new(ES256_KEY_ID))
+            .await
+            .expect("failed to get public key");
+
+        let signature = stronghold_ext_storage
+            .sign(&KeyId::new(ES256_KEY_ID), b"foobar", &public_key)
+            .await
+            .expect("failed to sign data");
+
+        assert_eq!(
+            hex::encode(signature),
+            "75070fea5fbf2e1b1cf9de9ee2abc270\
+             3148762e075a926d8afae8d04cdfce72\
+             7f7361a0611040768cd56a6cfcd61948\
+             3605e696ef41da6fe0c1395281f5dbe4"
+        );
     }
 }
