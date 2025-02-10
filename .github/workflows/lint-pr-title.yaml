@@ -7,7 +7,7 @@ on:
       - next
       - beta
     # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request
-    # types: [opened, synchronize, reopened, edited]
+    types: [opened, synchronize, reopened, edited]
 
 jobs:
   commitlint:
