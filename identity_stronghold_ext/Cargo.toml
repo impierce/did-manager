@@ -12,7 +12,7 @@ keywords = ["iota", "storage", "identity", "kms", "stronghold"]
 async-trait = { version = "0.1.64", default-features = false }
 elliptic-curve = { version = "0.13", features = ["jwk"] }
 identity_storage.workspace = true
-identity_verification = { version = "1.3", default-features = false }
+identity_verification.workspace = true
 iota-sdk.workspace = true
 iota_stronghold.workspace = true
 k256 = { version = "0.13", features = ["jwk"] }
@@ -23,6 +23,10 @@ stronghold_ext = { git = "https://github.com/impierce/stronghold_ext.git", featu
     "crypto",
 ] }
 tokio.workspace = true
+
+[dev-dependencies]
+hex = "0.4"
+test-log.workspace = true
 
 [features]
 default = []
