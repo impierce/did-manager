@@ -7,8 +7,8 @@ use identity_iota::verification::{
 };
 use identity_stronghold::StrongholdStorage;
 use identity_stronghold_ext::StrongholdExtStorage;
-use iota_sdk::client::secret::stronghold::StrongholdSecretManager;
-use iota_sdk::client::Password;
+use iota_sdk_legacy::client::secret::stronghold::StrongholdSecretManager;
+use iota_sdk_legacy::client::Password;
 use log::debug;
 use rand::distributions::DistString;
 

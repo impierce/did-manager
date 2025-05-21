@@ -6,7 +6,7 @@ use identity_iota::{
 use identity_storage::KeyStorageErrorKind::KeyNotFound;
 use identity_stronghold::StrongholdStorage;
 use identity_stronghold_ext::StrongholdExtStorage;
-use iota_sdk::client::{secret::stronghold::StrongholdSecretManager, Password};
+use iota_sdk_legacy::client::{secret::stronghold::StrongholdSecretManager, Password};
 use iota_stronghold::SnapshotPath;
 use log::{debug, info, warn};
 use shared::error::ProducerError;

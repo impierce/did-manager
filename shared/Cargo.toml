@@ -15,7 +15,7 @@ identity_iota.workspace = true
 identity_storage.workspace = true
 identity_stronghold.workspace = true
 identity_stronghold_ext = { path = "../identity_stronghold_ext", features = ["send-sync-storage"] }
-iota-sdk.workspace = true
+iota-sdk-legacy.workspace = true
 iota_stronghold.workspace = true
 log.workspace = true
 rand = "0.8"
