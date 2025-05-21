@@ -1,5 +1,5 @@
 use identity_storage::{KeyStorageError, KeyStorageErrorKind, KeyStorageResult};
-use iota_sdk::client::secret::SecretManager;
+use iota_sdk_legacy::client::secret::SecretManager;
 use iota_stronghold::{Client, ClientError, Stronghold};
 use tokio::sync::MutexGuard;
 
@@ -38,7 +38,7 @@ pub async fn persist_changes(
     drop(stronghold);
 
     match secret_manager {
-        iota_sdk::client::secret::SecretManager::Stronghold(stronghold_manager) => {
+        SecretManager::Stronghold(stronghold_manager) => {
             stronghold_manager
                 .write_stronghold_snapshot(None)
                 .await

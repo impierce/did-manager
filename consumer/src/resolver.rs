@@ -30,7 +30,11 @@ async fn configure_resolver(mut resolver: IdentityResolver) -> Result<IdentityRe
     resolver.attach_handler("jwk".to_owned(), resolve_did_jwk);
     resolver.attach_handler("key".to_owned(), resolve_did_key);
     resolver.attach_handler("web".to_owned(), resolve_did_web);
-    resolver.attach_multiple_iota_handlers(iota_clients().await?);
+    resolver.attach_multiple_iota_handlers(
+        iota_clients()
+            .await
+            .map_err(|e| ConsumerError::Generic(format!("Failed to attach IOTA handlers: {}", e)))?,
+    );
 
     Ok(resolver)
 }

@@ -43,7 +43,9 @@ pub async fn produce_did_iota(
     };
 
     // Sanity check: Can the document be resolved from the ledger?
-    let published_document = resolve(managed_did).await?;
+    let published_document = resolve(managed_did)
+        .await
+        .map_err(|e| ProducerError::Generic(e.to_string()))?;
 
     // Sanity check: Is the method in the document?
     let verification_method = published_document.resolve_method(&managed_fragment, None).unwrap();
@@ -66,7 +68,7 @@ mod tests {
     use super::*;
 
     use identity_stronghold::StrongholdStorage;
-    use iota_sdk::client::{secret::stronghold::StrongholdSecretManager, Password};
+    use iota_sdk_legacy::client::{secret::stronghold::StrongholdSecretManager, Password};
     use serde_json::json;
     use test_log::test;
 

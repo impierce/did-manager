@@ -9,7 +9,7 @@ pub enum ConsumerError {
     #[error("Identity error: `{0}`")]
     IdentityResolverError(#[from] identity_iota::resolver::Error),
     #[error("Client error: `{0}`")]
-    ClientError(#[from] iota_sdk::client::error::Error),
+    ClientError(#[from] iota_sdk_legacy::client::error::Error),
 }
 
 #[derive(Error, Debug)]

@@ -13,8 +13,8 @@ use identity_verification::jwk::JwkParamsEc;
 use identity_verification::jwk::JwkParamsOkp;
 use identity_verification::jws::JwsAlgorithm;
 use identity_verification::jwu;
-use iota_sdk::client::secret::stronghold::StrongholdSecretManager;
-use iota_sdk::client::secret::SecretManager;
+use iota_sdk_legacy::client::secret::stronghold::StrongholdSecretManager;
+use iota_sdk_legacy::client::secret::SecretManager;
 use iota_stronghold::procedures::Ed25519Sign;
 use iota_stronghold::procedures::GenerateKey;
 use iota_stronghold::procedures::KeyType as ProceduresKeyType;
@@ -514,7 +514,7 @@ impl TryFrom<&KeyType> for ExtProceduresKeyType {
 mod tests {
     use super::*;
 
-    use iota_sdk::client::Password;
+    use iota_sdk_legacy::client::Password;
     use iota_stronghold::SnapshotPath;
     use test_log::test;
 
