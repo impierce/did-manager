@@ -31,15 +31,15 @@ repository = "https://github.com/impierce/did-manager"
 rust-version = "1.75"
 
 [workspace.dependencies]
-identity_iota = { git = "https://github.com/iotaledger/identity.git", tag = "v1.6.0-alpha.5", default-features = false, features = [
+identity_iota = { git = "https://github.com/iotaledger/identity", tag = "v1.6.0-alpha.5", default-features = false, features = [
     "resolver",
     "iota-client",
 ] }
-identity_storage = { git = "https://github.com/iotaledger/identity.git", tag = "v1.6.0-alpha.5", default-features = false }
-identity_stronghold = { git = "https://github.com/iotaledger/identity.git", tag = "v1.6.0-alpha.5", features = [
+identity_storage = { git = "https://github.com/iotaledger/identity", tag = "v1.6.0-alpha.5", default-features = false }
+identity_stronghold = { git = "https://github.com/iotaledger/identity", tag = "v1.6.0-alpha.5", features = [
     "send-sync-storage",
 ] }
-identity_verification = { git = "https://github.com/iotaledger/identity.git", tag = "v1.6.0-alpha.5", default-features = false }
+identity_verification = { git = "https://github.com/iotaledger/identity", tag = "v1.6.0-alpha.5", default-features = false }
 iota-sdk = { git = "https://github.com/iotaledger/iota", package = "iota-sdk", tag = "v0.12.0-rc" }
 iota-sdk-legacy = { package = "iota-sdk", version = "1.1", features = [
     "stronghold",
