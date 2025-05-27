@@ -17,6 +17,7 @@ shared = { path = "../shared" }
 identity_iota.workspace = true
 signature.workspace = true
 tokio.workspace = true
+tracing = "0.1"
 
 [dev-dependencies]
 test-log.workspace = true

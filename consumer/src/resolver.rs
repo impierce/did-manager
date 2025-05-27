@@ -6,6 +6,7 @@ use identity_iota::did::CoreDID;
 use identity_iota::document::CoreDocument;
 use identity_iota::resolver::Resolver as IdentityResolver;
 use shared::error::ConsumerError;
+use tracing::info;
 
 pub struct Resolver {
     pub(crate) resolver: IdentityResolver,
@@ -13,9 +14,13 @@ pub struct Resolver {
 
 impl Resolver {
     pub async fn new() -> Self {
+        info!("Initializing DID resolver...");
         let resolver = configure_resolver(IdentityResolver::new())
             .await
             .expect("Failed to configure resolver");
+
+        info!("Resolver initialized successfully.");
+
         Self { resolver }
     }
 
@@ -27,14 +32,19 @@ impl Resolver {
 }
 
 async fn configure_resolver(mut resolver: IdentityResolver) -> Result<IdentityResolver, ConsumerError> {
+    info!("Configuring DID resolver...");
     resolver.attach_handler("jwk".to_owned(), resolve_did_jwk);
+    info!("Attached JWK handler.");
     resolver.attach_handler("key".to_owned(), resolve_did_key);
+    info!("Attached Key handler.");
     resolver.attach_handler("web".to_owned(), resolve_did_web);
-    resolver.attach_multiple_iota_handlers(
-        iota_clients()
-            .await
-            .map_err(|e| ConsumerError::Generic(format!("Failed to attach IOTA handlers: {}", e)))?,
-    );
+    info!("Attached Web handler.");
+    // resolver.attach_multiple_iota_handlers(
+    //     iota_clients()
+    //         .await
+    //         .map_err(|e| ConsumerError::Generic(format!("Failed to attach IOTA handlers: {}", e)))?,
+    // );
+    // info!("Attached IOTA handlers.");
 
     Ok(resolver)
 }
