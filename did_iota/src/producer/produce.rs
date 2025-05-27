@@ -1,7 +1,7 @@
 use identity_iota::{
     core::{FromJson, ToJson},
     document::CoreDocument,
-    iota::{IotaDID, NetworkName},
+    iota::IotaDID,
     verification::{jwk::Jwk, jws::JwsAlgorithm},
 };
 use log::{debug, info};
@@ -30,15 +30,12 @@ pub async fn produce_did_iota(
     let _ = match iota_method {
         IotaMethod::Testnet => {
             info!("Producing `did:iota:rms` for key_id `{key_id}` ({alg}) ...");
-            NetworkName::try_from("rms").expect("Invalid network")
         }
         IotaMethod::Shimmer => {
             info!("Producing `did:iota:smr` for key_id `{key_id}` ({alg}) ...");
-            NetworkName::try_from("smr").expect("Invalid network")
         }
         IotaMethod::Mainnet => {
             info!("Producing `did:iota` for key_id `{key_id}` ({alg}) ...");
-            NetworkName::try_from("iota").expect("Invalid network")
         }
     };
 
