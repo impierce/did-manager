@@ -2,10 +2,13 @@ use async_trait::async_trait;
 use identity_storage::key_storage::JwkStorage;
 use identity_storage::JwkGenOutput;
 use identity_storage::KeyId;
+use identity_storage::KeyIdStorage;
+use identity_storage::KeyIdStorageResult;
 use identity_storage::KeyStorageError;
 use identity_storage::KeyStorageErrorKind;
 use identity_storage::KeyStorageResult;
 use identity_storage::KeyType;
+use identity_storage::MethodDigest;
 use identity_verification::jwk::EcCurve;
 use identity_verification::jwk::EdCurve;
 use identity_verification::jwk::Jwk;
@@ -487,6 +490,47 @@ impl JwkStorage for StrongholdExtStorage {
                 .with_source(err)
         })?;
         Ok(exists)
+    }
+}
+
+#[cfg_attr(not(feature = "send-sync-storage"), async_trait(?Send))]
+#[cfg_attr(feature = "send-sync-storage", async_trait)]
+impl KeyIdStorage for StrongholdExtStorage {
+    async fn insert_key_id(&self, method_digest: MethodDigest, key_id: KeyId) -> KeyIdStorageResult<()> {
+        let stronghold = self.get_stronghold().await;
+        let client = get_client(&stronghold).unwrap();
+        let store = client.store();
+        let method_digest_pack = method_digest.pack();
+        let key_exists = store.contains_key(method_digest_pack.as_ref()).unwrap();
+
+        if key_exists {
+            panic!();
+        }
+        let key_id: String = key_id.into();
+        client.store().insert(method_digest_pack, key_id.into(), None).unwrap();
+        persist_changes(self.as_secret_manager(), stronghold).await.unwrap();
+        Ok(())
+    }
+
+    async fn get_key_id(&self, method_digest: &MethodDigest) -> KeyIdStorageResult<KeyId> {
+        let stronghold = self.get_stronghold().await;
+        let store = get_client(&stronghold).unwrap().store();
+        let method_digest_pack: Vec<u8> = method_digest.pack();
+        let key_id_bytes: Vec<u8> = store.get(method_digest_pack.as_ref()).unwrap().unwrap();
+
+        let key_id: KeyId = KeyId::new(String::from_utf8(key_id_bytes).unwrap());
+        Ok(key_id)
+    }
+
+    async fn delete_key_id(&self, method_digest: &MethodDigest) -> KeyIdStorageResult<()> {
+        let stronghold = self.get_stronghold().await;
+        let store = get_client(&stronghold).unwrap().store();
+        let key: Vec<u8> = method_digest.pack();
+
+        let _ = store.delete(key.as_ref()).unwrap().unwrap();
+
+        persist_changes(self.as_secret_manager(), stronghold).await.unwrap();
+        Ok(())
     }
 }
 
