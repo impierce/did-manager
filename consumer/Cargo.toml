@@ -15,6 +15,7 @@ did_web = { path = "../did_web" }
 shared = { path = "../shared" }
 
 identity_iota.workspace = true
+rustls = { version = "0.23", features = ["ring"] }
 signature.workspace = true
 tokio.workspace = true
 

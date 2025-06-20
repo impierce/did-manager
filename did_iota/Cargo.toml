@@ -15,6 +15,7 @@ identity_iota.workspace = true
 identity_stronghold.workspace = true
 iota-sdk.workspace = true
 log.workspace = true
+rustls = { version = "0.23", features = ["ring"] }
 tokio.workspace = true
 
 [dev-dependencies]
