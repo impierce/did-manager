@@ -24,6 +24,10 @@ stronghold_ext = { git = "https://github.com/impierce/stronghold_ext.git", featu
 ] }
 tokio.workspace = true
 secret-storage = { git = "https://github.com/iotaledger/secret-storage", tag = "v0.3.0" }
+rand = { version = "0.8.5", default-features = false, features = [
+    "std",
+    "std_rng",
+] }
 
 [dev-dependencies]
 hex = "0.4"

@@ -26,6 +26,7 @@ use iota_stronghold::procedures::StrongholdProcedure;
 use iota_stronghold::Location;
 use iota_stronghold::Stronghold;
 use log::info;
+use rand::distributions::DistString as _;
 use serde_json::json;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -37,6 +38,11 @@ use tokio::sync::MutexGuard;
 use crate::utils::{get_client, persist_changes};
 
 static IDENTITY_VAULT_PATH: &str = "iota_identity_vault";
+
+/// Generate a random alphanumeric string of len 32.
+pub fn random_key_id() -> KeyId {
+    KeyId::new(rand::distributions::Alphanumeric.sample_string(&mut rand::thread_rng(), 32))
+}
 
 /// Wrapper around a [`StrongholdSecretManager`] that implements the [`KeyIdStorage`](crate::KeyIdStorage)
 /// and [`JwkStorage`](crate::JwkStorage) interfaces.
@@ -191,6 +197,7 @@ impl JwkStorage for StrongholdExtStorage {
             JwsAlgorithm::ES256K => KeyId::new("es256k-0"),
             _ => unimplemented!("Unsupported algorithm"),
         };
+        // let key_id = random_key_id();
 
         let location = Location::generic(
             IDENTITY_VAULT_PATH.as_bytes().to_vec(),
@@ -473,8 +480,25 @@ impl JwkStorage for StrongholdExtStorage {
     }
 
     // TODO: implement
-    async fn delete(&self, _key_id: &KeyId) -> KeyStorageResult<()> {
-        unimplemented!("delete key not implemented");
+    async fn delete(&self, key_id: &KeyId) -> KeyStorageResult<()> {
+        let stronghold = self.get_stronghold().await;
+        let client = get_client(&stronghold)?;
+        let deleted = client
+            .vault(IDENTITY_VAULT_PATH.as_bytes())
+            .delete_secret(key_id.to_string().as_bytes())
+            .map_err(|err| {
+                KeyStorageError::new(KeyStorageErrorKind::Unspecified)
+                    .with_custom_message("stronghold client error")
+                    .with_source(err)
+            })?;
+
+        if !deleted {
+            return Err(KeyStorageError::new(KeyStorageErrorKind::KeyNotFound));
+        }
+
+        persist_changes(self.as_secret_manager(), stronghold).await?;
+
+        Ok(())
     }
 
     async fn exists(&self, key_id: &KeyId) -> KeyStorageResult<bool> {
