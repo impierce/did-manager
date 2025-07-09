@@ -6,23 +6,33 @@ use iota_sdk::IotaClientBuilder;
 pub async fn iota_clients(
     tls_config: Option<rustls::ClientConfig>,
 ) -> Result<Vec<(&'static str, IdentityClientReadOnly)>, Error> {
-    let tls_config = tls_config.unwrap();
-    let iota_testnet = IotaClientBuilder::default()
-        .tls_config(tls_config.clone())
-        .build_testnet()
-        .await?;
-    let iota_devnet = IotaClientBuilder::default()
-        .tls_config(tls_config.clone())
-        .build_devnet()
-        .await?;
-    let iota_mainnet = IotaClientBuilder::default()
-        .tls_config(tls_config)
-        .build_mainnet()
-        .await?;
+    let mut iota_testnet_client_builder = IotaClientBuilder::default();
+
+    if let Some(tls_config) = &tls_config {
+        iota_testnet_client_builder = iota_testnet_client_builder.tls_config(tls_config.clone());
+    }
+
+    let iota_testnet = iota_testnet_client_builder.build_testnet().await?;
+
+    let mut iota_devnet_client_builder = IotaClientBuilder::default();
+
+    if let Some(tls_config) = &tls_config {
+        iota_devnet_client_builder = iota_devnet_client_builder.tls_config(tls_config.clone());
+    }
+
+    let iota_devnet = iota_devnet_client_builder.build_devnet().await?;
+
+    let mut iota_mainnet_client_builder = IotaClientBuilder::default();
+
+    if let Some(tls_config) = tls_config {
+        iota_mainnet_client_builder = iota_mainnet_client_builder.tls_config(tls_config);
+    }
+
+    let iota_mainnet = iota_mainnet_client_builder.build_mainnet().await?;
 
     Ok(vec![
-        ("iota_testnet", IdentityClientReadOnly::new(iota_testnet).await?),
-        ("iota_devnet", IdentityClientReadOnly::new(iota_devnet).await?),
-        ("iota_mainnet", IdentityClientReadOnly::new(iota_mainnet).await?),
+        ("testnet", IdentityClientReadOnly::new(iota_testnet).await?),
+        ("devnet", IdentityClientReadOnly::new(iota_devnet).await?),
+        ("iota", IdentityClientReadOnly::new(iota_mainnet).await?),
     ])
 }
