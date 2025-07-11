@@ -7,6 +7,7 @@ use identity_iota::document::CoreDocument;
 use identity_iota::resolver::Resolver as IdentityResolver;
 use shared::error::ConsumerError;
 
+#[derive(Debug)]
 pub struct Resolver {
     pub(crate) resolver: IdentityResolver,
 }
