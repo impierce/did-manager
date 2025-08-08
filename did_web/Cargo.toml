@@ -16,7 +16,7 @@ iota-sdk.workspace = true
 log.workspace = true
 serde_json.workspace = true
 ssi-dids = { git = "https://github.com/impierce/spruceid-ssi.git" }
-ssi-jwk = "0.1.2"
+ssi-jwk.workspace = true
 tokio.workspace = true
 url = "2.5"
 urlencoding = "2.1"

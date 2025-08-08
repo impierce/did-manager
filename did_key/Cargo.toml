@@ -16,8 +16,8 @@ iota-sdk.workspace = true
 jsonwebkey = "0.3.5"
 log.workspace = true
 serde_json.workspace = true
-ssi-dids = "0.1.1"
-ssi-jwk = "0.1.2"
+ssi-dids.workspace = true
+ssi-jwk.workspace = true
 tokio.workspace = true
 
 [dev-dependencies]
