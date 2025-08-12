@@ -303,6 +303,7 @@ mod tests {
         )
     }
 
+    #[ignore = "This test needs to be updated to use `Devnet`"]
     #[test(tokio::test)]
     async fn cached_did_document_is_returned() {
         let mut secret_manager = SecretManager::builder()

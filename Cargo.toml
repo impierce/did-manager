@@ -59,6 +59,7 @@ test-log = "0.2"
 thiserror = "1.0"
 tokio = { version = "1.43", features = ["full"] }
 
+# TODO: Remove these patches once configuratble TLS is available in `iota-sdk`
 [patch.'https://github.com/iotaledger/iota']
 iota-sdk = { git = "https://github.com/impierce/iota", package = "iota-sdk", branch = "temp/fix" }
 move-core-types = { git = "https://github.com/impierce/iota.git", package = "move-core-types", branch = "temp/fix" }

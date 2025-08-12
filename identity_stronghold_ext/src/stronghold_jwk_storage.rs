@@ -26,7 +26,6 @@ use iota_stronghold::procedures::StrongholdProcedure;
 use iota_stronghold::Location;
 use iota_stronghold::Stronghold;
 use log::info;
-use rand::distributions::DistString as _;
 use serde_json::json;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -39,13 +38,10 @@ use crate::utils::{get_client, persist_changes};
 
 static IDENTITY_VAULT_PATH: &str = "iota_identity_vault";
 
-/// Generate a random alphanumeric string of len 32.
-pub fn random_key_id() -> KeyId {
-    KeyId::new(rand::distributions::Alphanumeric.sample_string(&mut rand::thread_rng(), 32))
-}
-
 /// Wrapper around a [`StrongholdSecretManager`] that implements the [`KeyIdStorage`](crate::KeyIdStorage)
 /// and [`JwkStorage`](crate::JwkStorage) interfaces.
+/// For the most part, this type is a copy of the [`StrongholdStorage`](https://github.com/iotaledger/identity/blob/wasm-v1.6.0-beta.2/identity_stronghold/src/storage/mod.rs#L47)
+/// type but with added `ES256` support.
 #[derive(Clone, Debug)]
 pub struct StrongholdExtStorage(Arc<SecretManager>);
 
@@ -197,7 +193,6 @@ impl JwkStorage for StrongholdExtStorage {
             JwsAlgorithm::ES256K => KeyId::new("es256k-0"),
             _ => unimplemented!("Unsupported algorithm"),
         };
-        // let key_id = random_key_id();
 
         let location = Location::generic(
             IDENTITY_VAULT_PATH.as_bytes().to_vec(),
@@ -479,7 +474,6 @@ impl JwkStorage for StrongholdExtStorage {
         Ok(signature)
     }
 
-    // TODO: implement
     async fn delete(&self, key_id: &KeyId) -> KeyStorageResult<()> {
         let stronghold = self.get_stronghold().await;
         let client = get_client(&stronghold)?;

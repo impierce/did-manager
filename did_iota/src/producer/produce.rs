@@ -9,6 +9,7 @@ use shared::{error::ProducerError, JwkStorageWrapper};
 
 use crate::producer::resolve::resolve;
 
+// TODO: Remove `Testnet` and `Shimmer`. Add `Devnet`.
 pub enum IotaMethod {
     Testnet,
     Shimmer,
@@ -27,7 +28,7 @@ pub async fn produce_did_iota(
 ) -> Result<CoreDocument, ProducerError> {
     let public_key_jwk = storage.get_public_key(key_id, alg).await?;
 
-    let _ = match iota_method {
+    match iota_method {
         IotaMethod::Testnet => {
             info!("Producing `did:iota:rms` for key_id `{key_id}` ({alg}) ...");
         }
@@ -73,6 +74,7 @@ mod tests {
     const PASSWORD: &str = "VNvRtH4tKyWwvJDpL6Vuc2aoLiKAecGQ";
     const KEY_ID: &str = "UVDxWhG2rB39FkaR7I27mHeUNrGtUgcr";
 
+    #[ignore = "This test needs to be updated to use `Devnet`"]
     #[test(tokio::test)]
     async fn produce_did_iota_testnet() {
         let stronghold_adapter = StrongholdSecretManager::builder()
