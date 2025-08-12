@@ -47,10 +47,10 @@ pub async fn produce_did_web(
     // Omit default HTTPS port
     let host_port_encoded = match port {
         443 => host.to_string(),
-        _ => urlencoding::encode(format!("{}:{}", host, port).as_str()).to_string(),
+        _ => urlencoding::encode(format!("{host}:{port}").as_str()).to_string(),
     };
 
-    let did_str = format!("did:web:{}", host_port_encoded);
+    let did_str = format!("did:web:{host_port_encoded}");
 
     info!("DID: `{did_str}`");
 
@@ -76,7 +76,7 @@ pub async fn produce_did_web(
 
     info!("Host the following json under the following url:");
     info!("================================================");
-    info!("{}", well_known);
+    info!("{well_known}");
     info!("================================================");
     info!("{}", document.to_json_pretty().unwrap());
     info!("================================================");

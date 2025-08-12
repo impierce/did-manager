@@ -47,7 +47,7 @@ pub fn random_stronghold_path() -> std::path::PathBuf {
     file.push("test_strongholds");
     file.push(rand::distributions::Alphanumeric.sample_string(&mut rand::thread_rng(), 32));
     file.set_extension("stronghold");
-    debug!("Stronghold path: {:?}", file);
+    debug!("Stronghold path: {file:?}");
     file.to_owned()
 }
 

@@ -13,13 +13,13 @@ pub async fn resolve_did_web(did: CoreDID) -> Result<CoreDocument, ConsumerError
     let (result, document, metadata) = resolver.resolve(did.as_str(), &input_metadata).await;
 
     if let Some(error) = result.error.clone() {
-        info!("Error: {:?}", error);
+        info!("Error: {error:?}");
         return Err(ConsumerError::Generic(error));
     }
 
-    debug!("Result: {:#?}", result);
-    debug!("Document: {:#?}", document);
-    debug!("Metadata: {:#?}", metadata);
+    debug!("Result: {result:#?}");
+    debug!("Document: {document:#?}");
+    debug!("Metadata: {metadata:#?}");
     CoreDocument::from_json(&document.to_json().unwrap()).map_err(|e| ConsumerError::Generic(e.to_string()))
 }
 

@@ -44,7 +44,7 @@ async fn configure_resolver(
     resolver.attach_multiple_iota_handlers(
         iota_clients(tls_config)
             .await
-            .map_err(|e| ConsumerError::Generic(format!("Failed to attach IOTA handlers: {}", e)))?,
+            .map_err(|e| ConsumerError::Generic(format!("Failed to attach IOTA handlers: {e}")))?,
     );
 
     Ok(resolver)

@@ -203,7 +203,7 @@ impl SecretManagerBuilder {
                     .await
                     .map_err(ProducerError::KeyStorageError)?
                 {
-                    debug!("Key exists: `{}`", ed25519_key_id);
+                    debug!("Key exists: `{ed25519_key_id}`");
                 } else {
                     return Err(ProducerError::KeyStorageError(SingleStructError::new(KeyNotFound)));
                 }
@@ -246,10 +246,10 @@ async fn check_key_existence(
         .await
         .map_err(ProducerError::KeyStorageError)?
     {
-        debug!("Key exists: `{}`", key_id);
+        debug!("Key exists: `{key_id}`");
         Ok(())
     } else {
-        warn!("Key does not exist: `{}`", key_id);
+        warn!("Key does not exist: `{key_id}`");
         Err(ProducerError::KeyStorageError(SingleStructError::new(KeyNotFound)))
     }
 }
