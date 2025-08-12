@@ -10,13 +10,16 @@ rust-version.workspace = true
 [dependencies]
 shared = { path = "../shared" }
 
+anyhow = "1.0"
 identity_iota.workspace = true
 identity_stronghold.workspace = true
 iota-sdk.workspace = true
 log.workspace = true
+rustls = { version = "0.23", features = ["ring"] }
 tokio.workspace = true
 
 [dev-dependencies]
+iota-sdk-legacy.workspace = true
 iota_stronghold = { version = "2.1" }
 serde_json.workspace = true
 test-log.workspace = true

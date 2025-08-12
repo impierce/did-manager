@@ -73,12 +73,12 @@ impl InMemoryCache {
 
         if entry.expires_at < Instant::now() {
             if self.entries.remove(did).is_some() {
-                info!("[-] Expired cache entry removed: `{:?}`", did)
+                info!("[-] Expired cache entry removed: `{did:?}`")
             }
             return None;
         }
 
-        info!("[!] Retrieved DID document from cache for DID `{:?}`", did);
+        info!("[!] Retrieved DID document from cache for DID `{did:?}`");
         Some(entry.document.clone())
     }
 }

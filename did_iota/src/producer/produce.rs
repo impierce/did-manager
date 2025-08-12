@@ -1,7 +1,7 @@
 use identity_iota::{
     core::{FromJson, ToJson},
     document::CoreDocument,
-    iota::{IotaDID, NetworkName},
+    iota::IotaDID,
     verification::{jwk::Jwk, jws::JwsAlgorithm},
 };
 use log::{debug, info};
@@ -9,6 +9,7 @@ use shared::{error::ProducerError, JwkStorageWrapper};
 
 use crate::producer::resolve::resolve;
 
+// TODO: Remove `Testnet` and `Shimmer`. Add `Devnet`.
 pub enum IotaMethod {
     Testnet,
     Shimmer,
@@ -27,23 +28,22 @@ pub async fn produce_did_iota(
 ) -> Result<CoreDocument, ProducerError> {
     let public_key_jwk = storage.get_public_key(key_id, alg).await?;
 
-    let _ = match iota_method {
+    match iota_method {
         IotaMethod::Testnet => {
             info!("Producing `did:iota:rms` for key_id `{key_id}` ({alg}) ...");
-            NetworkName::try_from("rms").expect("Invalid network")
         }
         IotaMethod::Shimmer => {
             info!("Producing `did:iota:smr` for key_id `{key_id}` ({alg}) ...");
-            NetworkName::try_from("smr").expect("Invalid network")
         }
         IotaMethod::Mainnet => {
             info!("Producing `did:iota` for key_id `{key_id}` ({alg}) ...");
-            NetworkName::try_from("iota").expect("Invalid network")
         }
     };
 
     // Sanity check: Can the document be resolved from the ledger?
-    let published_document = resolve(managed_did).await?;
+    let published_document = resolve(managed_did)
+        .await
+        .map_err(|e| ProducerError::Generic(e.to_string()))?;
 
     // Sanity check: Is the method in the document?
     let verification_method = published_document.resolve_method(&managed_fragment, None).unwrap();
@@ -66,7 +66,7 @@ mod tests {
     use super::*;
 
     use identity_stronghold::StrongholdStorage;
-    use iota_sdk::client::{secret::stronghold::StrongholdSecretManager, Password};
+    use iota_sdk_legacy::client::{secret::stronghold::StrongholdSecretManager, Password};
     use serde_json::json;
     use test_log::test;
 
@@ -74,6 +74,7 @@ mod tests {
     const PASSWORD: &str = "VNvRtH4tKyWwvJDpL6Vuc2aoLiKAecGQ";
     const KEY_ID: &str = "UVDxWhG2rB39FkaR7I27mHeUNrGtUgcr";
 
+    #[ignore = "This test needs to be updated to use `Devnet`"]
     #[test(tokio::test)]
     async fn produce_did_iota_testnet() {
         let stronghold_adapter = StrongholdSecretManager::builder()

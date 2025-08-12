@@ -7,13 +7,21 @@ use identity_iota::document::CoreDocument;
 use identity_iota::resolver::Resolver as IdentityResolver;
 use shared::error::ConsumerError;
 
+#[derive(Debug)]
 pub struct Resolver {
     pub(crate) resolver: IdentityResolver,
 }
 
 impl Resolver {
     pub async fn new() -> Self {
-        let resolver = configure_resolver(IdentityResolver::new())
+        let resolver = configure_resolver(IdentityResolver::new(), None)
+            .await
+            .expect("Failed to configure resolver");
+        Self { resolver }
+    }
+
+    pub async fn new_with_tls_config(tls_config: rustls::ClientConfig) -> Self {
+        let resolver = configure_resolver(IdentityResolver::new(), Some(tls_config))
             .await
             .expect("Failed to configure resolver");
         Self { resolver }
@@ -26,11 +34,18 @@ impl Resolver {
     }
 }
 
-async fn configure_resolver(mut resolver: IdentityResolver) -> Result<IdentityResolver, ConsumerError> {
+async fn configure_resolver(
+    mut resolver: IdentityResolver,
+    tls_config: Option<rustls::ClientConfig>,
+) -> Result<IdentityResolver, ConsumerError> {
     resolver.attach_handler("jwk".to_owned(), resolve_did_jwk);
     resolver.attach_handler("key".to_owned(), resolve_did_key);
     resolver.attach_handler("web".to_owned(), resolve_did_web);
-    resolver.attach_multiple_iota_handlers(iota_clients().await?);
+    resolver.attach_multiple_iota_handlers(
+        iota_clients(tls_config)
+            .await
+            .map_err(|e| ConsumerError::Generic(format!("Failed to attach IOTA handlers: {e}")))?,
+    );
 
     Ok(resolver)
 }

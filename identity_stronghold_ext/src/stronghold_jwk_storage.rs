@@ -2,10 +2,13 @@ use async_trait::async_trait;
 use identity_storage::key_storage::JwkStorage;
 use identity_storage::JwkGenOutput;
 use identity_storage::KeyId;
+use identity_storage::KeyIdStorage;
+use identity_storage::KeyIdStorageResult;
 use identity_storage::KeyStorageError;
 use identity_storage::KeyStorageErrorKind;
 use identity_storage::KeyStorageResult;
 use identity_storage::KeyType;
+use identity_storage::MethodDigest;
 use identity_verification::jwk::EcCurve;
 use identity_verification::jwk::EdCurve;
 use identity_verification::jwk::Jwk;
@@ -13,8 +16,8 @@ use identity_verification::jwk::JwkParamsEc;
 use identity_verification::jwk::JwkParamsOkp;
 use identity_verification::jws::JwsAlgorithm;
 use identity_verification::jwu;
-use iota_sdk::client::secret::stronghold::StrongholdSecretManager;
-use iota_sdk::client::secret::SecretManager;
+use iota_sdk_legacy::client::secret::stronghold::StrongholdSecretManager;
+use iota_sdk_legacy::client::secret::SecretManager;
 use iota_stronghold::procedures::Ed25519Sign;
 use iota_stronghold::procedures::GenerateKey;
 use iota_stronghold::procedures::KeyType as ProceduresKeyType;
@@ -37,6 +40,8 @@ static IDENTITY_VAULT_PATH: &str = "iota_identity_vault";
 
 /// Wrapper around a [`StrongholdSecretManager`] that implements the [`KeyIdStorage`](crate::KeyIdStorage)
 /// and [`JwkStorage`](crate::JwkStorage) interfaces.
+/// For the most part, this type is a copy of the [`StrongholdStorage`](https://github.com/iotaledger/identity/blob/wasm-v1.6.0-beta.2/identity_stronghold/src/storage/mod.rs#L47)
+/// type but with added `ES256` support.
 #[derive(Clone, Debug)]
 pub struct StrongholdExtStorage(Arc<SecretManager>);
 
@@ -469,9 +474,25 @@ impl JwkStorage for StrongholdExtStorage {
         Ok(signature)
     }
 
-    // TODO: implement
-    async fn delete(&self, _key_id: &KeyId) -> KeyStorageResult<()> {
-        unimplemented!("delete key not implemented");
+    async fn delete(&self, key_id: &KeyId) -> KeyStorageResult<()> {
+        let stronghold = self.get_stronghold().await;
+        let client = get_client(&stronghold)?;
+        let deleted = client
+            .vault(IDENTITY_VAULT_PATH.as_bytes())
+            .delete_secret(key_id.to_string().as_bytes())
+            .map_err(|err| {
+                KeyStorageError::new(KeyStorageErrorKind::Unspecified)
+                    .with_custom_message("stronghold client error")
+                    .with_source(err)
+            })?;
+
+        if !deleted {
+            return Err(KeyStorageError::new(KeyStorageErrorKind::KeyNotFound));
+        }
+
+        persist_changes(self.as_secret_manager(), stronghold).await?;
+
+        Ok(())
     }
 
     async fn exists(&self, key_id: &KeyId) -> KeyStorageResult<bool> {
@@ -487,6 +508,47 @@ impl JwkStorage for StrongholdExtStorage {
                 .with_source(err)
         })?;
         Ok(exists)
+    }
+}
+
+#[cfg_attr(not(feature = "send-sync-storage"), async_trait(?Send))]
+#[cfg_attr(feature = "send-sync-storage", async_trait)]
+impl KeyIdStorage for StrongholdExtStorage {
+    async fn insert_key_id(&self, method_digest: MethodDigest, key_id: KeyId) -> KeyIdStorageResult<()> {
+        let stronghold = self.get_stronghold().await;
+        let client = get_client(&stronghold).unwrap();
+        let store = client.store();
+        let method_digest_pack = method_digest.pack();
+        let key_exists = store.contains_key(method_digest_pack.as_ref()).unwrap();
+
+        if key_exists {
+            panic!();
+        }
+        let key_id: String = key_id.into();
+        client.store().insert(method_digest_pack, key_id.into(), None).unwrap();
+        persist_changes(self.as_secret_manager(), stronghold).await.unwrap();
+        Ok(())
+    }
+
+    async fn get_key_id(&self, method_digest: &MethodDigest) -> KeyIdStorageResult<KeyId> {
+        let stronghold = self.get_stronghold().await;
+        let store = get_client(&stronghold).unwrap().store();
+        let method_digest_pack: Vec<u8> = method_digest.pack();
+        let key_id_bytes: Vec<u8> = store.get(method_digest_pack.as_ref()).unwrap().unwrap();
+
+        let key_id: KeyId = KeyId::new(String::from_utf8(key_id_bytes).unwrap());
+        Ok(key_id)
+    }
+
+    async fn delete_key_id(&self, method_digest: &MethodDigest) -> KeyIdStorageResult<()> {
+        let stronghold = self.get_stronghold().await;
+        let store = get_client(&stronghold).unwrap().store();
+        let key: Vec<u8> = method_digest.pack();
+
+        let _ = store.delete(key.as_ref()).unwrap().unwrap();
+
+        persist_changes(self.as_secret_manager(), stronghold).await.unwrap();
+        Ok(())
     }
 }
 
@@ -514,7 +576,7 @@ impl TryFrom<&KeyType> for ExtProceduresKeyType {
 mod tests {
     use super::*;
 
-    use iota_sdk::client::Password;
+    use iota_sdk_legacy::client::Password;
     use iota_stronghold::SnapshotPath;
     use test_log::test;
 
