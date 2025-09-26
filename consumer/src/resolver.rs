@@ -91,31 +91,4 @@ mod tests {
             "did:iota:0xe4edef97da1257e83cbeb49159cfdd2da6ac971ac447f233f8439cf29376ebfe"
         );
     }
-
-    #[ignore]
-    #[test(tokio::test)]
-    async fn resolves_did_iota_smr() {
-        let resolver = Resolver::new().await;
-        let did = "did:iota:smr:0xe4edef97da1257e83cbeb49159cfdd2da6ac971ac447f233f8439cf29376ebfe";
-        let document = resolver.resolve(did).await.unwrap();
-
-        assert_eq!(
-            document.id(),
-            "did:iota:smr:0xe4edef97da1257e83cbeb49159cfdd2da6ac971ac447f233f8439cf29376ebfe"
-        );
-    }
-
-    #[ignore = "unnecessary"]
-    #[test(tokio::test)]
-    async fn resolves_did_iota_rms() {
-        // TODO: are these tests really necessary? (they're essentially just testing the resolver from identity.rs and require internet)
-        let resolver = Resolver::new().await;
-        let did = "did:iota:rms:0x29418b0a0120d10e20d0dacc78896c200ecd1cc1e3b153be482f150859a96739";
-        let document = resolver.resolve(did).await.unwrap();
-
-        assert_eq!(
-            document.id(),
-            "did:iota:rms:0x29418b0a0120d10e20d0dacc78896c200ecd1cc1e3b153be482f150859a96739"
-        );
-    }
 }
