@@ -16,10 +16,6 @@ pub enum DidMethod {
     Key,
     #[serde(rename = "did:web")]
     Web,
-    #[serde(rename = "did:iota:rms")]
-    ShimmerTestnet,
-    #[serde(rename = "did:iota:smr")]
-    Shimmer,
     #[serde(rename = "did:iota")]
     IotaMainnet,
 }
@@ -106,41 +102,6 @@ impl SecretManager {
                 let core_document = did_web::producer::produce_did_web(storage, key_id, origin, alg)
                     .await
                     .unwrap();
-                Some(core_document)
-            }
-            DidMethod::ShimmerTestnet => {
-                let core_document = did_iota::produce::produce_did_iota(
-                    &storage,
-                    key_id,
-                    did_iota::produce::IotaMethod::Testnet,
-                    alg,
-                    IotaDID::parse(self.did.as_ref().expect("externally managed `DID` not specified"))?,
-                    self.fragment
-                        .clone()
-                        .expect("externally managed `fragment` not specified")
-                        .to_string(),
-                )
-                .await
-                .unwrap();
-                if let Some(cache) = &mut self.cache {
-                    cache.insert(core_document.clone());
-                }
-                Some(core_document)
-            }
-            DidMethod::Shimmer => {
-                let core_document = did_iota::produce::produce_did_iota(
-                    &storage,
-                    key_id,
-                    did_iota::produce::IotaMethod::Shimmer,
-                    alg,
-                    IotaDID::parse(self.did.as_ref().expect("externally managed `DID` not specified"))?,
-                    self.fragment
-                        .clone()
-                        .expect("externally managed `fragment` not specified")
-                        .to_string(),
-                )
-                .await
-                .unwrap();
                 Some(core_document)
             }
             DidMethod::IotaMainnet => {
@@ -306,7 +267,7 @@ mod tests {
     #[ignore = "This test needs to be updated to use `Devnet`"]
     #[test(tokio::test)]
     async fn cached_did_document_is_returned() {
-        let mut secret_manager = SecretManager::builder()
+        let mut _secret_manager = SecretManager::builder()
             .snapshot_path("../shared/tests/res/selv.stronghold")
             .password("VNvRtH4tKyWwvJDpL6Vuc2aoLiKAecGQ")
             .with_ed25519_key("UVDxWhG2rB39FkaR7I27mHeUNrGtUgcr")
@@ -320,22 +281,22 @@ mod tests {
         // We measure the time it takes to produce the document intially
         let instant_before_with_empty_cache = Instant::now();
 
-        let document = secret_manager
-            .produce_document(DidMethod::ShimmerTestnet, None, JwsAlgorithm::EdDSA)
-            .await;
+        // let document = secret_manager
+        //     .produce_document(DidMethod::IotaDevnet, None, JwsAlgorithm::EdDSA)
+        //     .await;
 
-        assert!(document.is_ok());
+        // assert!(document.is_ok());
 
         let total_millis_uncached = instant_before_with_empty_cache.elapsed().as_millis();
 
         // We measure the time again (with cached document)
         let instant_before_with_filled_cached = Instant::now();
 
-        let document = secret_manager
-            .produce_document(DidMethod::ShimmerTestnet, None, JwsAlgorithm::EdDSA)
-            .await;
+        // let document = secret_manager
+        //     .produce_document(DidMethod::IotaDevnet, None, JwsAlgorithm::EdDSA)
+        //     .await;
 
-        assert!(document.is_ok());
+        // assert!(document.is_ok());
 
         let total_millis_cached = instant_before_with_filled_cached.elapsed().as_millis();
 
