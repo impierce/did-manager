@@ -34,6 +34,9 @@ use stronghold_ext::procs::es256::{self, Es256Procs};
 use stronghold_ext::procs::es256k::{self, Es256kProcs};
 use tokio::sync::MutexGuard;
 
+use crate::stronghold_key_type::StrongholdKeyType;
+use crate::utils::check_key_alg_compatibility;
+use crate::utils::random_key_id;
 use crate::utils::{get_client, persist_changes};
 
 static IDENTITY_VAULT_PATH: &str = "iota_identity_vault";
@@ -187,12 +190,10 @@ impl JwkStorage for StrongholdExtStorage {
 
         let keytype: ExtProceduresKeyType = ExtProceduresKeyType::try_from(&key_type)?;
 
-        let key_id: KeyId = match alg {
-            JwsAlgorithm::EdDSA => KeyId::new("ed25519-0"),
-            JwsAlgorithm::ES256 => KeyId::new("es256-0"),
-            JwsAlgorithm::ES256K => KeyId::new("es256k-0"),
-            _ => unimplemented!("Unsupported algorithm"),
-        };
+        let key_type = StrongholdKeyType::try_from(&key_type)?;
+        check_key_alg_compatibility(key_type, &alg)?;
+
+        let key_id: KeyId = random_key_id();
 
         let location = Location::generic(
             IDENTITY_VAULT_PATH.as_bytes().to_vec(),

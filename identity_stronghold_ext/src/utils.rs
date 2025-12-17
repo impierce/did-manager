@@ -1,10 +1,36 @@
-use identity_storage::{KeyStorageError, KeyStorageErrorKind, KeyStorageResult};
+use identity_storage::KeyId;
+use identity_storage::KeyStorageError;
+use identity_storage::KeyStorageErrorKind;
+use identity_storage::KeyStorageResult;
+use identity_verification::jws::JwsAlgorithm;
 use iota_sdk_legacy::client::secret::SecretManager;
-use iota_stronghold::{Client, ClientError, Stronghold};
+use iota_stronghold::Client;
+use iota_stronghold::ClientError;
+use iota_stronghold::Stronghold;
+use rand::distributions::DistString as _;
 use tokio::sync::MutexGuard;
+
+use crate::stronghold_key_type::StrongholdKeyType;
 
 // static IDENTITY_VAULT_PATH: &str = "iota_identity_vault";
 pub(crate) static IDENTITY_CLIENT_PATH: &[u8] = b"iota_identity_client";
+
+/// Generate a random alphanumeric string of len 32.
+pub fn random_key_id() -> KeyId {
+    KeyId::new(rand::distributions::Alphanumeric.sample_string(&mut rand::thread_rng(), 32))
+}
+
+/// Check that the key type can be used with the algorithm.
+pub fn check_key_alg_compatibility(key_type: StrongholdKeyType, alg: &JwsAlgorithm) -> KeyStorageResult<()> {
+    match (key_type, alg) {
+        (StrongholdKeyType::Ed25519, JwsAlgorithm::EdDSA) => Ok(()),
+        (StrongholdKeyType::P256, JwsAlgorithm::ES256) => Ok(()),
+        (key_type, alg) => Err(
+            KeyStorageError::new(identity_storage::KeyStorageErrorKind::KeyAlgorithmMismatch)
+                .with_custom_message(format!("cannot use key type `{key_type}` with algorithm `{alg}`")),
+        ),
+    }
+}
 
 pub fn get_client(stronghold: &Stronghold) -> KeyStorageResult<Client> {
     let client = stronghold.get_client(IDENTITY_CLIENT_PATH);
