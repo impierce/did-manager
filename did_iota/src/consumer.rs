@@ -2,33 +2,35 @@ use identity_iota::iota::rebased::client::IdentityClientReadOnly;
 use identity_iota::iota::rebased::Error;
 use iota_sdk::IotaClientBuilder;
 
-/// Builds clients for all IOTA networks.
+// Helper to create a builder with optional TLS config AND/OR node url
+fn client_builder_with_tls_or_url(
+    tls_config: Option<&rustls::ClientConfig>,
+    node_url: Option<&str>,
+) -> IotaClientBuilder {
+    let mut builder = IotaClientBuilder::default();
+    if let Some(url) = node_url {
+        builder = builder.ws_url(url);
+    }
+    if let Some(cfg) = tls_config {
+        builder = builder.tls_config(cfg.clone());
+    }
+    builder
+}
+
+/// Builds clients for all IOTA networks with optional node URL and/or TLS config.
 pub async fn iota_clients(
+    node_url: Option<&str>,
     tls_config: Option<rustls::ClientConfig>,
 ) -> Result<Vec<(&'static str, IdentityClientReadOnly)>, Error> {
-    let mut iota_testnet_client_builder = IotaClientBuilder::default();
-
-    if let Some(tls_config) = &tls_config {
-        iota_testnet_client_builder = iota_testnet_client_builder.tls_config(tls_config.clone());
-    }
-
-    let iota_testnet = iota_testnet_client_builder.build_testnet().await?;
-
-    let mut iota_devnet_client_builder = IotaClientBuilder::default();
-
-    if let Some(tls_config) = &tls_config {
-        iota_devnet_client_builder = iota_devnet_client_builder.tls_config(tls_config.clone());
-    }
-
-    let iota_devnet = iota_devnet_client_builder.build_devnet().await?;
-
-    let mut iota_mainnet_client_builder = IotaClientBuilder::default();
-
-    if let Some(tls_config) = tls_config {
-        iota_mainnet_client_builder = iota_mainnet_client_builder.tls_config(tls_config);
-    }
-
-    let iota_mainnet = iota_mainnet_client_builder.build_mainnet().await?;
+    let iota_testnet = client_builder_with_tls_or_url(tls_config.as_ref(), node_url)
+        .build_testnet()
+        .await?;
+    let iota_devnet = client_builder_with_tls_or_url(tls_config.as_ref(), node_url)
+        .build_devnet()
+        .await?;
+    let iota_mainnet = client_builder_with_tls_or_url(tls_config.as_ref(), node_url)
+        .build_mainnet()
+        .await?;
 
     Ok(vec![
         ("testnet", IdentityClientReadOnly::new(iota_testnet).await?),

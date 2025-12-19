@@ -4,7 +4,7 @@ use crate::consumer::iota_clients;
 
 pub async fn resolve(did: IotaDID) -> Result<CoreDocument, anyhow::Error> {
     let mut resolver = Resolver::<CoreDocument>::new();
-    resolver.attach_multiple_iota_handlers(iota_clients(None).await.unwrap());
+    resolver.attach_multiple_iota_handlers(iota_clients(None, None).await.unwrap());
     let document = resolver.resolve(&did).await?;
     Ok(document)
 }
