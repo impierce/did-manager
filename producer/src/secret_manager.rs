@@ -179,10 +179,10 @@ impl SecretManagerBuilder {
                         generate(&stronghold_ext_storage, KeyType::new("Ed25519"), JwsAlgorithm::EdDSA).await?;
                     self.ed25519_key_id = Some(ed25519_key_id);
                     let es256_key_id =
-                        generate(&stronghold_ext_storage, KeyType::new("ES256"), JwsAlgorithm::ES256).await?;
+                        generate(&stronghold_ext_storage, KeyType::new("P256"), JwsAlgorithm::ES256).await?;
                     self.es256_key_id = Some(es256_key_id);
                     let es256k_key_id =
-                        generate(&stronghold_ext_storage, KeyType::new("ES256K"), JwsAlgorithm::ES256K).await?;
+                        generate(&stronghold_ext_storage, KeyType::new("Secp256K1"), JwsAlgorithm::ES256K).await?;
                     self.es256k_key_id = Some(es256k_key_id);
                 }
             }

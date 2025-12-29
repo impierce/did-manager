@@ -212,7 +212,7 @@ impl JwkStorage for StrongholdExtStorage {
                         .with_source(err)
                 })?;
             }
-            ExtProceduresKeyType::ES256 => {
+            ExtProceduresKeyType::P256 => {
                 let generate_key_procedure = Es256Procs::GenerateKey(es256::GenerateKey {
                     output: location.clone(),
                 });
@@ -222,7 +222,7 @@ impl JwkStorage for StrongholdExtStorage {
                         .with_source(err)
                 })?;
             }
-            ExtProceduresKeyType::ES256K => {
+            ExtProceduresKeyType::Secp256K1 => {
                 let generate_key_procedure = Es256kProcs::GenerateKey(es256k::GenerateKey {
                     output: location.clone(),
                 });
@@ -254,7 +254,7 @@ impl JwkStorage for StrongholdExtStorage {
                 jwk.set_kid(jwk.thumbprint_sha256_b64());
                 jwk
             }
-            ExtProceduresKeyType::ES256 => {
+            ExtProceduresKeyType::P256 => {
                 let public_key_procedure = Es256Procs::PublicKey(es256::PublicKey {
                     private_key: location.clone(),
                 });
@@ -292,7 +292,7 @@ impl JwkStorage for StrongholdExtStorage {
                 jwk.set_kid(jwk.thumbprint_sha256_b64());
                 jwk
             }
-            ExtProceduresKeyType::ES256K => {
+            ExtProceduresKeyType::Secp256K1 => {
                 let public_key_procedure = Es256kProcs::PublicKey(es256k::PublicKey {
                     private_key: location.clone(),
                 });
@@ -556,8 +556,8 @@ impl KeyIdStorage for StrongholdExtStorage {
 #[derive(Debug, Clone)]
 enum ExtProceduresKeyType {
     Ed25519,
-    ES256,
-    ES256K,
+    P256,
+    Secp256K1,
 }
 
 impl TryFrom<&KeyType> for ExtProceduresKeyType {
@@ -566,8 +566,8 @@ impl TryFrom<&KeyType> for ExtProceduresKeyType {
     fn try_from(value: &KeyType) -> Result<Self, Self::Error> {
         match value.as_str() {
             "Ed25519" => Ok(ExtProceduresKeyType::Ed25519),
-            "ES256" => Ok(ExtProceduresKeyType::ES256),
-            "ES256K" => Ok(ExtProceduresKeyType::ES256K),
+            "P256" => Ok(ExtProceduresKeyType::P256),
+            "Secp256K1" => Ok(ExtProceduresKeyType::Secp256K1),
             _ => Err(KeyStorageError::new(KeyStorageErrorKind::UnsupportedKeyType)),
         }
     }
