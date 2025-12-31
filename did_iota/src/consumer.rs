@@ -17,7 +17,7 @@ fn client_builder_with_tls_or_url(
     builder
 }
 
-/// Builds clients for all IOTA networks with optional node URL and/or TLS config.
+/// Builds clients for all IOTA networks with optional node URL and/or TLS config, only returns an error if it fails to build, incorrect tls_config or node_url isn't caught before trying to build.
 pub async fn iota_clients(
     node_url: Option<&str>,
     tls_config: Option<rustls::ClientConfig>,
