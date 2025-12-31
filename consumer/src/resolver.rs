@@ -13,22 +13,8 @@ pub struct Resolver {
 }
 
 impl Resolver {
-    pub async fn new() -> Self {
-        let resolver = configure_resolver(IdentityResolver::new(), None, None)
-            .await
-            .expect("Failed to configure resolver");
-        Self { resolver }
-    }
-
-    pub async fn new_with_node_url(node_url: &str) -> Self {
-        let resolver = configure_resolver(IdentityResolver::new(), Some(node_url), None)
-            .await
-            .expect("Failed to configure resolver");
-        Self { resolver }
-    }
-
-    pub async fn new_with_tls_config(tls_config: rustls::ClientConfig) -> Self {
-        let resolver = configure_resolver(IdentityResolver::new(), None, Some(tls_config))
+    pub async fn new(node_url: Option<&str>, tls_config: Option<rustls::ClientConfig>) -> Self {
+        let resolver = configure_resolver(IdentityResolver::new(), node_url, tls_config)
             .await
             .expect("Failed to configure resolver");
         Self { resolver }
@@ -67,7 +53,7 @@ mod tests {
 
     #[test(tokio::test)]
     async fn resolve_all_supported_methods() {
-        let resolver = Resolver::new().await;
+        let resolver = Resolver::new(None, None).await;
         let did = "did:key:z6Mkk7yqnGF3YwTrLpqrW6PGsKci7dNqh1CjnvMbzrMerSeL";
         let document = resolver.resolve(did).await.unwrap();
 
@@ -81,7 +67,7 @@ mod tests {
 
     #[test(tokio::test)]
     async fn fails_on_unsupported_method() {
-        let resolver = Resolver::new().await;
+        let resolver = Resolver::new(None, None).await;
         let did = "did:foo:bar";
         let result = resolver.resolve(did).await;
 
@@ -91,7 +77,7 @@ mod tests {
     #[ignore]
     #[test(tokio::test)]
     async fn resolves_did_iota() {
-        let resolver = Resolver::new().await;
+        let resolver = Resolver::new(None, None).await;
         let did = "did:iota:0xe4edef97da1257e83cbeb49159cfdd2da6ac971ac447f233f8439cf29376ebfe";
         let document = resolver.resolve(did).await.unwrap();
 
