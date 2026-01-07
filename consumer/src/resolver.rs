@@ -1,4 +1,4 @@
-use did_iota::consumer::iota_clients;
+use did_iota::consumer::{iota_clients, NodeUrls};
 use did_jwk::consumer::resolve_did_jwk;
 use did_key::consumer::resolve_did_key;
 use did_web::consumer::resolve_did_web;
@@ -13,8 +13,12 @@ pub struct Resolver {
 }
 
 impl Resolver {
-    pub async fn new(node_url: Option<&str>, tls_config: Option<rustls::ClientConfig>) -> Self {
-        let resolver = configure_resolver(IdentityResolver::new(), node_url, tls_config)
+    pub async fn new(
+        node_urls: Option<NodeUrls>,
+        tls_config: Option<rustls::ClientConfig>,
+        set_user_password: Option<(&str, &str)>,
+    ) -> Self {
+        let resolver = configure_resolver(IdentityResolver::new(), node_urls, tls_config, set_user_password)
             .await
             .expect("Failed to configure resolver");
         Self { resolver }
@@ -29,15 +33,16 @@ impl Resolver {
 
 async fn configure_resolver(
     mut resolver: IdentityResolver,
-    node_url: Option<&str>,
+    node_urls: Option<NodeUrls>,
     tls_config: Option<rustls::ClientConfig>,
+    set_user_password: Option<(&str, &str)>,
 ) -> Result<IdentityResolver, ConsumerError> {
     resolver.attach_handler("jwk".to_owned(), resolve_did_jwk);
     resolver.attach_handler("key".to_owned(), resolve_did_key);
     resolver.attach_handler("web".to_owned(), resolve_did_web);
 
     resolver.attach_multiple_iota_handlers(
-        iota_clients(node_url, tls_config)
+        iota_clients(node_urls, tls_config, set_user_password)
             .await
             .map_err(|e| ConsumerError::Generic(format!("Failed to attach IOTA handlers: {e}")))?,
     );
@@ -53,7 +58,7 @@ mod tests {
 
     #[test(tokio::test)]
     async fn resolve_all_supported_methods() {
-        let resolver = Resolver::new(None, None).await;
+        let resolver = Resolver::new(None, None, None).await;
         let did = "did:key:z6Mkk7yqnGF3YwTrLpqrW6PGsKci7dNqh1CjnvMbzrMerSeL";
         let document = resolver.resolve(did).await.unwrap();
 
@@ -67,7 +72,7 @@ mod tests {
 
     #[test(tokio::test)]
     async fn fails_on_unsupported_method() {
-        let resolver = Resolver::new(None, None).await;
+        let resolver = Resolver::new(None, None, None).await;
         let did = "did:foo:bar";
         let result = resolver.resolve(did).await;
 
@@ -77,7 +82,7 @@ mod tests {
     #[ignore]
     #[test(tokio::test)]
     async fn resolves_did_iota() {
-        let resolver = Resolver::new(None, None).await;
+        let resolver = Resolver::new(None, None, None).await;
         let did = "did:iota:0xe4edef97da1257e83cbeb49159cfdd2da6ac971ac447f233f8439cf29376ebfe";
         let document = resolver.resolve(did).await.unwrap();
 
