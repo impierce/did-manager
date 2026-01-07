@@ -2,7 +2,8 @@ use identity_iota::iota::rebased::client::IdentityClientReadOnly;
 use identity_iota::iota::rebased::Error;
 use iota_sdk::{IotaClient, IotaClientBuilder};
 
-/// Builds clients for all IOTA networks with optional node URL and/or TLS confiuration, only returns an error if it fails to build, incorrect tls_config or node_url isn't caught before trying to build.
+/// Builds clients for all IOTA networks with optional node URL, TLS confiuration and basic authentication (username, password).
+/// Only returns an error if it fails to build, incorrect tls_config or node_urls aren't caught but simply defaults.
 pub async fn iota_clients(
     node_urls: Option<NodeUrls>,
     tls_config: Option<rustls::ClientConfig>,
