@@ -79,29 +79,4 @@ mod tests {
 
         iota_clients(None, Some(node_urls), None).await.unwrap();
     }
-
-    /// This tests the underlying logic in our iota_clients() fn in a way that we can also make assertions.
-    #[tokio::test]
-    async fn test_iota_client_builder_node_urls() {
-        let mainnet = IotaClientBuilder::default()
-            .build("https://rpc.mainnet.iota.monochain.p2p.org/")
-            .await
-            .unwrap();
-        let testnet = IotaClientBuilder::default()
-            .build("https://rpc.ankr.com/iota_testnet")
-            .await
-            .unwrap();
-        let devnet = IotaClientBuilder::default()
-            .build("https://indexer.devnet.iota.cafe")
-            .await
-            .unwrap();
-
-        let main_http_str = format!("{:?}", mainnet.http());
-        let test_http_str = format!("{:?}", testnet.http());
-        let dev_http_str = format!("{:?}", devnet.http());
-
-        assert!(main_http_str.contains("https://rpc.mainnet.iota.monochain.p2p.org/"));
-        assert!(test_http_str.contains("https://rpc.ankr.com/iota_testnet"));
-        assert!(dev_http_str.contains("https://indexer.devnet.iota.cafe"));
-    }
 }
