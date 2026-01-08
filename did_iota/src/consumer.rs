@@ -2,8 +2,14 @@ use identity_iota::iota::rebased::client::IdentityClientReadOnly;
 use identity_iota::iota::rebased::Error;
 use iota_sdk::{IotaClient, IotaClientBuilder};
 
-/// Builds clients for all IOTA networks with optional node URL, TLS confiuration and basic authentication (username, password).
-/// Only returns an error if it fails to build, incorrect tls_config or node_urls aren't caught but simply defaults.
+/// Builds clients for all IOTA networks.
+///
+/// Parameters:
+/// - TLS configuration (optional)
+/// - Node URLs (optional)
+/// - Basic Authentication (optional)
+///
+/// This function only returns an error if it fails to build. The provided values are not validated.
 pub async fn iota_clients(
     tls_config: Option<rustls::ClientConfig>,
     node_urls: Option<NodeUrls>,
@@ -38,9 +44,6 @@ pub async fn iota_clients(
     ])
 }
 
-// Helpers
-
-// Helper to create a builder with optional TLS config and basic_auth configuration
 fn client_builder(tls_config: Option<&rustls::ClientConfig>, basic_auth: Option<(&str, &str)>) -> IotaClientBuilder {
     let mut builder = IotaClientBuilder::default();
     if let Some(cfg) = tls_config {
@@ -52,8 +55,6 @@ fn client_builder(tls_config: Option<&rustls::ClientConfig>, basic_auth: Option<
     builder
 }
 
-/// This struct is to strictly define what is passed as an argument to fn iota_clients()
-/// If None is passed the IOTA default node for that net will be used.
 #[derive(Debug, Clone)]
 pub struct NodeUrls {
     pub mainnet: Option<String>,
