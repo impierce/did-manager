@@ -66,17 +66,16 @@ pub struct NodeUrls {
 mod tests {
     use super::*;
 
-    /// This is a very basic test which simply checks wether the function completes without error.
-    /// All resulting structs are private in the identity.rs crates, therefore no assertions can be made.
-    /// See the second test for a more in-depth test.
     #[tokio::test]
-    async fn test_iota_clients_node_urls() {
+    async fn test_iota_clients_custom_node_config() {
         let node_urls = NodeUrls {
             mainnet: Some("https://rpc.mainnet.iota.monochain.p2p.org/".to_string()),
-            testnet: Some("https://rpc.ankr.com/iota_testnet".to_string()),
-            devnet: Some("https://indexer.devnet.iota.cafe".to_string()),
+            testnet: None,
+            devnet: None,
         };
 
-        iota_clients(None, Some(node_urls), None).await.unwrap();
+        let basic_auth = Some(("username", "password"));
+
+        let _ = iota_clients(None, Some(node_urls), basic_auth).await.unwrap();
     }
 }
