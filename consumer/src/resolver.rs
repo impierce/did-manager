@@ -21,11 +21,11 @@ impl Resolver {
     }
 
     pub async fn new_with_options(
-        node_urls: Option<NodeUrls>,
         tls_config: Option<rustls::ClientConfig>,
+        node_urls: Option<NodeUrls>,
         basic_auth: Option<(&str, &str)>,
     ) -> Self {
-        let resolver = configure_resolver(IdentityResolver::new(), node_urls, tls_config, basic_auth)
+        let resolver = configure_resolver(IdentityResolver::new(), tls_config, node_urls, basic_auth)
             .await
             .expect("Failed to configure resolver");
         Self { resolver }
@@ -40,8 +40,8 @@ impl Resolver {
 
 async fn configure_resolver(
     mut resolver: IdentityResolver,
-    node_urls: Option<NodeUrls>,
     tls_config: Option<rustls::ClientConfig>,
+    node_urls: Option<NodeUrls>,
     basic_auth: Option<(&str, &str)>,
 ) -> Result<IdentityResolver, ConsumerError> {
     resolver.attach_handler("jwk".to_owned(), resolve_did_jwk);
@@ -49,7 +49,7 @@ async fn configure_resolver(
     resolver.attach_handler("web".to_owned(), resolve_did_web);
 
     resolver.attach_multiple_iota_handlers(
-        iota_clients(node_urls, tls_config, basic_auth)
+        iota_clients(tls_config, node_urls, basic_auth)
             .await
             .map_err(|e| ConsumerError::Generic(format!("Failed to attach IOTA handlers: {e}")))?,
     );

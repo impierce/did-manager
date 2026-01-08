@@ -5,8 +5,8 @@ use iota_sdk::{IotaClient, IotaClientBuilder};
 /// Builds clients for all IOTA networks with optional node URL, TLS confiuration and basic authentication (username, password).
 /// Only returns an error if it fails to build, incorrect tls_config or node_urls aren't caught but simply defaults.
 pub async fn iota_clients(
-    node_urls: Option<NodeUrls>,
     tls_config: Option<rustls::ClientConfig>,
+    node_urls: Option<NodeUrls>,
     basic_auth: Option<(&str, &str)>,
 ) -> Result<Vec<(&'static str, IdentityClientReadOnly)>, Error> {
     let iota_mainnet: IotaClient;
@@ -76,7 +76,7 @@ mod tests {
             testnet: Some("https://rpc.ankr.com/iota_testnet".to_string()),
         };
 
-        iota_clients(Some(node_urls), None, None).await.unwrap();
+        iota_clients(None, Some(node_urls), None).await.unwrap();
     }
 
     /// This tests the underlying logic in our iota_clients() fn in a way that we can also make assertions.
