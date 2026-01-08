@@ -7,58 +7,28 @@ use iota_sdk::{IotaClient, IotaClientBuilder};
 pub async fn iota_clients(
     node_urls: Option<NodeUrls>,
     tls_config: Option<rustls::ClientConfig>,
-    set_user_password: Option<(&str, &str)>,
+    basic_auth: Option<(&str, &str)>,
 ) -> Result<Vec<(&'static str, IdentityClientReadOnly)>, Error> {
     let iota_mainnet: IotaClient;
     let iota_devnet: IotaClient;
     let iota_testnet: IotaClient;
     if let Some(urls) = &node_urls {
         iota_mainnet = match &urls.mainnet {
-            Some(url) => {
-                client_builder(tls_config.as_ref(), set_user_password)
-                    .build(url)
-                    .await?
-            }
-            None => {
-                client_builder(tls_config.as_ref(), set_user_password)
-                    .build_mainnet()
-                    .await?
-            }
+            Some(url) => client_builder(tls_config.as_ref(), basic_auth).build(url).await?,
+            None => client_builder(tls_config.as_ref(), basic_auth).build_mainnet().await?,
         };
         iota_devnet = match &urls.devnet {
-            Some(url) => {
-                client_builder(tls_config.as_ref(), set_user_password)
-                    .build(url)
-                    .await?
-            }
-            None => {
-                client_builder(tls_config.as_ref(), set_user_password)
-                    .build_devnet()
-                    .await?
-            }
+            Some(url) => client_builder(tls_config.as_ref(), basic_auth).build(url).await?,
+            None => client_builder(tls_config.as_ref(), basic_auth).build_devnet().await?,
         };
         iota_testnet = match &urls.testnet {
-            Some(url) => {
-                client_builder(tls_config.as_ref(), set_user_password)
-                    .build(url)
-                    .await?
-            }
-            None => {
-                client_builder(tls_config.as_ref(), set_user_password)
-                    .build_testnet()
-                    .await?
-            }
+            Some(url) => client_builder(tls_config.as_ref(), basic_auth).build(url).await?,
+            None => client_builder(tls_config.as_ref(), basic_auth).build_testnet().await?,
         };
     } else {
-        iota_mainnet = client_builder(tls_config.as_ref(), set_user_password)
-            .build_mainnet()
-            .await?;
-        iota_devnet = client_builder(tls_config.as_ref(), set_user_password)
-            .build_devnet()
-            .await?;
-        iota_testnet = client_builder(tls_config.as_ref(), set_user_password)
-            .build_testnet()
-            .await?;
+        iota_mainnet = client_builder(tls_config.as_ref(), basic_auth).build_mainnet().await?;
+        iota_devnet = client_builder(tls_config.as_ref(), basic_auth).build_devnet().await?;
+        iota_testnet = client_builder(tls_config.as_ref(), basic_auth).build_testnet().await?;
     }
 
     Ok(vec![
@@ -71,15 +41,12 @@ pub async fn iota_clients(
 // Helpers
 
 // Helper to create a builder with optional TLS config and basic_auth configuration
-fn client_builder(
-    tls_config: Option<&rustls::ClientConfig>,
-    set_user_password: Option<(&str, &str)>,
-) -> IotaClientBuilder {
+fn client_builder(tls_config: Option<&rustls::ClientConfig>, basic_auth: Option<(&str, &str)>) -> IotaClientBuilder {
     let mut builder = IotaClientBuilder::default();
     if let Some(cfg) = tls_config {
         builder = builder.tls_config(cfg.clone());
     }
-    if let Some((username, password)) = set_user_password {
+    if let Some((username, password)) = basic_auth {
         builder = builder.basic_auth(username, password);
     }
     builder
