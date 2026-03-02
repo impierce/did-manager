@@ -1,58 +1,48 @@
 use identity_iota::iota::rebased::client::IdentityClientReadOnly;
-use identity_iota::iota::rebased::Error;
-use iota_sdk::{IotaClient, IotaClientBuilder};
+use iota_sdk::IotaClientBuilder;
 
-/// Builds clients for all IOTA networks.
+/// Builds client for the specified IOTA network with optional TLS configuration, node URLs, and basic authentication.
 ///
 /// Parameters:
 /// - TLS configuration (optional)
-/// - Node URLs (optional)
+/// - Node URL (optional)
 /// - Basic Authentication (optional)
 ///
-/// This function only returns an error if it fails to build. The provided values are not validated.
-pub async fn iota_clients(
+/// This function returns an `IdentityClientReadOnly` instance if the client is successfully built, or `None` if there was an error during initialization.
+pub async fn get_iota_client(
+    network: &str,
     tls_config: Option<rustls::ClientConfig>,
-    node_urls: Option<NodeUrls>,
+    node_url: Option<String>,
     basic_auth: Option<(&str, &str)>,
-) -> Result<Vec<(&'static str, IdentityClientReadOnly)>, Error> {
-    let iota_mainnet: IotaClient;
-    let iota_testnet: IotaClient;
-    let iota_devnet: IotaClient;
-    if let Some(urls) = &node_urls {
-        iota_mainnet = match &urls.mainnet {
-            Some(url) => client_builder(tls_config.as_ref(), basic_auth).build(url).await?,
-            None => client_builder(tls_config.as_ref(), basic_auth).build_mainnet().await?,
-        };
-        iota_testnet = match &urls.testnet {
-            Some(url) => client_builder(tls_config.as_ref(), basic_auth).build(url).await?,
-            None => client_builder(tls_config.as_ref(), basic_auth).build_testnet().await?,
-        };
-        iota_devnet = match &urls.devnet {
-            Some(url) => client_builder(tls_config.as_ref(), basic_auth).build(url).await?,
-            None => client_builder(tls_config.as_ref(), basic_auth).build_devnet().await?,
-        };
-    } else {
-        iota_mainnet = client_builder(tls_config.as_ref(), basic_auth).build_mainnet().await?;
-        iota_testnet = client_builder(tls_config.as_ref(), basic_auth).build_testnet().await?;
-        iota_devnet = client_builder(tls_config.as_ref(), basic_auth).build_devnet().await?;
-    }
-
-    Ok(vec![
-        ("iota", IdentityClientReadOnly::new(iota_mainnet).await?),
-        ("testnet", IdentityClientReadOnly::new(iota_testnet).await?),
-        ("devnet", IdentityClientReadOnly::new(iota_devnet).await?),
-    ])
-}
-
-fn client_builder(tls_config: Option<&rustls::ClientConfig>, basic_auth: Option<(&str, &str)>) -> IotaClientBuilder {
+) -> Option<IdentityClientReadOnly> {
     let mut builder = IotaClientBuilder::default();
+
     if let Some(cfg) = tls_config {
-        builder = builder.tls_config(cfg.clone());
+        builder = builder.tls_config(cfg);
     }
     if let Some((username, password)) = basic_auth {
         builder = builder.basic_auth(username, password);
     }
-    builder
+
+    let iota_client = if let Some(node_url) = &node_url {
+        builder.build(node_url).await.ok()?
+    } else {
+        match network {
+            "iota" => builder.build_mainnet().await.ok()?,
+            "testnet" => builder.build_testnet().await.ok()?,
+            "devnet" => builder.build_devnet().await.ok()?,
+            _ => return None,
+        }
+    };
+
+    IdentityClientReadOnly::new(iota_client).await.ok()
+}
+
+#[derive(Debug, Default)]
+pub struct IotaClients {
+    pub mainnet: bool,
+    pub testnet: bool,
+    pub devnet: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -68,14 +58,15 @@ mod tests {
 
     #[tokio::test]
     async fn test_iota_clients_custom_node_config() {
-        let node_urls = NodeUrls {
-            mainnet: Some("https://rpc.mainnet.iota.monochain.p2p.org/".to_string()),
-            testnet: None,
-            devnet: None,
-        };
-
         let basic_auth = Some(("username", "password"));
 
-        let _ = iota_clients(None, Some(node_urls), basic_auth).await.unwrap();
+        let _ = get_iota_client(
+            "iota",
+            None,
+            Some("https://rpc.mainnet.iota.monochain.p2p.org/".to_string()),
+            basic_auth,
+        )
+        .await
+        .unwrap();
     }
 }

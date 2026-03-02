@@ -1,10 +1,18 @@
-use identity_iota::{document::CoreDocument, iota::IotaDID, resolver::Resolver};
+use identity_iota::{did::DID as _, document::CoreDocument, iota::IotaDID, resolver::Resolver};
 
-use crate::consumer::iota_clients;
+use crate::consumer::get_iota_client;
 
 pub async fn resolve(did: IotaDID) -> Result<CoreDocument, anyhow::Error> {
     let mut resolver = Resolver::<CoreDocument>::new();
-    resolver.attach_multiple_iota_handlers(iota_clients(None, None, None).await.unwrap());
+
+    let authority = did.authority();
+
+    let iota_client = get_iota_client(authority, None, None, None)
+        .await
+        .ok_or_else(|| anyhow::anyhow!("Failed to get IOTA client for authority `{authority}`"))?;
+
+    resolver.attach_iota_handler(iota_client);
+
     let document = resolver.resolve(&did).await?;
     Ok(document)
 }
