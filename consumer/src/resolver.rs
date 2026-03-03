@@ -9,14 +9,14 @@ use shared::error::ConsumerError;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct ResolverConfig {
     tls_config: Option<rustls::ClientConfig>,
     node_urls: Option<NodeUrls>,
     basic_auth: Option<(String, String)>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Resolver {
     // We store the config so that we can initialize the resolver lazily
     config: ResolverConfig,
@@ -28,15 +28,7 @@ pub struct Resolver {
 
 impl Resolver {
     pub fn new() -> Self {
-        Self {
-            config: ResolverConfig {
-                tls_config: None,
-                node_urls: None,
-                basic_auth: None,
-            },
-            resolver: RwLock::new(None),
-            iota_clients: RwLock::new(IotaClients::default()),
-        }
+        Self::default()
     }
 
     pub fn new_with_options(
