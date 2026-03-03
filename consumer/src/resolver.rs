@@ -179,7 +179,49 @@ mod tests {
             "did:key:z6Mkk7yqnGF3YwTrLpqrW6PGsKci7dNqh1CjnvMbzrMerSeL"
         );
 
+        let did = "did:jwk:eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJTRklDVzczSEN3Sm9CVENpQUNGMUUzV21yaDVMRTB4al9HMUpWU2VYUy1NIiwia3R5IjoiT0tQIiwieCI6IjZCeG92MWxoSFltQVVHMWNibDM1eUcyYzZtcFpsOVdkeXNqSUhhSjdhODgifQ";
+        let document = resolver.resolve(did).await.unwrap();
+
+        assert_eq!(document.id().to_string(), did);
+
         // TODO: add more ...
+    }
+
+    #[test(tokio::test)]
+    async fn concurrent_resolutions_do_not_deadlock() {
+        let resolver = Arc::new(Resolver::new());
+        let did = "did:key:z6Mkk7yqnGF3YwTrLpqrW6PGsKci7dNqh1CjnvMbzrMerSeL";
+
+        let mut handles = vec![];
+        for _ in 0..50 {
+            let resolver_clone = resolver.clone();
+            handles.push(tokio::spawn(async move { resolver_clone.resolve(did).await }));
+        }
+
+        for handle in handles {
+            let result = handle.await.unwrap();
+            assert!(result.is_ok(), "Concurrent resolution failed: {:?}", result.err());
+        }
+    }
+
+    #[test(tokio::test)]
+    async fn iota_failure_does_not_break_basic_resolver() {
+        // This test simulates a scenario where IOTA resolution might fail (due to network or config),
+        // but validates that basic methods (key/jwk) continue to work.
+        let resolver = Resolver::new();
+
+        // 1. Resolve basic DID successfully
+        let key_did = "did:key:z6Mkk7yqnGF3YwTrLpqrW6PGsKci7dNqh1CjnvMbzrMerSeL";
+        assert!(resolver.resolve(key_did).await.is_ok());
+
+        // 2. Attempt invalid IOTA network resolution
+        // Note: Unless we have a real network, this will likely fail or timeout.
+        // We just want to ensure it doesn't panic or poison the resolver for future calls.
+        let iota_did = "did:iota:testnet:0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
+        let _ = resolver.resolve(iota_did).await; // We ignore the result, potentially Err
+
+        // 3. Resolve basic DID again - should still succeed
+        assert!(resolver.resolve(key_did).await.is_ok());
     }
 
     #[test(tokio::test)]
