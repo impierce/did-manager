@@ -119,6 +119,10 @@ impl Resolver {
             *resolver_guard = Some(new_arc.clone());
             resolver_arc = new_arc;
 
+            // TODO: We should optimize this by making sure prior attached handlers are preserved when we reinitialize the resolver with a new client.
+            // Reset the initialization flags for all networks, since we are reinitializing the resolver with a new client.
+            *clients_guard = IotaClients::default();
+
             // Update flags
             match network_name {
                 "testnet" => clients_guard.testnet = true,
