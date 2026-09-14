@@ -47,9 +47,13 @@ impl JwkStorageWrapper {
                         .get_es256k_public_key(&identity_storage::KeyId::new(key_id))
                         .await
                         .unwrap()),
+                    JwsAlgorithm::RS256 => json!(stronghold_ext_storage
+                        .get_rs256_public_key(&identity_storage::KeyId::new(key_id))
+                        .await
+                        .unwrap()),
                     // TODO: throw ProducerError
                     _ => unimplemented!(
-                        "KeyType `{alg}` not supported! JwkStorageWrapper `Stronghold` only supports [`EdDSA`, `ES256`, `ES256K`]"
+                        "KeyType `{alg}` not supported! JwkStorageWrapper `Stronghold` only supports [`EdDSA`, `ES256`, `ES256K`, `RS256`]"
                     ),
                 }
             }

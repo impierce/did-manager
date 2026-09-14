@@ -60,6 +60,13 @@ impl SecretManager {
                     .ok_or(ProducerError::MissingKeyIdError("No ES256K key present".to_string()))?
                     .as_str(),
             ),
+            JwsAlgorithm::RS256 => (
+                JwkStorageWrapper::StrongholdExt(self.stronghold_ext_storage.clone()),
+                self.rs256_key_id
+                    .as_ref()
+                    .ok_or(ProducerError::MissingKeyIdError("No RS256 key present".to_string()))?
+                    .as_str(),
+            ),
             _ => return Err(ProducerError::Generic("Unsupported JWS algorithm".to_string())),
         };
 
@@ -158,6 +165,48 @@ mod tests {
             .await;
 
         assert!(document.is_ok())
+    }
+
+    /// Covers the whole chain for RSA: key generation, public key retrieval and the conversion
+    /// into a `did:jwk` document.
+    #[test(tokio::test)]
+    async fn create_rs256_document_from_generated_stronghold() {
+        let mut secret_manager = SecretManager::builder()
+            .snapshot_path(random_stronghold_path().to_str().unwrap())
+            .password(PASSWORD)
+            .build()
+            .await
+            .unwrap();
+
+        let document = secret_manager
+            .produce_document(DidMethod::Jwk, None, JwsAlgorithm::RS256)
+            .await
+            .unwrap();
+
+        let jwk = document
+            .verification_method()
+            .first()
+            .unwrap()
+            .data()
+            .public_key_jwk()
+            .unwrap()
+            .to_json_value()
+            .unwrap();
+
+        // The RSA key is random, so only the key's shape can be asserted.
+        assert_eq!(jwk["kty"], json!("RSA"));
+        assert_eq!(jwk["alg"], json!("RS256"));
+        assert_eq!(jwk["e"], json!("AQAB"));
+        // 2048 bit modulus, base64url encoded without padding.
+        assert_eq!(jwk["n"].as_str().unwrap().len(), 342);
+
+        // The same key also produces a `did:key` document.
+        let document = secret_manager
+            .produce_document(DidMethod::Key, None, JwsAlgorithm::RS256)
+            .await
+            .unwrap();
+
+        assert!(document.id().to_string().starts_with("did:key:z4MX"));
     }
 
     #[test(tokio::test)]

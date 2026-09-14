@@ -24,6 +24,23 @@ impl SecretManager {
                     .expect("failed to sign data");
                 Ok(signature)
             }
+            JwsAlgorithm::RS256 => {
+                let key_id = self
+                    .rs256_key_id
+                    .as_ref()
+                    .ok_or(ProducerError::MissingKeyIdError("rs256".to_string()))?;
+                let public_key = self
+                    .stronghold_ext_storage
+                    .get_rs256_public_key(key_id)
+                    .await
+                    .expect("failed to get public key");
+                let signature = self
+                    .stronghold_ext_storage
+                    .sign(key_id, data, &public_key)
+                    .await
+                    .expect("failed to sign data");
+                Ok(signature)
+            }
             JwsAlgorithm::EdDSA => {
                 let key_id = self
                     .ed25519_key_id

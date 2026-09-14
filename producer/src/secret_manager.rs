@@ -16,6 +16,7 @@ use crate::cache::InMemoryCache;
 const DEFAULT_KEY_ID_ED25519: &str = "ed25519-0";
 const DEFAULT_KEY_ID_ES256: &str = "es256-0";
 const DEFAULT_KEY_ID_ES256K: &str = "es256k-0";
+const DEFAULT_KEY_ID_RS256: &str = "rs256-0";
 
 /// Generates or loads a Stronghold and uses the specified `KeyId` for all cryptographic operations
 #[derive(Debug)]
@@ -25,6 +26,7 @@ pub struct SecretManager {
     pub ed25519_key_id: Option<KeyId>,
     pub es256_key_id: Option<KeyId>,
     pub es256k_key_id: Option<KeyId>,
+    pub rs256_key_id: Option<KeyId>,
     pub did: Option<String>,      // TODO(selv): externally managed DID (see did_iota/README.md)
     pub fragment: Option<String>, // TODO(selv): externally managed fragment (see did_iota/README.md)
     pub cache: Option<InMemoryCache>,
@@ -32,7 +34,7 @@ pub struct SecretManager {
 
 /// Currently, there's two implementations of `StrongholdStorage`:
 /// - "default": unaltered implementation from `identity.rs`
-/// - "extended": custom procedures that allow additional key types (such as `ES256` and `ES256K`)
+/// - "extended": custom procedures that allow additional key types (such as `ES256`, `ES256K` and `RS256`)
 #[derive(Clone, Debug, Default, PartialEq)]
 pub enum StrongholdStorageType {
     Default,
@@ -48,6 +50,7 @@ pub struct SecretManagerBuilder {
     ed25519_key_id: Option<KeyId>,
     es256_key_id: Option<KeyId>,
     es256k_key_id: Option<KeyId>,
+    rs256_key_id: Option<KeyId>,
     did: Option<String>,
     fragment: Option<String>,
     cache: Option<InMemoryCache>,
@@ -82,6 +85,12 @@ impl SecretManagerBuilder {
         self
     }
 
+    pub fn with_rs256_key(mut self, key_id: &str) -> Self {
+        self.storage_type = StrongholdStorageType::Extended;
+        self.rs256_key_id = Some(KeyId::new(key_id));
+        self
+    }
+
     pub fn with_did(mut self, did: &str) -> Self {
         self.did = Some(did.to_owned());
         self
@@ -98,6 +107,9 @@ impl SecretManagerBuilder {
     }
 
     pub async fn build(mut self) -> Result<SecretManager, ProducerError> {
+        // Whether the RS256 key was asked for explicitly, as opposed to being filled in below.
+        let rs256_key_requested = self.rs256_key_id.is_some();
+
         let snapshot_path = match self.snapshot_path {
             Some(ref snapshot_path) => snapshot_path,
             None => {
@@ -148,10 +160,15 @@ impl SecretManagerBuilder {
 
         // If no key IDs have been provided, use the default ones.
         // This prevents a crash when user just wants a "default" Stronghold and restarts the app without specifying any key IDs.
-        if self.ed25519_key_id.is_none() && self.es256_key_id.is_none() && self.es256k_key_id.is_none() {
+        if self.ed25519_key_id.is_none()
+            && self.es256_key_id.is_none()
+            && self.es256k_key_id.is_none()
+            && self.rs256_key_id.is_none()
+        {
             self.ed25519_key_id = Some(KeyId::new(DEFAULT_KEY_ID_ED25519));
             self.es256_key_id = Some(KeyId::new(DEFAULT_KEY_ID_ES256));
             self.es256k_key_id = Some(KeyId::new(DEFAULT_KEY_ID_ES256K));
+            self.rs256_key_id = Some(KeyId::new(DEFAULT_KEY_ID_RS256));
         };
 
         // If Stronghold doesn't exist yet, generate new keys
@@ -184,6 +201,10 @@ impl SecretManagerBuilder {
                     let es256k_key_id =
                         generate(&stronghold_ext_storage, KeyType::new("ES256K"), JwsAlgorithm::ES256K).await?;
                     self.es256k_key_id = Some(es256k_key_id);
+                    // Note: generating the RSA key takes noticeably longer than the keys above.
+                    let rs256_key_id =
+                        generate(&stronghold_ext_storage, KeyType::new("RS256"), JwsAlgorithm::RS256).await?;
+                    self.rs256_key_id = Some(rs256_key_id);
                 }
             }
         }
@@ -191,8 +212,8 @@ impl SecretManagerBuilder {
         // Check if specified keys exists
         match self.storage_type {
             StrongholdStorageType::Default => {
-                if self.es256_key_id.is_some() || self.es256k_key_id.is_some() {
-                    warn!("Key IDs for ECDSA keys are ignored for Stronghold Storage of type `Default`");
+                if self.es256_key_id.is_some() || self.es256k_key_id.is_some() || self.rs256_key_id.is_some() {
+                    warn!("Key IDs for ECDSA and RSA keys are ignored for Stronghold Storage of type `Default`");
                 }
                 let ed25519_key_id = self
                     .ed25519_key_id
@@ -220,6 +241,22 @@ impl SecretManagerBuilder {
                 if let Some(es256k_key_id) = &self.es256k_key_id {
                     check_key_existence(&stronghold_ext_storage, es256k_key_id).await?;
                 }
+
+                if let Some(rs256_key_id) = self.rs256_key_id.clone() {
+                    // Strongholds created before RS256 support was added do not contain an RSA key.
+                    // Only fail if the key was requested explicitly: a defaulted key ID is dropped
+                    // instead, so that such Strongholds keep loading (without `RS256` support).
+                    match check_key_existence(&stronghold_ext_storage, &rs256_key_id).await {
+                        Ok(()) => {}
+                        Err(err) => {
+                            if rs256_key_requested {
+                                return Err(err);
+                            }
+                            warn!("No RS256 key in this Stronghold, `RS256` operations will not be available");
+                            self.rs256_key_id = None;
+                        }
+                    }
+                }
             }
         }
 
@@ -229,6 +266,7 @@ impl SecretManagerBuilder {
             ed25519_key_id: self.ed25519_key_id,
             es256_key_id: self.es256_key_id,
             es256k_key_id: self.es256k_key_id,
+            rs256_key_id: self.rs256_key_id,
             did: self.did,
             fragment: self.fragment,
             cache: self.cache,
@@ -354,6 +392,52 @@ mod tests {
             .build()
             .await
             .is_ok());
+    }
+
+    #[test(tokio::test)]
+    async fn generates_an_rs256_key_for_a_new_stronghold() {
+        let path = random_stronghold_path().to_str().unwrap().to_string();
+
+        let secret_manager = SecretManager::builder()
+            .snapshot_path(&path)
+            .password(PASSWORD)
+            .build()
+            .await
+            .unwrap();
+
+        assert_eq!(secret_manager.rs256_key_id.unwrap().as_str(), "rs256-0");
+
+        // The generated key can be referred to explicitly when loading the Stronghold again.
+        assert!(SecretManager::builder()
+            .snapshot_path(&path)
+            .password(PASSWORD)
+            .with_rs256_key("rs256-0")
+            .build()
+            .await
+            .is_ok());
+    }
+
+    /// Strongholds created before RS256 support was added do not contain an RSA key. They should
+    /// still load, just without `RS256` being available.
+    #[test(tokio::test)]
+    async fn loads_an_existing_stronghold_without_an_rs256_key() {
+        let secret_manager = SecretManager::builder()
+            .snapshot_path("../shared/tests/res/all_slots.stronghold")
+            .password("sup3rSecr3t")
+            .build()
+            .await
+            .unwrap();
+
+        assert!(secret_manager.rs256_key_id.is_none());
+
+        // Explicitly asking for the missing key still fails.
+        assert!(SecretManager::builder()
+            .snapshot_path("../shared/tests/res/all_slots.stronghold")
+            .password("sup3rSecr3t")
+            .with_rs256_key("rs256-0")
+            .build()
+            .await
+            .is_err());
     }
 
     #[test(tokio::test)]

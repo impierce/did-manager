@@ -14,6 +14,7 @@ use identity_verification::jwk::EdCurve;
 use identity_verification::jwk::Jwk;
 use identity_verification::jwk::JwkParamsEc;
 use identity_verification::jwk::JwkParamsOkp;
+use identity_verification::jwk::JwkParamsRsa;
 use identity_verification::jws::JwsAlgorithm;
 use identity_verification::jwu;
 use iota_sdk_legacy::client::secret::stronghold::StrongholdSecretManager;
@@ -26,12 +27,16 @@ use iota_stronghold::procedures::StrongholdProcedure;
 use iota_stronghold::Location;
 use iota_stronghold::Stronghold;
 use log::info;
+use rsa::pkcs1::DecodeRsaPublicKey;
+use rsa::traits::PublicKeyParts;
+use rsa::RsaPublicKey;
 use serde_json::json;
 use std::str::FromStr;
 use std::sync::Arc;
 use stronghold_ext::execute_procedure_ext;
 use stronghold_ext::procs::es256::{self, Es256Procs};
 use stronghold_ext::procs::es256k::{self, Es256kProcs};
+use stronghold_ext::procs::rs256::{self, Rs256Procs};
 use tokio::sync::MutexGuard;
 
 use crate::utils::{get_client, persist_changes};
@@ -41,7 +46,7 @@ static IDENTITY_VAULT_PATH: &str = "iota_identity_vault";
 /// Wrapper around a [`StrongholdSecretManager`] that implements the [`KeyIdStorage`](crate::KeyIdStorage)
 /// and [`JwkStorage`](crate::JwkStorage) interfaces.
 /// For the most part, this type is a copy of the [`StrongholdStorage`](https://github.com/iotaledger/identity/blob/wasm-v1.6.0-beta.2/identity_stronghold/src/storage/mod.rs#L47)
-/// type but with added `ES256` support.
+/// type but with added `ES256`, `ES256K` and `RS256` support.
 #[derive(Clone, Debug)]
 pub struct StrongholdExtStorage(Arc<SecretManager>);
 
@@ -175,6 +180,48 @@ impl StrongholdExtStorage {
 
         Ok(jwk)
     }
+
+    /// Retrieve the public RS256 key corresponding to `key_id`.
+    pub async fn get_rs256_public_key(&self, key_id: &KeyId) -> KeyStorageResult<Jwk> {
+        let stronghold = self.get_stronghold().await;
+        let client = get_client(&stronghold)?;
+
+        let location = Location::generic(
+            IDENTITY_VAULT_PATH.as_bytes().to_vec(),
+            key_id.to_string().as_bytes().to_vec(),
+        );
+
+        let pub_key = Rs256Procs::PublicKey(rs256::PublicKey {
+            private_key: location.clone(),
+        });
+
+        let procedure_result = execute_procedure_ext(&client, pub_key)
+            .map_err(|err| KeyStorageError::new(KeyStorageErrorKind::KeyNotFound).with_source(err))?;
+
+        let public_key: Vec<u8> = procedure_result.into();
+
+        rs256_jwk_from_pkcs1_der(&public_key)
+    }
+}
+
+/// Converts a PKCS#1 DER encoded RSA public key -- the output of the `Rs256Procs::PublicKey`
+/// procedure -- into a JWK with `RS256` as its algorithm.
+fn rs256_jwk_from_pkcs1_der(public_key: &[u8]) -> KeyStorageResult<Jwk> {
+    let public_key = RsaPublicKey::from_pkcs1_der(public_key).map_err(|err| {
+        KeyStorageError::new(KeyStorageErrorKind::Unspecified)
+            .with_custom_message("failed to parse the PKCS#1 DER encoded RSA public key")
+            .with_source(err)
+    })?;
+
+    let mut params = JwkParamsRsa::new();
+    params.n = jwu::encode_b64(public_key.n().to_bytes_be());
+    params.e = jwu::encode_b64(public_key.e().to_bytes_be());
+
+    let mut jwk: Jwk = Jwk::from_params(params);
+    jwk.set_alg(JwsAlgorithm::RS256.name());
+    jwk.set_kid(jwk.thumbprint_sha256_b64());
+
+    Ok(jwk)
 }
 
 #[cfg_attr(not(feature = "send-sync-storage"), async_trait(?Send))]
@@ -191,6 +238,7 @@ impl JwkStorage for StrongholdExtStorage {
             JwsAlgorithm::EdDSA => KeyId::new("ed25519-0"),
             JwsAlgorithm::ES256 => KeyId::new("es256-0"),
             JwsAlgorithm::ES256K => KeyId::new("es256k-0"),
+            JwsAlgorithm::RS256 => KeyId::new("rs256-0"),
             _ => unimplemented!("Unsupported algorithm"),
         };
 
@@ -223,6 +271,18 @@ impl JwkStorage for StrongholdExtStorage {
             }
             ExtProceduresKeyType::ES256K => {
                 let generate_key_procedure = Es256kProcs::GenerateKey(es256k::GenerateKey {
+                    output: location.clone(),
+                });
+                execute_procedure_ext(&client, generate_key_procedure).map_err(|err| {
+                    KeyStorageError::new(KeyStorageErrorKind::Unspecified)
+                        .with_custom_message("stronghold GenerateKey procedure failed")
+                        .with_source(err)
+                })?;
+            }
+            ExtProceduresKeyType::RS256 => {
+                // Note: RSA key generation is a probabilistic prime search and takes noticeably
+                // longer than the elliptic-curve algorithms above.
+                let generate_key_procedure = Rs256Procs::GenerateKey(rs256::GenerateKey {
                     output: location.clone(),
                 });
                 execute_procedure_ext(&client, generate_key_procedure).map_err(|err| {
@@ -329,6 +389,20 @@ impl JwkStorage for StrongholdExtStorage {
                 jwk.set_kid(jwk.thumbprint_sha256_b64());
                 jwk
             }
+            ExtProceduresKeyType::RS256 => {
+                let public_key_procedure = Rs256Procs::PublicKey(rs256::PublicKey {
+                    private_key: location.clone(),
+                });
+                let public_key: Vec<u8> = execute_procedure_ext(&client, public_key_procedure)
+                    .map_err(|err| {
+                        KeyStorageError::new(KeyStorageErrorKind::Unspecified)
+                            .with_custom_message("stronghold PublicKey procedure failed")
+                            .with_source(err)
+                    })?
+                    .into();
+
+                rs256_jwk_from_pkcs1_der(&public_key)?
+            }
         };
 
         // let public_key_procedure = match keytype {
@@ -428,6 +502,30 @@ impl JwkStorage for StrongholdExtStorage {
                     .map_err(|err| {
                         KeyStorageError::new(KeyStorageErrorKind::Unspecified)
                             .with_custom_message("stronghold Es256Procs::Sign procedure failed")
+                            .with_source(err)
+                    })?
+                    .into()
+            }
+            JwsAlgorithm::RS256 => {
+                // Check that `kty` is `Rsa`.
+                public_key.try_rsa_params().map_err(|err| {
+                    KeyStorageError::new(KeyStorageErrorKind::Unspecified)
+                        .with_custom_message(format!("expected a Jwk with Rsa params in order to sign with {alg}"))
+                        .with_source(err)
+                })?;
+
+                let procedure = Rs256Procs::Sign(rs256::Sign {
+                    private_key: location,
+                    msg: data.to_vec(),
+                });
+
+                let stronghold = self.get_stronghold().await;
+                let client = get_client(&stronghold)?;
+
+                execute_procedure_ext(&client, procedure)
+                    .map_err(|err| {
+                        KeyStorageError::new(KeyStorageErrorKind::Unspecified)
+                            .with_custom_message("stronghold Rs256Procs::Sign procedure failed")
                             .with_source(err)
                     })?
                     .into()
@@ -557,6 +655,7 @@ enum ExtProceduresKeyType {
     Ed25519,
     ES256,
     ES256K,
+    RS256,
 }
 
 impl TryFrom<&KeyType> for ExtProceduresKeyType {
@@ -567,6 +666,7 @@ impl TryFrom<&KeyType> for ExtProceduresKeyType {
             "Ed25519" => Ok(ExtProceduresKeyType::Ed25519),
             "ES256" => Ok(ExtProceduresKeyType::ES256),
             "ES256K" => Ok(ExtProceduresKeyType::ES256K),
+            "RS256" => Ok(ExtProceduresKeyType::RS256),
             _ => Err(KeyStorageError::new(KeyStorageErrorKind::UnsupportedKeyType)),
         }
     }
@@ -584,6 +684,7 @@ mod tests {
     const PASSWORD: &str = "sup3rSecr3t";
     const ED25519_KEY_ID: &str = "ed25519-0";
     const ES256_KEY_ID: &str = "es256-0";
+    const RS256_KEY_ID: &str = "rs256-0";
 
     #[test(tokio::test)]
     async fn produces_the_expected_ed25519_signature() {
@@ -613,6 +714,62 @@ mod tests {
              0b0734cc9585de9db5434c9497e63e02\
              b1badd496c6451a9ccf1b90cb23aeb06"
         );
+    }
+
+    /// The shared test snapshot predates RS256 support, so this test generates its own
+    /// Stronghold, generates an RSA key in it and verifies a signature made with that key.
+    #[test(tokio::test)]
+    async fn produces_a_verifiable_rs256_signature() {
+        iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0).unwrap();
+
+        let mut snapshot_path = std::env::temp_dir();
+        snapshot_path.push(format!("rs256-{}.stronghold", std::process::id()));
+        let _ = std::fs::remove_file(&snapshot_path);
+
+        let stronghold_secret_manager = StrongholdSecretManager::builder()
+            .password(Password::from(PASSWORD.to_string()))
+            .build(SnapshotPath::from_path(&snapshot_path).as_path())
+            .unwrap();
+
+        let stronghold_ext_storage = StrongholdExtStorage::new(stronghold_secret_manager);
+
+        let JwkGenOutput { key_id, jwk, .. } = stronghold_ext_storage
+            .generate(KeyType::new("RS256"), JwsAlgorithm::RS256)
+            .await
+            .expect("failed to generate key");
+
+        assert_eq!(key_id.as_str(), RS256_KEY_ID);
+
+        // The public key is also retrievable on its own, and matches the one returned by `generate`.
+        let public_key = stronghold_ext_storage
+            .get_rs256_public_key(&key_id)
+            .await
+            .expect("failed to get public key");
+        assert_eq!(public_key, jwk);
+
+        let signature = stronghold_ext_storage
+            .sign(&key_id, b"foobar", &public_key)
+            .await
+            .expect("failed to sign data");
+
+        // RSA keys are generated randomly, so the signature can only be asserted by verifying it.
+        let params = public_key.try_rsa_params().unwrap();
+        let verifying_key = rsa::pkcs1v15::VerifyingKey::<rsa::sha2::Sha256>::new(
+            rsa::RsaPublicKey::new(
+                rsa::BigUint::from_bytes_be(&jwu::decode_b64(&params.n).unwrap()),
+                rsa::BigUint::from_bytes_be(&jwu::decode_b64(&params.e).unwrap()),
+            )
+            .unwrap(),
+        );
+
+        assert!(rsa::signature::Verifier::verify(
+            &verifying_key,
+            b"foobar",
+            &rsa::pkcs1v15::Signature::try_from(signature.as_slice()).unwrap(),
+        )
+        .is_ok());
+
+        let _ = std::fs::remove_file(&snapshot_path);
     }
 
     #[test(tokio::test)]
