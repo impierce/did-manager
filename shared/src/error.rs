@@ -9,7 +9,13 @@ pub enum ConsumerError {
     #[error("Identity error: `{0}`")]
     IdentityResolverError(#[from] identity_iota::resolver::Error),
     #[error("Client error: `{0}`")]
-    ClientError(#[from] iota_sdk_legacy::client::error::Error),
+    ClientError(Box<iota_sdk_legacy::client::error::Error>),
+}
+
+impl From<iota_sdk_legacy::client::error::Error> for ConsumerError {
+    fn from(error: iota_sdk_legacy::client::error::Error) -> Self {
+        Self::ClientError(Box::new(error))
+    }
 }
 
 #[derive(Error, Debug)]

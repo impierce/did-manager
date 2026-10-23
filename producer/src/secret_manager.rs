@@ -183,11 +183,11 @@ impl SecretManagerBuilder {
                     info!(
                         "Generated new {} key with key ID `{}`",
                         "Ed25519",
-                        &jwk_gen_output.key_id.as_str()
+                        jwk_gen_output.key_id.as_str()
                     );
                     warn!(
                         "A new key was generated with id `{}`. It is required for all future operations. Provide it using `with_ed25519_key()`. If you do not intend this behavior, remove the generated Stronghold file and use the default key IDs.",
-                        &jwk_gen_output.key_id.as_str()
+                        jwk_gen_output.key_id.as_str()
                     );
                     self.ed25519_key_id = Some(jwk_gen_output.key_id);
                 }
@@ -303,8 +303,8 @@ async fn generate(
         .map_err(ProducerError::KeyStorageError)?;
     info!(
         "Generated new {:?} key with key ID {:?}",
-        &key_type.as_str(),
-        &jwk_gen_output.key_id.as_str()
+        key_type.as_str(),
+        jwk_gen_output.key_id.as_str()
     );
     Ok(jwk_gen_output.key_id)
 }
