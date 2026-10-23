@@ -24,7 +24,7 @@ pub async fn produce_did_web(
 
     info!("Producing `did:web` for key_id `{key_id}` ({alg}) ...");
 
-    debug!("Origin: {}", &origin.ascii_serialization());
+    debug!("Origin: {}", origin.ascii_serialization());
 
     let (_scheme, host, port) = match origin {
         url::Origin::Tuple(ref scheme, ref host, ref port) => (scheme, host, port),
